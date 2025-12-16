@@ -1,6 +1,6 @@
-async function importAddressesFromText(content) {
+async function importAddressesFromText(content, options = {}) {
   if (!content || typeof content !== "string") {
-    return { imported: 0 };
+    return { imported: 0, invalid: 0, total: 0 };
   }
 
   const lines = content
@@ -9,7 +9,7 @@ async function importAddressesFromText(content) {
     .filter(Boolean);
 
   if (!lines.length) {
-    return { imported: 0 };
+    return { imported: 0, invalid: 0, total: 0 };
   }
 
   const now = Date.now();
@@ -27,7 +27,7 @@ async function importAddressesFromText(content) {
     const keySet = hashed ? fingerprint.keys.hash : fingerprint.keys.plain;
     const recordId = hashed ? fingerprint.ids?.hash || fingerprint.id : fingerprint.ids?.plain || fingerprint.id;
 
-    records.push({
+    const record = {
       id: recordId,
       hostHash: keySet.host,
       pathHash: keySet.path,
@@ -41,17 +41,30 @@ async function importAddressesFromText(content) {
       fragment: fingerprint.parts.fragment,
       lastVisited: now,
       visitCount: 1
-    });
+    };
+
+    if (options.preview) {
+      records.push(null); // placeholder to count valid
+    } else {
+      records.push(record);
+    }
   }
 
   if (!records.length) {
-    return { imported: 0 };
+    return { imported: 0, invalid: lines.length, total: lines.length };
+  }
+
+  const validCount = records.length;
+  const invalidCount = lines.length - validCount;
+
+  if (options.preview) {
+    return { imported: 0, valid: validCount, invalid: invalidCount, total: lines.length };
   }
 
   const db = await openDatabase();
   const tx = db.transaction(VISITS_STORE, "readwrite");
   const store = tx.objectStore(VISITS_STORE);
-  const imported = records.length;
+  const imported = validCount;
 
   for (const record of records) {
     store.put(record);
@@ -66,5 +79,5 @@ async function importAddressesFromText(content) {
     // ignore broadcast errors
   }
 
-  return { imported };
+  return { imported, invalid: invalidCount, total: lines.length };
 }

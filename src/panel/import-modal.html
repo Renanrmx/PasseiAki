@@ -1,0 +1,74 @@
+<style>
+  .import-modal-overlay {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    background: rgba(0, 0, 0, 0.6);
+  }
+  .import-modal {
+    background: #0f1826;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 16px;
+    width: 100%;
+    max-width: 360px;
+    box-shadow: 0 14px 40px rgba(0, 0, 0, 0.5);
+    color: #e8f1f2;
+    text-align: center;
+    box-sizing: border-box;
+  }
+  .import-modal-text {
+    margin-bottom: 12px;
+    font-size: 13px;
+    line-height: 1.4;
+  }
+  .import-modal-actions {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+  }
+  .import-modal-actions button {
+    padding: 8px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    color: #e8f1f2;
+    font-size: 13px;
+  }
+  .import-modal-cancel {
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    background: rgba(255, 255, 255, 0.08);
+  }
+  .import-modal-confirm {
+    border: 1px solid rgba(14, 158, 110, 0.35);
+    background: rgba(14, 158, 110, 0.15);
+  }
+</style>
+
+<div class="import-modal-overlay" id="import-invalid-overlay" aria-hidden="true">
+  <div class="import-modal" role="dialog" aria-modal="true" aria-labelledby="import-modal-text">
+    <div class="import-modal-text" id="import-modal-text">
+      Foram encontradas URLs inválidas. Deseja incluir somente as válidas ou cancelar?
+    </div>
+    <div class="import-modal-actions">
+      <button type="button" class="import-modal-cancel" data-import-cancel>Cancelar</button>
+      <button type="button" class="import-modal-confirm" data-import-confirm>Incluir válidas</button>
+    </div>
+  </div>
+</div>
+
+<div class="import-modal-overlay" id="import-success-overlay" aria-hidden="true">
+  <div class="import-modal" role="dialog" aria-modal="true" aria-labelledby="import-success-text">
+    <div class="import-modal-text" id="import-success-text">
+      Importação concluída.
+    </div>
+    <div class="import-modal-actions">
+      <button type="button" class="import-modal-confirm" data-import-success-close>Fechar</button>
+    </div>
+  </div>
+</div>

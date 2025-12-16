@@ -165,8 +165,10 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     if (message.type === "IMPORT_ADDRESSES") {
       return (async () => {
-        const result = await importAddressesFromText(message.content || "");
-        return { ok: true, imported: result.imported };
+        const result = await importAddressesFromText(message.content || "", {
+          preview: Boolean(message.preview)
+        });
+        return { ok: true, ...result };
       })().catch((error) => ({
         ok: false,
         error: error && error.message ? error.message : String(error)
