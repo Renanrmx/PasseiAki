@@ -60,8 +60,8 @@
 
   "browser_specific_settings": {
     "gecko": {
-      "id": "passei-aki@example.local",
-      "strict_min_version": "80.0",
+      "id": "passei-aki@renanrmx.github.io",
+      "strict_min_version": "109.0",
       "data_collection_permissions": {
         "required": ["none"]
       }
