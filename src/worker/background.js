@@ -163,6 +163,16 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
       }));
     }
 
+    if (message.type === "EXPORT_VISITS_TXT") {
+      return (async () => {
+        const result = await exportPlainVisitsTxt(message.filename);
+        return { ok: true, exported: result.exported };
+      })().catch((error) => ({
+        ok: false,
+        error: error && error.message ? error.message : String(error)
+      }));
+    }
+
     if (message.type === "IMPORT_ADDRESSES") {
       return (async () => {
         const result = await importAddressesFromText(message.content || "", {

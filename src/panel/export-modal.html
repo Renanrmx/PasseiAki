@@ -1,0 +1,70 @@
+<style>
+  .export-modal-overlay {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    background: rgba(0, 0, 0, 0.6);
+  }
+  .export-modal {
+    background: #0f1826;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 16px;
+    width: 100%;
+    max-width: 360px;
+    box-shadow: 0 14px 40px rgba(0, 0, 0, 0.5);
+    color: #e8f1f2;
+    text-align: center;
+    box-sizing: border-box;
+  }
+  .export-modal-text {
+    margin-bottom: 12px;
+    font-size: 13px;
+    line-height: 1.4;
+  }
+  .export-modal-actions {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+  }
+  .export-modal-actions button {
+    padding: 8px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    color: #e8f1f2;
+    font-size: 13px;
+  }
+  .export-modal-cancel {
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    background: rgba(255, 255, 255, 0.08);
+  }
+  .export-modal-table {
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    background: rgba(255, 255, 255, 0.12);
+  }
+  .export-modal-text-btn {
+    border: 1px solid rgba(14, 158, 110, 0.35);
+    background: rgba(14, 158, 110, 0.15);
+  }
+</style>
+
+<div class="export-modal-overlay" id="export-choice-overlay" aria-hidden="true">
+  <div class="export-modal" role="dialog" aria-modal="true" aria-labelledby="export-modal-text">
+    <div class="export-modal-text" id="export-modal-text">
+      Escolha como deseja exportar os endereços:
+    </div>
+    <div class="export-modal-actions">
+      <button type="button" class="export-modal-table" data-export-table>Exportar como tabela (CSV)</button>
+      <button type="button" class="export-modal-text-btn" data-export-text>Exportar como texto (TXT)</button>
+    </div>
+    <div style="margin-top:10px" class="export-modal-actions">
+      <button type="button" class="export-modal-cancel" data-export-cancel>Cancelar</button>
+    </div>
+  </div>
+</div>

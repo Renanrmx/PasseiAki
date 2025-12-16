@@ -13,7 +13,7 @@ O histórico fica em base local segura sem coleta de dados, o usuário pode esco
 ## Recursos secundários
 - Listagem dos últimos endereços acessados com data e hora (este recurso fica limitado se configurar a extensão para anonimizar os dados).
 - Backup seguro: em configurações pode criar ou restaurar um backup que é criptografado com uma senha definida no momento da criação.
-- Exportar endereços acessados em formato de tabela com as datas de acesso.
+- Exportar endereços acessados em formato de tabela com as datas de acesso ou exportar como texto apenas com os endereços.
 - Importar endereços de arquivos de texto, cada linha contendo uma URL apenas, não são aceitas datas de acesso ficando assim com a data da importação, essa limitação é intencional para manter a integridade do banco sendo assim só podendo definir todos os campos por meio da restauração de backup que é criptografado.
 
 ## Persistência e privacidade
