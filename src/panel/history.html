@@ -12,7 +12,7 @@
       }
       body {
         margin: 0;
-        padding: 12px;
+        padding: 12px 12px 0;
         background: linear-gradient(135deg, #0b0c10 0%, #1f2833 55%, #0b1727 100%);
         min-height: 100vh;
         display: flex;
@@ -78,9 +78,47 @@
         border-color: rgba(255, 107, 107, 0.5);
       }
       footer {
-        margin-top: 10px;
+        position: sticky;
+        bottom: 0;
+        margin: 0 -12px 0;
+        width: calc(100%);
         font-size: 11px;
         color: #9dc6d8;
+        background: rgba(12, 18, 30, 0.98);
+        padding: 2px 12px 10px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        z-index: 1100;
+      }
+      footer::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: -30px;
+        height: 30px;
+        background: linear-gradient(to top, rgba(12, 18, 30, 0.95), rgba(12, 18, 30, 0.05));
+        pointer-events: none;
+      }
+      footer .footer-text {
+        line-height: 1.4;
+      }
+      .export-btn {
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        background: rgba(255, 255, 255, 0.14);
+        color: #e8f1f2;
+        padding: 8px 12px;
+        border-radius: 8px;
+        font-size: 12px;
+        cursor: pointer;
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+        white-space: nowrap;
+      }
+      .export-btn:hover {
+        background: rgba(255, 255, 255, 0.12);
+        border-color: rgba(255, 255, 255, 0.35);
       }
 
       .overlay {
@@ -139,7 +177,13 @@
   <body>
     <h1>Últimos acessos</h1>
     <ul id="history-list" style="flex: 1;"></ul>
-    <footer>Acima exibidos apenas os últimos acessos</footer>
+    <footer>
+      <div class="footer-text">
+        Exibidos apenas os últimos acessos<br />
+        Todos os registros disponiveis ao exportar os dados
+      </div>
+      <button class="export-btn" id="export-history-btn">Exportar acessos</button>
+    </footer>
     <div class="overlay" id="confirm-overlay">
       <div class="modal">
         <p id="confirm-text">Excluir este registro de acesso?</p>
@@ -149,6 +193,12 @@
         </div>
       </div>
     </div>
+    <script>
+      var SUPPORTED_PROTOCOLS = typeof SUPPORTED_PROTOCOLS !== "undefined"
+        ? SUPPORTED_PROTOCOLS
+        : new Set(["http:", "https:"]);
+    </script>
+    <script src="../worker/background.utils.js"></script>
     <script src="history.js"></script>
   </body>
 </html>

@@ -1,3 +1,7 @@
+const ALLOWED_PROTOCOLS = typeof SUPPORTED_PROTOCOLS !== "undefined"
+  ? SUPPORTED_PROTOCOLS
+  : new Set(["http:", "https:"]);
+
 function decodeComponentSafe(value) {
   try {
     return decodeURIComponent(value);
@@ -38,7 +42,7 @@ function normalizeParams(paramString) {
 function normalizeUrlParts(urlString) {
   try {
     const url = new URL(urlString);
-    if (!SUPPORTED_PROTOCOLS.has(url.protocol)) {
+    if (!ALLOWED_PROTOCOLS.has(url.protocol)) {
       return null;
     }
 
@@ -60,4 +64,12 @@ function normalizeUrlParts(urlString) {
   } catch (error) {
     return null;
   }
+}
+
+function buildAddressFromRecord(item) {
+  const host = item.host || "";
+  const path = item.path || "";
+  const query = item.query ? `?${item.query}` : "";
+  const fragment = item.fragment ? `#${item.fragment}` : "";
+  return `${host}${path}${query}${fragment}`;
 }

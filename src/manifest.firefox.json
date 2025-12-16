@@ -40,7 +40,8 @@
       "worker/background.match.js",
       "worker/background.history.js",
       "worker/background.js",
-      "worker/background.backup.js"
+      "worker/background.backup.js",
+      "worker/background.export.js"
     ]
   },
 

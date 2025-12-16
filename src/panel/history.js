@@ -4,6 +4,8 @@ let refreshTimer = null;
 const confirmOverlay = document.getElementById("confirm-overlay");
 const confirmOk = document.getElementById("confirm-ok");
 const confirmCancel = document.getElementById("confirm-cancel");
+const exportHistoryBtn = document.getElementById("export-history-btn");
+
 
 function formatDate(timestamp, withTime) {
   if (!timestamp) return "—";
@@ -36,11 +38,7 @@ function renderHistory(items) {
     if (isHashed) {
       urlDiv.textContent = "???";
     } else {
-      const host = item.host || "";
-      const path = item.path || "";
-      const query = item.query ? `?${item.query}` : "";
-      const fragment = item.fragment ? `#${item.fragment}` : "";
-      fullUrl = `${host}${path}${query}${fragment}`;
+      fullUrl = buildAddressFromRecord(item);
       urlDiv.textContent = fullUrl;
     }
 
@@ -117,8 +115,25 @@ async function loadHistory() {
   }
 }
 
+async function exportHistoryAddresses() {
+  try {
+    const response = await api.runtime.sendMessage({ type: "EXPORT_VISITS_CSV" });
+    if (!response || response.ok === false) {
+      throw new Error(response && response.error ? response.error : "Falha ao exportar");
+    }
+    if (response.exported === 0) {
+      alert("Nenhum endereço não anônimo para exportar.");
+    }
+  } catch (error) {
+    alert("Erro ao exportar endereços: " + (error && error.message ? error.message : error));
+  }
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   loadHistory();
+  if (exportHistoryBtn) {
+    exportHistoryBtn.addEventListener("click", exportHistoryAddresses);
+  }
 });
 
 window.addEventListener("focus", loadHistory);

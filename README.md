@@ -13,6 +13,7 @@ O histórico fica em base local segura sem coleta de dados, o usuário pode esco
 ## Recursos secundários
 - Listagem dos últimos endereços acessados com data e hora (este recurso fica limitado se configurar a extensão para anonimizar os dados).
 - Backup seguro: em configurações pode criar ou restaurar um backup que é criptografado com uma senha definida no momento da criação.
+- Exportar endereços acessados em formato de tabela com as datas de acesso
 
 ## Persistência e privacidade
 - Os registros são salvos após normalizados e separados em `host`, `path`, `params` e `fragment`, tudo é salvo apenas localmente no IndexedDB

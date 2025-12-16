@@ -54,7 +54,8 @@ if (typeof importScripts === "function") {
     "background.utils.js",
     "background.match.js",
     "background.history.js",
-    "background.backup.js"
+    "background.backup.js",
+    "background.export.js"
   );
 }
 
@@ -149,6 +150,16 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
         console.error("Falha na restauração:", error);
         return { ok: false, error: error && error.message ? error.message : String(error) };
       }
+    }
+
+    if (message.type === "EXPORT_VISITS_CSV") {
+      return (async () => {
+        const result = await exportPlainVisitsCsv(message.filename);
+        return { ok: true, exported: result.exported };
+      })().catch((error) => ({
+        ok: false,
+        error: error && error.message ? error.message : String(error)
+      }));
     }
 
     return undefined;
