@@ -55,6 +55,7 @@ if (typeof importScripts === "function") {
     "background.match.js",
     "background.history.js",
     "background.backup.js",
+    "background.import.js",
     "background.export.js"
   );
 }
@@ -156,6 +157,16 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
       return (async () => {
         const result = await exportPlainVisitsCsv(message.filename);
         return { ok: true, exported: result.exported };
+      })().catch((error) => ({
+        ok: false,
+        error: error && error.message ? error.message : String(error)
+      }));
+    }
+
+    if (message.type === "IMPORT_ADDRESSES") {
+      return (async () => {
+        const result = await importAddressesFromText(message.content || "");
+        return { ok: true, imported: result.imported };
       })().catch((error) => ({
         ok: false,
         error: error && error.message ? error.message : String(error)

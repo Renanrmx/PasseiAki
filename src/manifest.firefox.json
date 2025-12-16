@@ -41,7 +41,8 @@
       "worker/background.history.js",
       "worker/background.js",
       "worker/background.backup.js",
-      "worker/background.export.js"
+      "worker/background.export.js",
+      "worker/background.import.js"
     ]
   },
 
