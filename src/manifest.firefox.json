@@ -1,0 +1,68 @@
+{
+  "manifest_version": 2,
+  "name": "Passei Aki",
+  "description": "Registra páginas acessadas e indica quando um link já foi visitado",
+  "version": "2.0.0",
+
+  "browser_action": {
+    "default_title": "Passei Aki",
+    "default_popup": "panel/index.html",
+    "default_icon": {
+      "16": "icons/check-mark-16.png",
+      "24": "icons/check-mark-24.png",
+      "32": "icons/check-mark-32.png",
+      "48": "icons/check-mark-48.png",
+      "96": "icons/check-mark-96.png"
+    }
+  },
+
+  "icons": {
+    "48": "icons/check-mark-48.png",
+    "96": "icons/check-mark-96.png"
+  },
+
+  "permissions": [
+    "tabs",
+    "activeTab",
+    "downloads",
+    "http://*/*",
+    "https://*/*"
+  ],
+
+  "background": {
+    "scripts": [
+      "vendor/argon2-bundled.min.js",
+      "vendor/chacha20poly1305.js",
+      "worker/background.crypto.js",
+      "worker/background.hash.js",
+      "worker/background.database.js",
+      "worker/background.utils.js",
+      "worker/background.match.js",
+      "worker/background.history.js",
+      "worker/background.js",
+      "worker/background.backup.js"
+    ]
+  },
+
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*/*"
+      ],
+      "js": [
+        "content/highlighter.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "passei-aki@example.local",
+      "strict_min_version": "80.0",
+      "data_collection_permissions": {
+        "required": ["none"]
+      }
+    }
+  }
+}

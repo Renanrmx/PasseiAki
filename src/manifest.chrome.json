@@ -1,0 +1,55 @@
+{
+  "manifest_version": 3,
+  "name": "Passei Aki",
+  "description": "Registra páginas acessadas e indica quando um link já foi visitado",
+  "version": "2.0.0",
+
+  "action": {
+    "default_title": "Passei Aki",
+    "default_popup": "panel/index.html",
+    "default_icon": {
+      "16": "icons/check-mark-16.png",
+      "24": "icons/check-mark-24.png",
+      "32": "icons/check-mark-32.png",
+      "48": "icons/check-mark-48.png"
+    }
+  },
+
+  "icons": {
+    "48": "icons/check-mark-48.png",
+    "96": "icons/check-mark-96.png"
+  },
+
+  "background": {
+    "service_worker": "worker/background.js"
+  },
+
+  "permissions": [
+    "tabs",
+    "activeTab",
+    "downloads"
+  ],
+
+  "host_permissions": [
+    "*://*/*"
+  ],
+
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*/*"
+      ],
+      "js": [
+        "content/highlighter.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "passei-aki@example.local",
+      "strict_min_version": "109.0"
+    }
+  }
+}

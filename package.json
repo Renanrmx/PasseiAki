@@ -1,0 +1,22 @@
+{
+  "name": "passei-aki",
+  "version": "2.0.0",
+  "description": "Registra páginas acessadas e indica quando um link já foi visitado",
+  "private": true,
+  "scripts": {
+    "start": "node -e \"const fs=require('fs');const path=require('path');const src='src';const dist='dist';fs.rmSync(dist,{recursive:true,force:true});fs.cpSync(src,dist,{recursive:true});['manifest.json','manifest.chrome.json','manifest.firefox.json'].forEach(f=>{try{fs.unlinkSync(path.join(dist,f));}catch(e){}});fs.copyFileSync(path.join(src,'manifest.firefox.json'),path.join(dist,'manifest.json'));\" && web-ext run --source-dir dist",
+    "build:chrome": "node -e \"const fs=require('fs');const path=require('path');const src='src';const dist='dist';fs.rmSync(dist,{recursive:true,force:true});fs.cpSync(src,dist,{recursive:true});['manifest.json','manifest.chrome.json','manifest.firefox.json'].forEach(f=>{try{fs.unlinkSync(path.join(dist,f));}catch(e){}});fs.copyFileSync(path.join(src,'manifest.chrome.json'),path.join(dist,'manifest.json'));\" && web-ext build --source-dir dist --artifacts-dir dist --filename passei_aki-{version}_chrome.zip",
+    "build:firefox": "node -e \"const fs=require('fs');const path=require('path');const src='src';const dist='dist';fs.rmSync(dist,{recursive:true,force:true});fs.cpSync(src,dist,{recursive:true});['manifest.json','manifest.chrome.json','manifest.firefox.json'].forEach(f=>{try{fs.unlinkSync(path.join(dist,f));}catch(e){}});fs.copyFileSync(path.join(src,'manifest.firefox.json'),path.join(dist,'manifest.json'));\" && web-ext build --source-dir dist --artifacts-dir dist --filename passei_aki-{version}_firefox.zip",
+    "lint": "node -e \"const fs=require('fs');const path=require('path');const src='src';const dist='dist';fs.rmSync(dist,{recursive:true,force:true});fs.cpSync(src,dist,{recursive:true});['manifest.json','manifest.chrome.json','manifest.firefox.json'].forEach(f=>{try{fs.unlinkSync(path.join(dist,f));}catch(e){}});fs.copyFileSync(path.join(src,'manifest.chrome.json'),path.join(dist,'manifest.json'));\" && web-ext lint --source-dir dist"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "web-ext": "^9.2.0"
+  },
+  "dependencies": {
+    "@stablelib/chacha20poly1305": "^2.0.1",
+    "@stablelib/random": "^2.0.1",
+    "argon2-browser": "^1.18.0"
+  }
+}

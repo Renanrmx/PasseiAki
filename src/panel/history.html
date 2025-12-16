@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Últimos acessos - Passei Aki</title>
+    <style>
+      :root {
+        font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+        background: #0b0c10;
+        color: #e8f1f2;
+      }
+      body {
+        margin: 0;
+        padding: 12px;
+        background: linear-gradient(135deg, #0b0c10 0%, #1f2833 55%, #0b1727 100%);
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+      h1 {
+        margin: 0 0 10px;
+        font-size: 18px;
+      }
+      ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      li.entry {
+        padding: 10px 12px;
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        position: relative;
+      }
+      .url {
+        font-size: 13px;
+        margin-bottom: 4px;
+        word-break: break-all;
+      }
+      .meta {
+        font-size: 12px;
+        color: #c5d6e2;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        width: 100%;
+      }
+      .copy-btn {
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        background: rgba(255, 255, 255, 0.06);
+        color: #e8f1f2;
+        padding: 4px 6px;
+        border-radius: 6px;
+        font-size: 11px;
+        cursor: pointer;
+      }
+      .copy-btn:hover {
+        background: rgba(255, 255, 255, 0.12);
+        border-color: rgba(255, 255, 255, 0.35);
+      }
+      .delete-btn {
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        background: rgba(255, 255, 255, 0.06);
+        color: #ff6b6b;
+        padding: 4px 6px;
+        border-radius: 6px;
+        font-size: 11px;
+        cursor: pointer;
+      }
+      .delete-btn:hover {
+        background: rgba(255, 107, 107, 0.15);
+        border-color: rgba(255, 107, 107, 0.5);
+      }
+      footer {
+        margin-top: 10px;
+        font-size: 11px;
+        color: #9dc6d8;
+      }
+
+      .overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.55);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+      }
+
+      .overlay.active {
+        display: flex;
+      }
+
+      .modal {
+        background: #0f1826;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 12px;
+        padding: 14px 16px;
+        width: 100%;
+        max-width: 360px;
+        box-sizing: border-box;
+        box-shadow: 0 14px 40px rgba(0, 0, 0, 0.5);
+      }
+
+      .modal p {
+        margin: 0 0 10px;
+        font-size: 13px;
+        color: #c5d6e2;
+      }
+
+      .modal .modal-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+      }
+
+      .modal .btn {
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        background: rgba(255, 255, 255, 0.06);
+        color: #e8f1f2;
+        padding: 6px 10px;
+        border-radius: 6px;
+        font-size: 11px;
+        cursor: pointer;
+      }
+
+      .modal .btn:hover {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: rgba(255, 255, 255, 0.3);
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Últimos acessos</h1>
+    <ul id="history-list" style="flex: 1;"></ul>
+    <footer>Acima exibidos apenas os últimos acessos</footer>
+    <div class="overlay" id="confirm-overlay">
+      <div class="modal">
+        <p id="confirm-text">Excluir este registro de acesso?</p>
+        <div class="modal-actions">
+          <button class="btn" id="confirm-cancel">Cancelar</button>
+          <button class="btn" id="confirm-ok">Excluir</button>
+        </div>
+      </div>
+    </div>
+    <script src="history.js"></script>
+  </body>
+</html>

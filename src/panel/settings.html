@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/png" sizes="16x16" href="../icons/check-mark-16.png" />
+    <title>Passei Aki - Configurações</title>
+    <style>
+      :root {
+        font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+        background: #0b0c10;
+        color: #e8f1f2;
+      }
+      body {
+        margin: 0;
+        padding: 16px;
+        background: linear-gradient(135deg, #0b0c10 0%, #1f2833 55%, #0b1727 100%);
+      }
+      h1 {
+        margin: 0 0 10px;
+        font-size: 18px;
+      }
+      p {
+        margin: 0 0 12px;
+        color: #c5d6e2;
+        font-size: 13px;
+      }
+      .card {
+        padding: 12px;
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        margin-bottom: 12px;
+      }
+      .actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 12px;
+      }
+      .btn {
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        background: rgba(255, 255, 255, 0.06);
+        color: #e8f1f2;
+        padding: 8px 12px;
+        border-radius: 8px;
+        font-size: 13px;
+        cursor: pointer;
+      }
+      .btn:hover {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: rgba(255, 255, 255, 0.3);
+      }
+      .file-label {
+        position: relative;
+        overflow: hidden;
+      }
+      .file-label input[type="file"] {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        cursor: pointer;
+      }
+      .toggle {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .toggle input[type="checkbox"] {
+        width: 16px;
+        height: 16px;
+        accent-color: #0b8a5d;
+      }
+      .status {
+        font-size: 12px;
+        margin-top: 4px;
+        color: #c5d6e2;
+      }
+      .status.bad {
+        color: #ff6b6b;
+      }
+      .overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.55);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+      }
+      .overlay.active {
+        display: flex;
+      }
+      .modal {
+        background: #0f1826;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 12px;
+        padding: 14px 16px;
+        width: 100%;
+        max-width: 360px;
+        box-shadow: 0 14px 40px rgba(0, 0, 0, 0.5);
+        box-sizing: border-box;
+      }
+      .modal h3 {
+        margin: 0 0 6px;
+        font-size: 14px;
+      }
+      .modal p {
+        margin: 0 0 10px;
+        font-size: 12px;
+        color: #c5d6e2;
+      }
+      .modal input[type="password"] {
+        width: 100%;
+        padding: 8px 10px;
+        border-radius: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        background: rgba(255, 255, 255, 0.05);
+        color: #e8f1f2;
+        margin-top: 6px;
+        box-sizing: border-box;
+      }
+      .modal .modal-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        margin-top: 12px;
+      }
+      .modal .error {
+        color: #ff6b6b;
+        font-size: 11px;
+        min-height: 14px;
+        margin-top: 6px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Passei Aki - Configurações</h1>
+
+    <div class="card">
+      <label class="toggle">
+        <input type="checkbox" id="encryption-toggle" />
+        <span>Ativar criptografia</span>
+      </label>
+      <div class="status" id="encryption-status">
+        Links acessados são criptografados e mantidos localmente no dispositivo.
+      </div>
+    </div>
+
+    <div class="card">
+      <p>Criar ou restaurar backup completo dos acessos registrados.</p>
+      <div class="actions">
+        <button class="btn" id="create-bkp-btn">Criar backup</button>
+        <button class="btn" id="restore-bkp-btn">Restaurar backup</button>
+        <input type="file" id="restore-bkp-file" accept=".bak" style="display:none" />
+      </div>
+    </div>
+
+    <div class="overlay" id="password-overlay">
+      <div class="modal">
+        <form id="password-form">
+          <h3 id="password-title">Senha</h3>
+          <p id="password-desc"></p>
+          <input type="password" id="password-input" autocomplete="off" placeholder="Senha" />
+          <input type="password" id="password-confirm-input" autocomplete="off" placeholder="Confirmar senha" />
+          <div class="error" id="password-error"></div>
+          <div class="modal-actions">
+            <button class="btn" id="password-cancel" type="button">Cancelar</button>
+            <button class="btn" id="password-confirm" type="submit">Confirmar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <script src="backup.js"></script>
+  </body>
+</html>
