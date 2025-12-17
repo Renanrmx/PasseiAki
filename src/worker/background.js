@@ -54,6 +54,7 @@ if (typeof importScripts === "function") {
     "background.utils.js",
     "background.match.js",
     "background.history.js",
+    "background.highlight.js",
     "background.backup.js",
     "background.import.js",
     "background.export.js"
@@ -234,38 +235,24 @@ async function upsertVisit(urlString) {
   const recordId = hashed ? fingerprint.ids?.hash || fingerprint.id : fingerprint.ids?.plain || fingerprint.id;
   const paramKeys = hashed ? fingerprint.keys.hash.params : fingerprint.keys.plain.params;
 
+  const baseRecord = {
+    id: recordId,
+    hostHash: keySet.host,
+    pathHash: keySet.path,
+    queryHash: keySet.query,
+    fragmentHash: keySet.fragment,
+    queryParamsHash: paramKeys,
+    hashed,
+    host: fingerprint.parts.host,
+    path: fingerprint.parts.path,
+    query: fingerprint.parts.query,
+    fragment: fingerprint.parts.fragment,
+    lastVisited: now
+  };
+
   const record = existedBefore
-    ? {
-        ...existing,
-        id: recordId,
-        hostHash: keySet.host,
-        pathHash: keySet.path,
-        queryHash: keySet.query,
-        fragmentHash: keySet.fragment,
-        queryParamsHash: paramKeys,
-        hashed,
-        host: fingerprint.parts.host,
-        path: fingerprint.parts.path,
-        query: fingerprint.parts.query,
-        fragment: fingerprint.parts.fragment,
-        lastVisited: now,
-        visitCount: (existing.visitCount || 0) + 1
-      }
-    : {
-        id: recordId,
-        hostHash: keySet.host,
-        pathHash: keySet.path,
-        queryHash: keySet.query,
-        fragmentHash: keySet.fragment,
-        queryParamsHash: paramKeys,
-        hashed,
-        host: fingerprint.parts.host,
-        path: fingerprint.parts.path,
-        query: fingerprint.parts.query,
-        fragment: fingerprint.parts.fragment,
-        lastVisited: now,
-        visitCount: 1
-      };
+    ? { ...existing, ...baseRecord, visitCount: (existing.visitCount || 0) + 1 }
+    : { ...baseRecord, visitCount: 1 };
 
   store.put(record);
   await waitForTransaction(tx);
@@ -406,21 +393,6 @@ async function handleWindowFocusChanged(windowId) {
   } catch (error) {
     console.warn("Nao foi possivel sincronizar janela:", error);
   }
-}
-
-async function handleCheckVisitedLinks(links) {
-  const visitedTokens = [];
-
-  for (const link of links) {
-    const fingerprint = await computeFingerprint(link.href);
-    if (!fingerprint) continue;
-    const match = await findVisitMatch(fingerprint);
-    if (match.state !== MATCH_STATE.none) {
-      visitedTokens.push(link.token);
-    }
-  }
-
-  return { visitedTokens };
 }
 
 async function handleGetVisitForUrl(urlString, tabId) {

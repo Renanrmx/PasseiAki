@@ -2,6 +2,7 @@ const api = typeof browser !== "undefined" ? browser : chrome;
 
 const SUPPORTED_PROTOCOLS = new Set(["http:", "https:"]);
 const VISITED_CLASS = "passei-aki-visited";
+const PARTIAL_CLASS = "passei-aki-partial";
 const STYLE_ID = "passei-aki-style";
 const SCAN_DEBOUNCE_MS = 400;
 
@@ -18,6 +19,10 @@ function injectStyle() {
     a.${VISITED_CLASS} {
       color: #0b8a5d !important;
       text-decoration-color: #0b8a5d !important;
+    }
+    a.${PARTIAL_CLASS} {
+      color: #7559ca !important;
+      text-decoration-color: #7559ca !important;
     }
   `;
   document.head.appendChild(style);
@@ -47,15 +52,19 @@ function collectLinks() {
   return urlToAnchors;
 }
 
-function markVisited(urlToAnchors, visitedTokens) {
-  for (const token of visitedTokens) {
-    const anchors = urlToAnchors.get(token);
-    if (!anchors) {
-      continue;
-    }
+function markVisited(urlToAnchors, visitedLinks) {
+  for (const item of visitedLinks) {
+    const anchors = urlToAnchors.get(item.token);
+    if (!anchors) continue;
     anchors.forEach((anchor) => {
-      anchor.classList.add(VISITED_CLASS);
-      anchor.dataset.passeiAkiVisited = "true";
+      anchor.classList.remove(VISITED_CLASS, PARTIAL_CLASS);
+      if (item.state === "partial") {
+        anchor.classList.add(PARTIAL_CLASS);
+        anchor.dataset.passeiAkiVisited = "partial";
+      } else {
+        anchor.classList.add(VISITED_CLASS);
+        anchor.dataset.passeiAkiVisited = "true";
+      }
     });
   }
 }
@@ -75,8 +84,8 @@ async function requestVisited(urlToAnchors) {
       type: "CHECK_VISITED_LINKS",
       links: linksPayload
     });
-    if (response && Array.isArray(response.visitedTokens)) {
-      markVisited(urlToAnchors, response.visitedTokens);
+    if (response && Array.isArray(response.visitedLinks)) {
+      markVisited(urlToAnchors, response.visitedLinks);
     }
   } catch (error) {
     // runtime or permission issue; fail silently
