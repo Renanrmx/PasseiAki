@@ -1,8 +1,10 @@
 const api = typeof browser !== "undefined" ? browser : chrome;
 
 const SUPPORTED_PROTOCOLS = new Set(["http:", "https:"]);
-const VISITED_CLASS = "passei-aki-visited";
-const PARTIAL_CLASS = "passei-aki-partial";
+const VISITED_TEXT_CLASS = "passei-aki-visited";
+const PARTIAL_TEXT_CLASS = "passei-aki-partial";
+const VISITED_BORDER_CLASS = "passei-aki-visited-border";
+const PARTIAL_BORDER_CLASS = "passei-aki-partial-border";
 const STYLE_ID = "passei-aki-style";
 const SCAN_DEBOUNCE_MS = 400;
 
@@ -10,48 +12,74 @@ let scanTimer = null;
 let currentColors = {
   matchHexColor: null,
   partialHexColor: null,
-  matchColorEnabled: true,
-  partialColorEnabled: true
+  matchTextEnabled: true,
+  partialTextEnabled: true,
+  matchBorderEnabled: true,
+  partialBorderEnabled: true
 };
 
 
 function buildStyleText() {
   const matchColor =
-    currentColors.matchColorEnabled !== false && currentColors.matchHexColor
+    currentColors.matchTextEnabled !== false && currentColors.matchHexColor
       ? currentColors.matchHexColor
       : null;
   const partialColor =
-    currentColors.partialColorEnabled !== false && currentColors.partialHexColor
+    currentColors.partialTextEnabled !== false && currentColors.partialHexColor
       ? currentColors.partialHexColor
       : null;
 
-  const matchRule = matchColor
+  const matchTextRule = matchColor
     ? `
-    a.${VISITED_CLASS} {
+    a.${VISITED_TEXT_CLASS} {
       color: ${matchColor} !important;
       text-decoration-color: ${matchColor} !important;
     }`
     : `
-    a.${VISITED_CLASS} {
+    a.${VISITED_TEXT_CLASS} {
       color: inherit !important;
       text-decoration-color: inherit !important;
     }`;
 
-  const partialRule = partialColor
+  const partialTextRule = partialColor
     ? `
-    a.${PARTIAL_CLASS} {
+    a.${PARTIAL_TEXT_CLASS} {
       color: ${partialColor} !important;
       text-decoration-color: ${partialColor} !important;
     }`
     : `
-    a.${PARTIAL_CLASS} {
+    a.${PARTIAL_TEXT_CLASS} {
       color: inherit !important;
       text-decoration-color: inherit !important;
     }`;
 
+  const matchBorderRule = `
+    a.${VISITED_BORDER_CLASS} {
+      outline: 2px solid ${
+        currentColors.matchBorderEnabled !== false && currentColors.matchHexColor
+          ? currentColors.matchHexColor
+          : "transparent"
+      } !important;
+      outline-offset: 0px;
+      border-radius: 3px;
+    }`;
+
+  const partialBorderRule = `
+    a.${PARTIAL_BORDER_CLASS} {
+      outline: 2px solid ${
+        currentColors.partialBorderEnabled !== false && currentColors.partialHexColor
+          ? currentColors.partialHexColor
+          : "transparent"
+      } !important;
+      outline-offset: 0px;
+      border-radius: 3px;
+    }`;
+
   return `
-    ${matchRule}
-    ${partialRule}
+    ${matchTextRule}
+    ${partialTextRule}
+    ${matchBorderRule}
+    ${partialBorderRule}
   `;
 }
 
@@ -77,10 +105,14 @@ function applyColors(colors = {}) {
   currentColors = {
     matchHexColor: normalizeHexColor(colors.matchHexColor, null),
     partialHexColor: normalizeHexColor(colors.partialHexColor, null),
-    matchColorEnabled:
-      typeof colors.matchColorEnabled === "boolean" ? colors.matchColorEnabled : true,
-    partialColorEnabled:
-      typeof colors.partialColorEnabled === "boolean" ? colors.partialColorEnabled : true
+    matchTextEnabled:
+      typeof colors.matchTextEnabled === "boolean" ? colors.matchTextEnabled : true,
+    partialTextEnabled:
+      typeof colors.partialTextEnabled === "boolean" ? colors.partialTextEnabled : true,
+    matchBorderEnabled:
+      typeof colors.matchBorderEnabled === "boolean" ? colors.matchBorderEnabled : true,
+    partialBorderEnabled:
+      typeof colors.partialBorderEnabled === "boolean" ? colors.partialBorderEnabled : true
   };
   let style = document.getElementById(STYLE_ID);
   if (!style) {
@@ -121,12 +153,14 @@ function markVisited(urlToAnchors, visitedLinks) {
     const anchors = urlToAnchors.get(item.token);
     if (!anchors) continue;
     anchors.forEach((anchor) => {
-      anchor.classList.remove(VISITED_CLASS, PARTIAL_CLASS);
+      anchor.classList.remove(VISITED_TEXT_CLASS, PARTIAL_TEXT_CLASS, VISITED_BORDER_CLASS, PARTIAL_BORDER_CLASS);
       if (item.state === "partial") {
-        anchor.classList.add(PARTIAL_CLASS);
+        anchor.classList.add(PARTIAL_TEXT_CLASS);
+        anchor.classList.add(PARTIAL_BORDER_CLASS);
         anchor.dataset.passeiAkiVisited = "partial";
       } else {
-        anchor.classList.add(VISITED_CLASS);
+        anchor.classList.add(VISITED_TEXT_CLASS);
+        anchor.classList.add(VISITED_BORDER_CLASS);
         anchor.dataset.passeiAkiVisited = "true";
       }
     });

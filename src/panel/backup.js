@@ -199,7 +199,7 @@ function updateEncryptionStatus(enabled) {
   if (!encryptionStatus) return;
   if (enabled) {
     encryptionStatus.textContent =
-      "Links acessados são criptografados e mantidos localmente no dispositivo";
+      "Links criptografados e mantidos localmente";
     encryptionStatus.classList.remove("bad");
   } else {
     encryptionStatus.textContent = "Links não criptografados";

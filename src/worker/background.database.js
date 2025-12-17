@@ -89,8 +89,10 @@ async function getLinkColors() {
   const store = tx.objectStore(META_STORE);
   const matchColorEntry = await requestToPromise(store.get("matchHexColor"));
   const partialColorEntry = await requestToPromise(store.get("partialHexColor"));
-  const matchEnabledEntry = await requestToPromise(store.get("matchColorEnabled"));
-  const partialEnabledEntry = await requestToPromise(store.get("partialColorEnabled"));
+  const matchTextEnabledEntry = await requestToPromise(store.get("matchTextEnabled"));
+  const partialTextEnabledEntry = await requestToPromise(store.get("partialTextEnabled"));
+  const matchBorderEnabledEntry = await requestToPromise(store.get("matchBorderEnabled"));
+  const partialBorderEnabledEntry = await requestToPromise(store.get("partialBorderEnabled"));
   await waitForTransaction(tx);
 
   const matchHexColor = normalizeHexColor(
@@ -101,26 +103,34 @@ async function getLinkColors() {
     partialColorEntry && partialColorEntry.value,
     DEFAULT_PARTIAL_HEX_COLOR
   );
-  const matchColorEnabled = matchEnabledEntry && typeof matchEnabledEntry.value === "boolean" ? matchEnabledEntry.value : true;
-  const partialColorEnabled =
-    partialEnabledEntry && typeof partialEnabledEntry.value === "boolean" ? partialEnabledEntry.value : true;
+  const matchTextEnabled = matchTextEnabledEntry && typeof matchTextEnabledEntry.value === "boolean" ? matchTextEnabledEntry.value : true;
+  const partialTextEnabled =
+    partialTextEnabledEntry && typeof partialTextEnabledEntry.value === "boolean" ? partialTextEnabledEntry.value : true;
+  const matchBorderEnabled =
+    matchBorderEnabledEntry && typeof matchBorderEnabledEntry.value === "boolean" ? matchBorderEnabledEntry.value : false;
+  const partialBorderEnabled =
+    partialBorderEnabledEntry && typeof partialBorderEnabledEntry.value === "boolean" ? partialBorderEnabledEntry.value : false;
 
   // persist defaults on first fetch to avoid undefined in futuras execuções
-  if (!matchColorEntry || !partialColorEntry || !matchEnabledEntry || !partialEnabledEntry) {
+  if (!matchColorEntry || !partialColorEntry || !matchTextEnabledEntry || !partialTextEnabledEntry) {
     const writeTx = db.transaction(META_STORE, "readwrite");
     const writeStore = writeTx.objectStore(META_STORE);
     writeStore.put({ key: "matchHexColor", value: matchHexColor });
     writeStore.put({ key: "partialHexColor", value: partialHexColor });
-    writeStore.put({ key: "matchColorEnabled", value: matchColorEnabled });
-    writeStore.put({ key: "partialColorEnabled", value: partialColorEnabled });
+    writeStore.put({ key: "matchTextEnabled", value: matchTextEnabled });
+    writeStore.put({ key: "partialTextEnabled", value: partialTextEnabled });
+    writeStore.put({ key: "matchBorderEnabled", value: matchBorderEnabled });
+    writeStore.put({ key: "partialBorderEnabled", value: partialBorderEnabled });
     await waitForTransaction(writeTx);
   }
 
   return {
     matchHexColor,
     partialHexColor,
-    matchColorEnabled,
-    partialColorEnabled
+    matchTextEnabled,
+    partialTextEnabled,
+    matchBorderEnabled,
+    partialBorderEnabled
   };
 }
 
@@ -129,12 +139,18 @@ async function setLinkColors(colors = {}) {
   const next = {
     matchHexColor: normalizeHexColor(colors.matchHexColor, current.matchHexColor),
     partialHexColor: normalizeHexColor(colors.partialHexColor, current.partialHexColor),
-    matchColorEnabled:
-      typeof colors.matchColorEnabled === "boolean" ? colors.matchColorEnabled : current.matchColorEnabled,
-    partialColorEnabled:
-      typeof colors.partialColorEnabled === "boolean"
-        ? colors.partialColorEnabled
-        : current.partialColorEnabled
+    matchTextEnabled:
+      typeof colors.matchTextEnabled === "boolean" ? colors.matchTextEnabled : current.matchTextEnabled,
+    partialTextEnabled:
+      typeof colors.partialTextEnabled === "boolean"
+        ? colors.partialTextEnabled
+        : current.partialTextEnabled,
+    matchBorderEnabled:
+      typeof colors.matchBorderEnabled === "boolean" ? colors.matchBorderEnabled : current.matchBorderEnabled,
+    partialBorderEnabled:
+      typeof colors.partialBorderEnabled === "boolean"
+        ? colors.partialBorderEnabled
+        : current.partialBorderEnabled
   };
 
   const db = await openDatabase();
@@ -142,8 +158,10 @@ async function setLinkColors(colors = {}) {
   const store = tx.objectStore(META_STORE);
   store.put({ key: "matchHexColor", value: next.matchHexColor });
   store.put({ key: "partialHexColor", value: next.partialHexColor });
-  store.put({ key: "matchColorEnabled", value: next.matchColorEnabled });
-  store.put({ key: "partialColorEnabled", value: next.partialColorEnabled });
+  store.put({ key: "matchTextEnabled", value: next.matchTextEnabled });
+  store.put({ key: "partialTextEnabled", value: next.partialTextEnabled });
+  store.put({ key: "matchBorderEnabled", value: next.matchBorderEnabled });
+  store.put({ key: "partialBorderEnabled", value: next.partialBorderEnabled });
   await waitForTransaction(tx);
 
   return next;

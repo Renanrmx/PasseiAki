@@ -189,8 +189,10 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
         const colors = await setLinkColors({
           matchHexColor: message.matchHexColor,
           partialHexColor: message.partialHexColor,
-          matchColorEnabled: message.matchColorEnabled,
-          partialColorEnabled: message.partialColorEnabled
+          matchTextEnabled: message.matchTextEnabled,
+          partialTextEnabled: message.partialTextEnabled,
+          matchBorderEnabled: message.matchBorderEnabled,
+          partialBorderEnabled: message.partialBorderEnabled
         });
         try {
           api.runtime.sendMessage({ type: "LINK_COLORS_UPDATED", colors });

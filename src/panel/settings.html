@@ -57,12 +57,30 @@
         justify-content: space-between;
         gap: 10px;
         padding: 6px 0;
+        flex-wrap: wrap;
       }
       .indicator-row label {
         display: flex;
         align-items: center;
         gap: 8px;
         font-size: 13px;
+      }
+      .indicator-group {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      .indicator-group .switch {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 13px;
+      }
+      .indicator-group .switch input[type="checkbox"] {
+        width: 16px;
+        height: 16px;
+        accent-color: #0eb378;
       }
       .indicator-row input[type="checkbox"] {
         width: 16px;
@@ -162,32 +180,35 @@
     <h1>Passei Aki - Configurações</h1>
 
     <div class="card">
-      <label class="toggle">
-        <input type="checkbox" id="encryption-toggle" />
-        <span>Ativar criptografia</span>
-      </label>
-      <div class="status" id="encryption-status">
-        Links acessados são criptografados e mantidos localmente no dispositivo.
-      </div>
-    </div>
-
-    <div class="card">
-      <p>Defina os indicadores de links acessados.</p>
+      <h3 style="margin:6px 0 4px; font-size:13px; color:#c5d6e2;">Marcador de links acessados</h3>
       <div class="indicator-row">
-        <label for="visited-color-toggle">
-          <input type="checkbox" id="visited-color-toggle" checked />
-          <span>Cor de links acessados</span>
-        </label>
+        <div class="indicator-group">
+          <label class="switch" for="visited-color-toggle">
+            <input type="checkbox" id="visited-color-toggle" checked />
+            <span id="visited-text-label" style="color:#0eb378;">Texto colorido</span>
+          </label>
+          <label class="switch" for="visited-border-toggle">
+            <input type="checkbox" id="visited-border-toggle" checked />
+            <span id="visited-border-label" style="padding:2px 6px; border:2px solid #0eb378; border-radius:6px;">Borda colorida</span>
+          </label>
+        </div>
         <div class="color-swatch" title="Cor de links acessados">
           <input type="color" id="visited-color-picker" value="#0eb378" />
           <div aria-hidden="true" style="position:absolute; inset:2px; border-radius:4px; background:#0eb378;"></div>
         </div>
       </div>
+      <h3 style="margin:10px 0 4px; font-size:13px; color:#c5d6e2;">Marcador de links semelhantes</h3>
       <div class="indicator-row">
-        <label for="partial-color-toggle">
-          <input type="checkbox" id="partial-color-toggle" checked />
-          <span>Cor de links parciais</span>
-        </label>
+        <div class="indicator-group">
+          <label class="switch" for="partial-color-toggle">
+            <input type="checkbox" id="partial-color-toggle" checked />
+            <span id="partial-text-label" style="color:#81c700;">Texto colorido</span>
+          </label>
+          <label class="switch" for="partial-border-toggle">
+            <input type="checkbox" id="partial-border-toggle" checked />
+            <span id="partial-border-label" style="padding:2px 6px; border:2px solid #81c700; border-radius:6px;">Borda colorida</span>
+          </label>
+        </div>
         <div class="color-swatch" title="Cor de links parciais">
           <input type="color" id="partial-color-picker" value="#81c700" />
           <div aria-hidden="true" style="position:absolute; inset:2px; border-radius:4px; background:#81c700;"></div>
@@ -196,7 +217,21 @@
     </div>
 
     <div class="card">
-      <p>Criar ou restaurar backup completo dos acessos registrados.</p>
+      <p>Anonimizar os endereços acessados ao registrá-los, evita que qualquer um veja nessa extensão</p>
+      <p style="margin-top:-6px;">Obs: Isso impede algumas funcionalidades</p>
+      <div class="indicator-row">
+        <label for="encryption-toggle">
+          <input type="checkbox" id="encryption-toggle" />
+          <span>Ativar criptografia</span>
+        </label>
+        <div class="status" id="encryption-status">
+          Links criptografados e mantidos localmente
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <p>Criar ou restaurar backup completo dos acessos registrados</p>
       <div class="actions">
         <button class="btn" id="create-bkp-btn">Criar backup</button>
         <button class="btn" id="restore-bkp-btn">Restaurar backup</button>
@@ -205,14 +240,14 @@
     </div>
 
     <div class="card">
-      <p>Exportar para um arquivo todos os endereços salvos que não estejam anonimizados.</p>
+      <p>Exportar para um arquivo todos os endereços salvos que não estejam anonimizados</p>
       <div class="actions">
         <button class="btn" id="export-addresses-btn" data-export-addresses-btn>Exportar endereços</button>
       </div>
     </div>
 
     <div class="card">
-      <p>Importar endereços a partir de um arquivo de texto (.txt) com apenas uma URL por linha.</p>
+      <p>Importar endereços a partir de um arquivo de texto (.txt) com apenas uma URL por linha</p>
       <div class="actions">
         <button class="btn" data-import-addresses>Importar endereços</button>
       </div>

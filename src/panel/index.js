@@ -176,8 +176,8 @@ if (settingsBtn) {
         const created = await api.windows.create({
           url,
           type: "popup",
-          width: 480,
-          height: 560,
+          width: 650,
+          height: 600,
           focused: true
         });
 

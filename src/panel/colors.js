@@ -6,6 +6,10 @@
   const partialPickerInput = document.getElementById("partial-color-picker");
   const visitedSwatch = visitedPickerInput ? visitedPickerInput.parentElement : null;
   const partialSwatch = partialPickerInput ? partialPickerInput.parentElement : null;
+  const visitedTextLabel = document.getElementById("visited-text-label");
+  const partialTextLabel = document.getElementById("partial-text-label");
+  const visitedBorderLabel = document.getElementById("visited-border-label");
+  const partialBorderLabel = document.getElementById("partial-border-label");
 
   let picker = null;
   let pickerPopover = null;
@@ -13,8 +17,10 @@
   let colorsState = {
     matchHexColor: null,
     partialHexColor: null,
-    matchColorEnabled: true,
-    partialColorEnabled: true
+    matchTextEnabled: true,
+    partialTextEnabled: true,
+    matchBorderEnabled: false,
+    partialBorderEnabled: false
   };
 
   function normalizeHexColor(value, fallback) {
@@ -37,6 +43,16 @@
     }
   }
 
+  function setLabelColor(labelEl, color) {
+    if (!labelEl) return;
+    labelEl.style.color = color;
+  }
+
+  function setBorderLabel(labelEl, color) {
+    if (!labelEl) return;
+    labelEl.style.borderColor = color;
+  }
+
   async function loadColors() {
     try {
       const res = await apiColors.runtime.sendMessage({ type: "GET_LINK_COLORS" });
@@ -44,20 +60,32 @@
         colorsState = {
           matchHexColor: normalizeHexColor(res.colors.matchHexColor, null),
           partialHexColor: normalizeHexColor(res.colors.partialHexColor, null),
-          matchColorEnabled:
-            typeof res.colors.matchColorEnabled === "boolean" ? res.colors.matchColorEnabled : true,
-          partialColorEnabled:
-            typeof res.colors.partialColorEnabled === "boolean" ? res.colors.partialColorEnabled : true
+          matchTextEnabled:
+            typeof res.colors.matchTextEnabled === "boolean" ? res.colors.matchTextEnabled : true,
+          partialTextEnabled:
+            typeof res.colors.partialTextEnabled === "boolean" ? res.colors.partialTextEnabled : true,
+          matchBorderEnabled:
+            typeof res.colors.matchBorderEnabled === "boolean" ? res.colors.matchBorderEnabled : false,
+          partialBorderEnabled:
+            typeof res.colors.partialBorderEnabled === "boolean" ? res.colors.partialBorderEnabled : false
         };
       }
     } catch (error) {
       // ignore, fall back to defaults
     }
 
-    if (visitedToggle) visitedToggle.checked = colorsState.matchColorEnabled !== false;
-    if (partialToggle) partialToggle.checked = colorsState.partialColorEnabled !== false;
+    if (visitedToggle) visitedToggle.checked = colorsState.matchTextEnabled !== false;
+    if (partialToggle) partialToggle.checked = colorsState.partialTextEnabled !== false;
+    const visitedBorderToggle = document.getElementById("visited-border-toggle");
+    const partialBorderToggle = document.getElementById("partial-border-toggle");
+    if (visitedBorderToggle) visitedBorderToggle.checked = colorsState.matchBorderEnabled === true;
+    if (partialBorderToggle) partialBorderToggle.checked = colorsState.partialBorderEnabled === true;
     setSwatchColor(visitedSwatch, colorsState.matchHexColor);
     setSwatchColor(partialSwatch, colorsState.partialHexColor);
+    setLabelColor(visitedTextLabel, colorsState.matchHexColor);
+    setLabelColor(partialTextLabel, colorsState.partialHexColor);
+    setBorderLabel(visitedBorderLabel, colorsState.matchHexColor);
+    setBorderLabel(partialBorderLabel, colorsState.partialHexColor);
   }
 
   async function saveColors(partialUpdate = {}) {
@@ -70,8 +98,10 @@
         type: "SET_LINK_COLORS",
         matchHexColor: colorsState.matchHexColor,
         partialHexColor: colorsState.partialHexColor,
-        matchColorEnabled: colorsState.matchColorEnabled,
-        partialColorEnabled: colorsState.partialColorEnabled
+        matchTextEnabled: colorsState.matchTextEnabled,
+        partialTextEnabled: colorsState.partialTextEnabled,
+        matchBorderEnabled: colorsState.matchBorderEnabled,
+        partialBorderEnabled: colorsState.partialBorderEnabled
       });
     } catch (error) {
       // ignore save errors
@@ -104,9 +134,13 @@
       const hex = color.hexString;
       if (activeTarget === "match") {
         setSwatchColor(visitedSwatch, hex);
+        setLabelColor(visitedTextLabel, hex);
+        setBorderLabel(visitedBorderLabel, hex);
         saveColors({ matchHexColor: hex });
       } else if (activeTarget === "partial") {
         setSwatchColor(partialSwatch, hex);
+        setLabelColor(partialTextLabel, hex);
+        setBorderLabel(partialBorderLabel, hex);
         saveColors({ partialHexColor: hex });
       }
     });
@@ -153,9 +187,13 @@
     toggleEl.addEventListener("change", (event) => {
       const enabled = event.target.checked;
       if (targetKey === "match") {
-        saveColors({ matchColorEnabled: enabled });
-      } else {
-        saveColors({ partialColorEnabled: enabled });
+        saveColors({ matchTextEnabled: enabled });
+      } else if (targetKey === "partial") {
+        saveColors({ partialTextEnabled: enabled });
+      } else if (targetKey === "matchBorder") {
+        saveColors({ matchBorderEnabled: enabled });
+      } else if (targetKey === "partialBorder") {
+        saveColors({ partialBorderEnabled: enabled });
       }
     });
   }
@@ -165,5 +203,7 @@
     bindSwatch(partialSwatch, "partial");
     bindToggle(visitedToggle, "match");
     bindToggle(partialToggle, "partial");
+    bindToggle(document.getElementById("visited-border-toggle"), "matchBorder");
+    bindToggle(document.getElementById("partial-border-toggle"), "partialBorder");
   });
 })();
