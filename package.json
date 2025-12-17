@@ -1,6 +1,6 @@
 {
   "name": "passei-aki",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Registra páginas acessadas e indica quando um link já foi visitado",
   "private": true,
   "scripts": {
@@ -10,7 +10,7 @@
     "lint": "node -e \"const fs=require('fs');const path=require('path');const src='src';const dist='dist';fs.rmSync(dist,{recursive:true,force:true});fs.cpSync(src,dist,{recursive:true});['manifest.json','manifest.chrome.json','manifest.firefox.json'].forEach(f=>{try{fs.unlinkSync(path.join(dist,f));}catch(e){}});fs.copyFileSync(path.join(src,'manifest.chrome.json'),path.join(dist,'manifest.json'));\" && web-ext lint --source-dir dist"
   },
   "author": "",
-  "license": "ISC",
+  "license": "Apache-2.0",
   "devDependencies": {
     "web-ext": "^9.2.0"
   },
