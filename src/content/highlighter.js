@@ -101,7 +101,7 @@ function normalizeHexColor(value, fallback) {
   return cleaned.startsWith("#") ? cleaned : `#${cleaned}`;
 }
 
-function applyColors(colors = {}) {
+function applyColors(colors = {}, options = {}) {
   currentColors = {
     matchHexColor: normalizeHexColor(colors.matchHexColor, null),
     partialHexColor: normalizeHexColor(colors.partialHexColor, null),
@@ -121,6 +121,10 @@ function applyColors(colors = {}) {
   }
   if (style) {
     style.textContent = buildStyleText();
+  }
+
+  if (options.rescan) {
+    scanAndMark();
   }
 }
 
@@ -154,13 +158,35 @@ function markVisited(urlToAnchors, visitedLinks) {
     if (!anchors) continue;
     anchors.forEach((anchor) => {
       anchor.classList.remove(VISITED_TEXT_CLASS, PARTIAL_TEXT_CLASS, VISITED_BORDER_CLASS, PARTIAL_BORDER_CLASS);
+      anchor.style.color = "";
+      anchor.style.textDecorationColor = "";
+      anchor.style.outline = "";
+
       if (item.state === "partial") {
         anchor.classList.add(PARTIAL_TEXT_CLASS);
         anchor.classList.add(PARTIAL_BORDER_CLASS);
+        if (currentColors.partialTextEnabled !== false && currentColors.partialHexColor) {
+          anchor.style.setProperty("color", currentColors.partialHexColor, "important");
+          anchor.style.setProperty("text-decoration-color", currentColors.partialHexColor, "important");
+        }
+        if (currentColors.partialBorderEnabled !== false && currentColors.partialHexColor) {
+          anchor.style.setProperty("outline", `2px solid ${currentColors.partialHexColor}`, "important");
+          anchor.style.setProperty("outline-offset", "0px", "important");
+          anchor.style.setProperty("border-radius", "3px", "important");
+        }
         anchor.dataset.passeiAkiVisited = "partial";
       } else {
         anchor.classList.add(VISITED_TEXT_CLASS);
         anchor.classList.add(VISITED_BORDER_CLASS);
+        if (currentColors.matchTextEnabled !== false && currentColors.matchHexColor) {
+          anchor.style.setProperty("color", currentColors.matchHexColor, "important");
+          anchor.style.setProperty("text-decoration-color", currentColors.matchHexColor, "important");
+        }
+        if (currentColors.matchBorderEnabled !== false && currentColors.matchHexColor) {
+          anchor.style.setProperty("outline", `2px solid ${currentColors.matchHexColor}`, "important");
+          anchor.style.setProperty("outline-offset", "0px", "important");
+          anchor.style.setProperty("border-radius", "3px", "important");
+        }
         anchor.dataset.passeiAkiVisited = "true";
       }
     });
@@ -246,7 +272,7 @@ if (document.readyState === "loading") {
 if (api.runtime && api.runtime.onMessage) {
   api.runtime.onMessage.addListener((message) => {
     if (message && message.type === "LINK_COLORS_UPDATED" && message.colors) {
-      applyColors(message.colors);
+      applyColors(message.colors, { rescan: true });
     }
   });
 }
