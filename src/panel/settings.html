@@ -51,13 +51,37 @@
         background: rgba(255, 255, 255, 0.1);
         border-color: rgba(255, 255, 255, 0.3);
       }
-      .file-label {
-        position: relative;
-        overflow: hidden;
+      .indicator-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 6px 0;
       }
-      .file-label input[type="file"] {
+      .indicator-row label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+      }
+      .indicator-row input[type="checkbox"] {
+        width: 16px;
+        height: 16px;
+        accent-color: #0eb378;
+      }
+      .color-swatch {
+        width: 28px;
+        height: 28px;
+        border-radius: 6px;
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        cursor: pointer;
+        position: relative;
+      }
+      .color-swatch input[type="color"] {
         position: absolute;
         inset: 0;
+        width: 100%;
+        height: 100%;
         opacity: 0;
         cursor: pointer;
       }
@@ -69,7 +93,7 @@
       .toggle input[type="checkbox"] {
         width: 16px;
         height: 16px;
-        accent-color: #0b8a5d;
+        accent-color: #0eb378;
       }
       .status {
         font-size: 12px;
@@ -148,6 +172,30 @@
     </div>
 
     <div class="card">
+      <p>Defina os indicadores de links acessados.</p>
+      <div class="indicator-row">
+        <label for="visited-color-toggle">
+          <input type="checkbox" id="visited-color-toggle" checked />
+          <span>Cor de links acessados</span>
+        </label>
+        <div class="color-swatch" title="Cor de links acessados">
+          <input type="color" id="visited-color-picker" value="#0eb378" />
+          <div aria-hidden="true" style="position:absolute; inset:2px; border-radius:4px; background:#0eb378;"></div>
+        </div>
+      </div>
+      <div class="indicator-row">
+        <label for="partial-color-toggle">
+          <input type="checkbox" id="partial-color-toggle" checked />
+          <span>Cor de links parciais</span>
+        </label>
+        <div class="color-swatch" title="Cor de links parciais">
+          <input type="color" id="partial-color-picker" value="#81c700" />
+          <div aria-hidden="true" style="position:absolute; inset:2px; border-radius:4px; background:#81c700;"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
       <p>Criar ou restaurar backup completo dos acessos registrados.</p>
       <div class="actions">
         <button class="btn" id="create-bkp-btn">Criar backup</button>
@@ -186,8 +234,10 @@
       </div>
     </div>
 
+    <script src="../vendor/iro.min.js"></script>
     <script src="backup.js"></script>
     <script src="export.js"></script>
     <script src="import.js"></script>
+    <script src="colors.js"></script>
   </body>
 </html>

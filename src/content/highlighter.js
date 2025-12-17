@@ -7,7 +7,53 @@ const STYLE_ID = "passei-aki-style";
 const SCAN_DEBOUNCE_MS = 400;
 
 let scanTimer = null;
+let currentColors = {
+  matchHexColor: null,
+  partialHexColor: null,
+  matchColorEnabled: true,
+  partialColorEnabled: true
+};
 
+
+function buildStyleText() {
+  const matchColor =
+    currentColors.matchColorEnabled !== false && currentColors.matchHexColor
+      ? currentColors.matchHexColor
+      : null;
+  const partialColor =
+    currentColors.partialColorEnabled !== false && currentColors.partialHexColor
+      ? currentColors.partialHexColor
+      : null;
+
+  const matchRule = matchColor
+    ? `
+    a.${VISITED_CLASS} {
+      color: ${matchColor} !important;
+      text-decoration-color: ${matchColor} !important;
+    }`
+    : `
+    a.${VISITED_CLASS} {
+      color: inherit !important;
+      text-decoration-color: inherit !important;
+    }`;
+
+  const partialRule = partialColor
+    ? `
+    a.${PARTIAL_CLASS} {
+      color: ${partialColor} !important;
+      text-decoration-color: ${partialColor} !important;
+    }`
+    : `
+    a.${PARTIAL_CLASS} {
+      color: inherit !important;
+      text-decoration-color: inherit !important;
+    }`;
+
+  return `
+    ${matchRule}
+    ${partialRule}
+  `;
+}
 
 function injectStyle() {
   if (document.getElementById(STYLE_ID)) {
@@ -15,17 +61,35 @@ function injectStyle() {
   }
   const style = document.createElement("style");
   style.id = STYLE_ID;
-  style.textContent = `
-    a.${VISITED_CLASS} {
-      color: #0b8a5d !important;
-      text-decoration-color: #0b8a5d !important;
-    }
-    a.${PARTIAL_CLASS} {
-      color: #7559ca !important;
-      text-decoration-color: #7559ca !important;
-    }
-  `;
+  style.textContent = buildStyleText();
   document.head.appendChild(style);
+}
+
+function normalizeHexColor(value, fallback) {
+  if (typeof value !== "string") return fallback;
+  const cleaned = value.trim().toLowerCase();
+  const match = cleaned.match(/^#?[0-9a-f]{6}$/);
+  if (!match) return fallback;
+  return cleaned.startsWith("#") ? cleaned : `#${cleaned}`;
+}
+
+function applyColors(colors = {}) {
+  currentColors = {
+    matchHexColor: normalizeHexColor(colors.matchHexColor, null),
+    partialHexColor: normalizeHexColor(colors.partialHexColor, null),
+    matchColorEnabled:
+      typeof colors.matchColorEnabled === "boolean" ? colors.matchColorEnabled : true,
+    partialColorEnabled:
+      typeof colors.partialColorEnabled === "boolean" ? colors.partialColorEnabled : true
+  };
+  let style = document.getElementById(STYLE_ID);
+  if (!style) {
+    injectStyle();
+    style = document.getElementById(STYLE_ID);
+  }
+  if (style) {
+    style.textContent = buildStyleText();
+  }
 }
 
 function collectLinks() {
@@ -123,6 +187,17 @@ function init() {
   if (!SUPPORTED_PROTOCOLS.has(window.location.protocol)) {
     return;
   }
+  try {
+    api.runtime.sendMessage({ type: "GET_LINK_COLORS" }).then((res) => {
+      if (res && res.colors) {
+        applyColors(res.colors);
+      } else {
+        applyColors({});
+      }
+    });
+  } catch (error) {
+    applyColors({});
+  }
   injectStyle();
   scanAndMark();
   startObservers();
@@ -132,4 +207,12 @@ if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", init);
 } else {
   init();
+}
+
+if (api.runtime && api.runtime.onMessage) {
+  api.runtime.onMessage.addListener((message) => {
+    if (message && message.type === "LINK_COLORS_UPDATED" && message.colors) {
+      applyColors(message.colors);
+    }
+  });
 }

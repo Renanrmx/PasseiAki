@@ -15,6 +15,7 @@
     "web-ext": "^9.2.0"
   },
   "dependencies": {
+    "@jaames/iro": "^5.5.2",
     "@stablelib/chacha20poly1305": "^2.0.1",
     "@stablelib/random": "^2.0.1",
     "argon2-browser": "^1.18.0"

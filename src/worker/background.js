@@ -174,6 +174,47 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
       }));
     }
 
+    if (message.type === "GET_LINK_COLORS") {
+      return (async () => {
+        const colors = await getLinkColors();
+        return { ok: true, colors };
+      })().catch((error) => ({
+        ok: false,
+        error: error && error.message ? error.message : String(error)
+      }));
+    }
+
+    if (message.type === "SET_LINK_COLORS") {
+      return (async () => {
+        const colors = await setLinkColors({
+          matchHexColor: message.matchHexColor,
+          partialHexColor: message.partialHexColor,
+          matchColorEnabled: message.matchColorEnabled,
+          partialColorEnabled: message.partialColorEnabled
+        });
+        try {
+          api.runtime.sendMessage({ type: "LINK_COLORS_UPDATED", colors });
+          if (api.tabs && api.tabs.query) {
+            api.tabs.query({}, (tabs) => {
+              tabs.forEach((tab) => {
+                try {
+                  api.tabs.sendMessage(tab.id, { type: "LINK_COLORS_UPDATED", colors });
+                } catch (error) {
+                  // ignore per-tab errors
+                }
+              });
+            });
+          }
+        } catch (error) {
+          // ignore broadcast error
+        }
+        return { ok: true, colors };
+      })().catch((error) => ({
+        ok: false,
+        error: error && error.message ? error.message : String(error)
+      }));
+    }
+
     if (message.type === "IMPORT_ADDRESSES") {
       return (async () => {
         const result = await importAddressesFromText(message.content || "", {
