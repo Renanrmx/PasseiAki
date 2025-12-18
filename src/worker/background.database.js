@@ -105,7 +105,9 @@ async function getLinkColors() {
   );
   const matchTextEnabled = matchTextEnabledEntry && typeof matchTextEnabledEntry.value === "boolean" ? matchTextEnabledEntry.value : true;
   const partialTextEnabled =
-    partialTextEnabledEntry && typeof partialTextEnabledEntry.value === "boolean" ? partialTextEnabledEntry.value : true;
+    partialTextEnabledEntry && typeof partialTextEnabledEntry.value === "boolean"
+      ? partialTextEnabledEntry.value
+      : false;
   const matchBorderEnabled =
     matchBorderEnabledEntry && typeof matchBorderEnabledEntry.value === "boolean" ? matchBorderEnabledEntry.value : false;
   const partialBorderEnabled =

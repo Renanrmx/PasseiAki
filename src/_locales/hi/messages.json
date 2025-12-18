@@ -33,6 +33,7 @@
   "exportVisits": { "message": "एक्सेस निर्यात करें" },
   "extensionDescription": { "message": "देखे गए पृष्ठों को दर्ज करता है और दिखाता है जब कोई लिंक पहले से देखा जा चुका है" },
   "extensionName": { "message": "Passei Aki" },
+  "finish": { "message": "समाप्त करें" },
   "genericError": { "message": "त्रुटि: $1" },
   "historyPageTitle": { "message": "हाल के एक्सेस" },
   "importAddresses": { "message": "पते आयात करें" },
@@ -71,5 +72,10 @@
   "unexpectedError": { "message": "अनपेक्षित त्रुटि: $1" },
   "visitedColorTitle": { "message": "देखे गए लिंक का रंग" },
   "visitedMarker": { "message": "देखे गए लिंक का मार्कर" },
-  "visitsThisPage": { "message": "इस पृष्ठ की विज़िट" }
+  "visitsThisPage": { "message": "इस पृष्ठ की विज़िट" },
+  "welcomeSubtitle1": { "message": "यदि चाहें तो नीचे की सेटिंग्स समायोजित करें।" },
+  "welcomeSubtitle2": { "message": "कुछ सुविधाएँ शुरू में बंद रहती हैं, लेकिन उपयोग के अनुसार उपयोगी हो सकती हैं।" },
+  "welcomeSubtitle3": { "message": "आप इन्हें बाद में इस एक्सटेंशन के मेनू सेटिंग्स में बदल सकते हैं।" },
+  "welcomeTitle": { "message": "स्वागत है" },
+  "welcomeTitlePart": { "message": "में आपका स्वागत है" }
 }

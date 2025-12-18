@@ -33,6 +33,7 @@
   "exportVisits": { "message": "Exportar acessos" },
   "extensionDescription": { "message": "Registra páginas acessadas e indica quando um link já foi visitado" },
   "extensionName": { "message": "Passei Aki" },
+  "finish": { "message": "Concluir" },
   "genericError": { "message": "Erro: $1" },
   "historyPageTitle": { "message": "Últimos acessos" },
   "importAddresses": { "message": "Importar endereços" },
@@ -71,5 +72,10 @@
   "unexpectedError": { "message": "Erro inesperado: $1" },
   "visitedColorTitle": { "message": "Cor de links acessados" },
   "visitedMarker": { "message": "Marcador de links acessados" },
-  "visitsThisPage": { "message": "Visitas desta página" }
+  "visitsThisPage": { "message": "Visitas desta página" },
+  "welcomeSubtitle1": { "message": "Altere as configurações abaixo se preferir." },
+  "welcomeSubtitle2": { "message": "Alguns recursos estão desativadas mas dependendo do uso pode ser interessante ativar." },
+  "welcomeSubtitle3": { "message": "Se quiser alterar depois vá nas configurações do menu desta extensão." },
+  "welcomeTitle": { "message": "Bem vindo" },
+  "welcomeTitlePart": { "message": "Bem vindo ao" }
 }

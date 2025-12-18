@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title data-i18n="welcomeTitle">Bem vindo</title>
+    <style>
+      :root {
+        font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+        background: #0b0c10;
+        color: #e8f1f2;
+      }
+      html, body {
+        height: 100%;
+      }
+      body {
+        margin: 0;
+        padding: 16px;
+        background: linear-gradient(135deg, #0b0c10 0%, #1f2833 55%, #0b1727 100%);
+        min-height: 100vh;
+      }
+      .card {
+        padding: 12px;
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        margin-bottom: 12px;
+      }
+      h1 {
+        margin: 0 0 8px;
+        font-size: 20px;
+      }
+      .brand {
+        color: #669966;
+      }
+      p {
+        margin: 0 0 10px;
+        color: #c5d6e2;
+        font-size: 13px;
+      }
+      .welcome-footer {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        padding: 12px;
+        display: flex;
+        justify-content: center;
+        background: linear-gradient(180deg, rgba(11, 12, 16, 0) 0%, rgba(11, 12, 16, 0.9) 40%, rgba(11, 12, 16, 1) 100%);
+      }
+      .welcome-close-btn {
+        padding: 10px 18px;
+        border-radius: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        background: rgba(255, 255, 255, 0.08);
+        color: #e8f1f2;
+        cursor: pointer;
+        font-size: 14px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1><span data-i18n="welcomeTitlePart">Bem vindo ao</span> <span class="brand" data-i18n="extensionName">Passei Aki</span></h1>
+    <p data-i18n="welcomeSubtitle1">Altere as configurações abaixo se preferir.</p>
+    <p data-i18n="welcomeSubtitle2">Alguns recursos estão desativadas mas dependendo do uso pode ser interessante ativar.</p>
+    <p data-i18n="welcomeSubtitle3">Se quiser alterar depois vá nas configurações do menu desta extensão.</p>
+
+    <div id="highlight-placeholder"></div>
+
+    <div class="welcome-footer">
+      <button id="welcome-close-btn" class="welcome-close-btn" data-i18n="finish">Concluir</button>
+    </div>
+
+    <script src="i18n.js"></script>
+    <script src="init-i18n.js"></script>
+    <script src="../vendor/iro.min.js"></script>
+    <script src="welcome.js"></script>
+  </body>
+</html>

@@ -258,9 +258,22 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
   return true; // indica que respondere async
 });
 
-api.runtime.onInstalled.addListener(async () => {
+api.runtime.onInstalled.addListener(async (details) => {
   await ensurePepperKey();
   await openDatabase();
+
+  try {
+    if (details && details.reason === "install") {
+      api.windows.create({
+        url: api.runtime.getURL("panel/welcome.html"),
+        type: "popup",
+        width: 480,
+        height: 450
+      });
+    }
+  } catch (error) {
+    // ignore tab creation errors
+  }
 });
 
 async function upsertVisit(urlString) {

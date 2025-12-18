@@ -33,6 +33,7 @@
   "exportVisits": { "message": "匯出造訪記錄" },
   "extensionDescription": { "message": "記錄已造訪的頁面並標示某個連結是否已看過" },
   "extensionName": { "message": "Passei Aki" },
+  "finish": { "message": "完成" },
   "genericError": { "message": "錯誤：$1" },
   "historyPageTitle": { "message": "最近造訪" },
   "importAddresses": { "message": "匯入地址" },
@@ -71,5 +72,10 @@
   "unexpectedError": { "message": "發生未預期的錯誤：$1" },
   "visitedColorTitle": { "message": "已造訪連結的顏色" },
   "visitedMarker": { "message": "已造訪連結的標記" },
-  "visitsThisPage": { "message": "此頁面的造訪次數" }
+  "visitsThisPage": { "message": "此頁面的造訪次數" },
+  "welcomeSubtitle1": { "message": "如有需要，可調整下方設定。" },
+  "welcomeSubtitle2": { "message": "部分功能預設關閉，但依使用情境可能有用。" },
+  "welcomeSubtitle3": { "message": "您可以稍後在此擴充的功能表設定中變更。" },
+  "welcomeTitle": { "message": "歡迎" },
+  "welcomeTitlePart": { "message": "歡迎使用" }
 }

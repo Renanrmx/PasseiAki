@@ -33,6 +33,7 @@
   "exportVisits": { "message": "アクセスをエクスポート" },
   "extensionDescription": { "message": "閲覧したページを記録し、リンクを既に訪問したかを表示します" },
   "extensionName": { "message": "Passei Aki" },
+  "finish": { "message": "完了" },
   "genericError": { "message": "エラー: $1" },
   "historyPageTitle": { "message": "最近のアクセス" },
   "importAddresses": { "message": "アドレスをインポート" },
@@ -71,5 +72,10 @@
   "unexpectedError": { "message": "予期しないエラー: $1" },
   "visitedColorTitle": { "message": "訪問済みリンクの色" },
   "visitedMarker": { "message": "訪問済みリンクのマーカー" },
-  "visitsThisPage": { "message": "このページの訪問数" }
+  "visitsThisPage": { "message": "このページの訪問数" },
+  "welcomeSubtitle1": { "message": "必要に応じて下の設定を調整してください。" },
+  "welcomeSubtitle2": { "message": "一部の機能は初期状態で無効ですが、使い方によっては有用です。" },
+  "welcomeSubtitle3": { "message": "後で拡張機能のメニュー設定から変更できます。" },
+  "welcomeTitle": { "message": "ようこそ" },
+  "welcomeTitlePart": { "message": "へようこそ" }
 }

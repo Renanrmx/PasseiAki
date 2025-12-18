@@ -145,14 +145,18 @@
       }
     });
 
-    document.addEventListener("click", (event) => {
-      if (!pickerPopover || pickerPopover.style.display === "none") return;
-      if (pickerPopover.contains(event.target)) return;
-      if (visitedSwatch && visitedSwatch.contains(event.target)) return;
-      if (partialSwatch && partialSwatch.contains(event.target)) return;
-      pickerPopover.style.display = "none";
-      activeTarget = null;
-    });
+    document.addEventListener(
+      "click",
+      (event) => {
+        if (!pickerPopover || pickerPopover.style.display === "none") return;
+        if (pickerPopover.contains(event.target)) return;
+        if (visitedSwatch && visitedSwatch.contains(event.target)) return;
+        if (partialSwatch && partialSwatch.contains(event.target)) return;
+        pickerPopover.style.display = "none";
+        activeTarget = null;
+      },
+      true
+    );
 
     return picker;
   }
@@ -167,8 +171,9 @@
     const pickerRect = pickerPopover.getBoundingClientRect();
     const pickerWidth = pickerRect.width || 220;
     const left = rect.left + window.scrollX - pickerWidth - 4;
+    const top = rect.top + window.scrollY;
     pickerPopover.style.left = `${Math.max(left, 8)}px`;
-    pickerPopover.style.top = `${rect.top + window.scrollY}px`;
+    pickerPopover.style.top = `${Math.max(top, 8)}px`;
     pickerPopover.style.visibility = "visible";
   }
 

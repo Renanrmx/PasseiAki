@@ -33,6 +33,7 @@
   "exportVisits": { "message": "تصدير عمليات الوصول" },
   "extensionDescription": { "message": "يسجل الصفحات التي تم الوصول إليها ويشير إلى ما إذا كان الرابط تمت زيارته من قبل" },
   "extensionName": { "message": "Passei Aki" },
+  "finish": { "message": "إنهاء" },
   "genericError": { "message": "خطأ: $1" },
   "historyPageTitle": { "message": "آخر عمليات الوصول" },
   "importAddresses": { "message": "استيراد العناوين" },
@@ -71,5 +72,10 @@
   "unexpectedError": { "message": "خطأ غير متوقع: $1" },
   "visitedColorTitle": { "message": "لون الروابط التي تم الوصول إليها" },
   "visitedMarker": { "message": "علامة الروابط التي تم الوصول إليها" },
-  "visitsThisPage": { "message": "زيارات هذه الصفحة" }
+  "visitsThisPage": { "message": "زيارات هذه الصفحة" },
+  "welcomeSubtitle1": { "message": "اضبط الإعدادات أدناه إذا رغبت." },
+  "welcomeSubtitle2": { "message": "بعض الميزات تكون معطلة افتراضيًا ولكن قد تكون مفيدة حسب استخدامك." },
+  "welcomeSubtitle3": { "message": "يمكنك تعديلها لاحقًا من إعدادات قائمة هذا الامتداد." },
+  "welcomeTitle": { "message": "مرحبًا" },
+  "welcomeTitlePart": { "message": "مرحبًا بك في" }
 }

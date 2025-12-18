@@ -33,6 +33,7 @@
   "exportVisits": { "message": "Экспортировать посещения" },
   "extensionDescription": { "message": "Записывает посещенные страницы и показывает, когда ссылка уже была посещена" },
   "extensionName": { "message": "Passei Aki" },
+  "finish": { "message": "Готово" },
   "genericError": { "message": "Ошибка: $1" },
   "historyPageTitle": { "message": "Последние посещения" },
   "importAddresses": { "message": "Импортировать адреса" },
@@ -71,5 +72,10 @@
   "unexpectedError": { "message": "Неожиданная ошибка: $1" },
   "visitedColorTitle": { "message": "Цвет посещенных ссылок" },
   "visitedMarker": { "message": "Маркер посещенных ссылок" },
-  "visitsThisPage": { "message": "Посещения этой страницы" }
+  "visitsThisPage": { "message": "Посещения этой страницы" },
+  "welcomeSubtitle1": { "message": "При необходимости отрегулируйте настройки ниже." },
+  "welcomeSubtitle2": { "message": "Некоторые функции изначально выключены, но могут пригодиться в зависимости от использования." },
+  "welcomeSubtitle3": { "message": "Позже их можно изменить в настройках меню этого расширения." },
+  "welcomeTitle": { "message": "Добро пожаловать" },
+  "welcomeTitlePart": { "message": "Добро пожаловать в" }
 }

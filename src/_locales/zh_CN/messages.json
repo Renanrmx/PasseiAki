@@ -33,6 +33,7 @@
   "exportVisits": { "message": "导出访问记录" },
   "extensionDescription": { "message": "记录访问过的页面并指示某个链接是否已访问" },
   "extensionName": { "message": "Passei Aki" },
+  "finish": { "message": "完成" },
   "genericError": { "message": "错误：$1" },
   "historyPageTitle": { "message": "最近访问" },
   "importAddresses": { "message": "导入地址" },
@@ -71,5 +72,10 @@
   "unexpectedError": { "message": "意外错误：$1" },
   "visitedColorTitle": { "message": "已访问链接的颜色" },
   "visitedMarker": { "message": "已访问链接的标记" },
-  "visitsThisPage": { "message": "此页面的访问次数" }
+  "visitsThisPage": { "message": "此页面的访问次数" },
+  "welcomeSubtitle1": { "message": "如果需要，可调整下方设置。" },
+  "welcomeSubtitle2": { "message": "部分功能默认关闭，但根据使用需求可能有用。" },
+  "welcomeSubtitle3": { "message": "您可以稍后在此扩展的菜单设置中进行更改。" },
+  "welcomeTitle": { "message": "欢迎" },
+  "welcomeTitlePart": { "message": "欢迎使用" }
 }

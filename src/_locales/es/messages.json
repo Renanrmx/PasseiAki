@@ -33,6 +33,7 @@
   "exportVisits": { "message": "Exportar accesos" },
   "extensionDescription": { "message": "Registra páginas visitadas y señala cuando un enlace ya fue visitado" },
   "extensionName": { "message": "Passei Aki" },
+  "finish": { "message": "Finalizar" },
   "genericError": { "message": "Error: $1" },
   "historyPageTitle": { "message": "Últimos accesos" },
   "importAddresses": { "message": "Importar direcciones" },
@@ -71,5 +72,10 @@
   "unexpectedError": { "message": "Error inesperado: $1" },
   "visitedColorTitle": { "message": "Color de enlaces visitados" },
   "visitedMarker": { "message": "Marcador de enlaces visitados" },
-  "visitsThisPage": { "message": "Visitas de esta página" }
+  "visitsThisPage": { "message": "Visitas de esta página" },
+  "welcomeSubtitle1": { "message": "Ajusta la configuración de abajo si lo deseas." },
+  "welcomeSubtitle2": { "message": "Algunas funciones empiezan desactivadas pero pueden ser útiles según tu uso." },
+  "welcomeSubtitle3": { "message": "Puedes cambiarlas después en el menú de configuración de esta extensión." },
+  "welcomeTitle": { "message": "Bienvenido" },
+  "welcomeTitlePart": { "message": "Bienvenido a" }
 }
