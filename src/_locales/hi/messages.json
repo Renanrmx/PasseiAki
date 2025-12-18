@@ -62,6 +62,7 @@
   "confirm": { "message": "पुष्टि करें" },
   "setPassword": { "message": "एक पासवर्ड सेट करें" },
   "passwordMismatch": { "message": "पासवर्ड मेल नहीं खाते" },
+  "passwordMinimumLength": { "message": "पासवर्ड में कम से कम $1 अक्षर होने चाहिए" },
   "backupExportError": { "message": "निर्यात करते समय त्रुटि: $1" },
   "restoreComplete": { "message": "बैकअप पुनर्स्थापना पूर्ण" },
   "restoreError": { "message": "पुनर्स्थापित करते समय त्रुटि: $1" },
@@ -69,5 +70,6 @@
   "unexpectedError": { "message": "अनपेक्षित त्रुटि: $1" },
   "genericError": { "message": "त्रुटि: $1" },
   "csvHeader": { "message": "पता;अंतिम एक्सेस;एक्सेस की संख्या" },
-  "settingsPageTitle": { "message": "सेटिंग्स" }
+  "settingsPageTitle": { "message": "सेटिंग्स" },
+  "passwordConfirmation": { "message": "पुष्टि वाले फ़ील्ड को भरें" }
 }

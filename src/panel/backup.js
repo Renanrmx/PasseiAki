@@ -17,6 +17,9 @@ const passwordForm = document.getElementById("password-form");
 
 let passwordResolve = null;
 let passwordReject = null;
+let passwordRequireConfirm = true;
+
+const MIN_PASSWORD_LENGTH = 3;
 
 // Garantir tradução caso o applyI18n não tenha sido executado por outro script
 if (typeof applyI18n === "function") {
@@ -26,6 +29,7 @@ if (typeof applyI18n === "function") {
 
 function showPasswordDialog({ title, description, requireConfirm = true }) {
   return new Promise((resolve, reject) => {
+    passwordRequireConfirm = Boolean(requireConfirm);
     passwordResolve = resolve;
     passwordReject = reject;
     passwordTitle.textContent = title || t("passwordLabel");
@@ -63,9 +67,16 @@ passwordConfirm.addEventListener("click", () => {
     passwordError.textContent = t("setPassword");
     return;
   }
-  if (passwordConfirmInput.style.display !== "none") {
-    const confirmVal = passwordConfirmInput.value || passwordInput.value;
-    if (passwordInput.value !== confirmVal) {
+  if (passwordInput.value.length < MIN_PASSWORD_LENGTH) {
+    passwordError.textContent = t("passwordMinimumLength", [MIN_PASSWORD_LENGTH]);
+    return;
+  }
+  if (passwordRequireConfirm) {
+    if (!passwordConfirmInput.value) {
+      passwordError.textContent = t("passwordConfirmation");
+      return;
+    }
+    if (passwordInput.value !== passwordConfirmInput.value) {
       passwordError.textContent = t("passwordMismatch");
       return;
     }

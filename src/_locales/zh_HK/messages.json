@@ -62,6 +62,7 @@
   "confirm": { "message": "確認" },
   "setPassword": { "message": "請設定密碼" },
   "passwordMismatch": { "message": "密碼不一致" },
+  "passwordMinimumLength": { "message": "密碼至少需要 $1 個字元" },
   "backupExportError": { "message": "匯出時發生錯誤：$1" },
   "restoreComplete": { "message": "備份還原完成" },
   "restoreError": { "message": "還原時發生錯誤：$1" },
@@ -69,5 +70,6 @@
   "unexpectedError": { "message": "發生未預期的錯誤：$1" },
   "genericError": { "message": "錯誤：$1" },
   "csvHeader": { "message": "地址;最後存取;存取次數" },
-  "settingsPageTitle": { "message": "設定" }
+  "settingsPageTitle": { "message": "設定" },
+  "passwordConfirmation": { "message": "請填寫確認欄位" }
 }

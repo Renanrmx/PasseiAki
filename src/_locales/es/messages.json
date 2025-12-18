@@ -62,6 +62,8 @@
   "confirm": { "message": "Confirmar" },
   "setPassword": { "message": "Defina una contraseña" },
   "passwordMismatch": { "message": "Las contraseñas no coinciden" },
+  "passwordMinimumLength": { "message": "La contraseña debe tener al menos $1 caracteres" },
+  "passwordConfirmation": { "message": "Complete el campo de confirmación" },
   "backupExportError": { "message": "Error al exportar: $1" },
   "restoreComplete": { "message": "Restauración de la copia de seguridad completada" },
   "restoreError": { "message": "Error al restaurar: $1" },

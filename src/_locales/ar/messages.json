@@ -62,6 +62,7 @@
   "confirm": { "message": "تأكيد" },
   "setPassword": { "message": "عيّن كلمة مرور" },
   "passwordMismatch": { "message": "كلمتا المرور غير متطابقتين" },
+  "passwordMinimumLength": { "message": "يجب أن تكون كلمة المرور بطول لا يقل عن $1 أحرف" },
   "backupExportError": { "message": "خطأ أثناء التصدير: $1" },
   "restoreComplete": { "message": "اكتملت استعادة النسخة الاحتياطية" },
   "restoreError": { "message": "خطأ أثناء الاستعادة: $1" },
@@ -69,5 +70,6 @@
   "unexpectedError": { "message": "خطأ غير متوقع: $1" },
   "genericError": { "message": "خطأ: $1" },
   "csvHeader": { "message": "العنوان;آخر وصول;عدد مرات الوصول" },
-  "settingsPageTitle": { "message": "الإعدادات" }
+  "settingsPageTitle": { "message": "الإعدادات" },
+  "passwordConfirmation": { "message": "يرجى ملء حقل التأكيد" }
 }

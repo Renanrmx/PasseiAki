@@ -62,6 +62,8 @@
   "confirm": { "message": "Confirm" },
   "setPassword": { "message": "Set a password" },
   "passwordMismatch": { "message": "Passwords do not match" },
+  "passwordMinimumLength": { "message": "Password must be at least $1 characters long" },
+  "passwordConfirmation": { "message": "Fill the confirmation field" },
   "backupExportError": { "message": "Export error: $1" },
   "restoreComplete": { "message": "Backup restore completed" },
   "restoreError": { "message": "Restore error: $1" },
