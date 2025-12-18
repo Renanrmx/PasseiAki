@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" type="image/png" sizes="16x16" href="../icons/check-mark-16.png" />
-    <title data-i18n="settingsPageTitle">Passei Aki - Configurações</title>
+    <title data-i18n="settingsPageTitle">Configurações</title>
     <style>
       :root {
         font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
@@ -177,7 +177,7 @@
     </style>
   </head>
   <body>
-    <h1 data-i18n="settingsPageTitle">Passei Aki - Configurações</h1>
+    <h1 data-i18n="settingsPageTitle">Configurações</h1>
 
     <div class="card">
       <h3 style="margin:6px 0 4px; font-size:13px; color:#c5d6e2;" data-i18n="visitedMarker">Marcador de links acessados</h3>
@@ -271,8 +271,10 @@
 
     <script src="i18n.js"></script>
     <script>
-      applyI18n();
-      document.title = t("settingsPageTitle");
+      document.addEventListener("DOMContentLoaded", () => {
+        applyI18n();
+        document.title = t("settingsPageTitle");
+      });
     </script>
     <script src="../vendor/iro.min.js"></script>
     <script src="backup.js"></script>

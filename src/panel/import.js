@@ -36,7 +36,7 @@ async function ensureConfirmModal() {
       const invalidOverlay = container.querySelector("#import-invalid-overlay");
       const successOverlay = container.querySelector("#import-success-overlay");
       if (!invalidOverlay || !successOverlay) {
-        throw new Error(t("importModalInvalid"));
+        throw new Error("Invalid import modal");
       }
       document.body.appendChild(invalidOverlay);
       document.body.appendChild(successOverlay);
@@ -105,7 +105,7 @@ async function onImportFileSelected(event) {
       preview: true
     });
     if (!preview || preview.ok === false) {
-      throw new Error(preview && preview.error ? preview.error : t("importValidationFailed"));
+      throw new Error(preview && preview.error ? preview.error : "Import validation failed");
     }
 
     const validCount = preview.valid || 0;
@@ -134,7 +134,7 @@ async function onImportFileSelected(event) {
       content: text
     });
     if (!response || response.ok === false) {
-      throw new Error(response && response.error ? response.error : "Falha ao importar");
+      throw new Error(response && response.error ? response.error : "Import failed");
     }
     const msg = t("importCompleteWithCount", response.imported || 0);
     await showSuccessModal(msg);

@@ -65,7 +65,7 @@ function renderHistory(items) {
       try {
         const res = await api.runtime.sendMessage({ type: "DELETE_VISIT", id: item.id });
         if (!res || res.ok === false) {
-          throw new Error(res && res.error ? res.error : t("deleteError"));
+          throw new Error(res && res.error ? res.error : "Error deleting record");
         }
         await loadHistory();
       } catch (error) {
@@ -116,7 +116,7 @@ async function loadHistory() {
 
 document.addEventListener("DOMContentLoaded", () => {
   applyI18n();
-  document.title = t("historyTitle");
+  document.title = t("historyPageTitle");
   loadHistory();
 });
 

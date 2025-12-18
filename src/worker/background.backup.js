@@ -62,7 +62,7 @@ async function restoreBackup(password, envelope) {
     const plaintext = await decryptWithPassword(password, envelope);
     const decoded = JSON.parse(new TextDecoder().decode(plaintext));
     if (!decoded || !decoded.visits || !Array.isArray(decoded.visits) || !Array.isArray(decoded.meta)) {
-      throw new Error("Pacote invalido");
+      throw new Error("Invalid backup payload");
     }
 
     const db = await openDatabase();
@@ -118,7 +118,7 @@ async function restoreBackup(password, envelope) {
       // ignore broadcast errors
     }
   } catch (error) {
-    console.error("Erro ao restaurar dados:", error);
+    console.error("Error restoring data:", error);
     throw error;
   }
 }

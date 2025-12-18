@@ -1,11 +1,3 @@
-function i18n(key, substitutions) {
-  if (typeof api !== "undefined" && api?.i18n?.getMessage) {
-    const msg = api.i18n.getMessage(key, substitutions);
-    if (msg) return msg;
-  }
-  return key;
-}
-
 function formatDateTime(timestamp) {
   if (!timestamp) {
     return "";
@@ -46,7 +38,7 @@ async function exportPlainVisitsCsv(filename) {
         saveAs: true
       });
     } else {
-      throw new Error(i18n("downloadApiUnavailable"));
+      throw new Error("Download API unavailable");
     }
   } finally {
     setTimeout(() => URL.revokeObjectURL(objectUrl), 5000);
@@ -78,7 +70,7 @@ async function exportPlainVisitsTxt(filename) {
         saveAs: true
       });
     } else {
-      throw new Error(i18n("downloadApiUnavailable"));
+      throw new Error("Download API unavailable");
     }
   } finally {
     setTimeout(() => URL.revokeObjectURL(objectUrl), 5000);

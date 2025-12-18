@@ -18,6 +18,11 @@ const passwordForm = document.getElementById("password-form");
 let passwordResolve = null;
 let passwordReject = null;
 
+// Garantir tradução caso o applyI18n não tenha sido executado por outro script
+if (typeof applyI18n === "function") {
+  applyI18n();
+}
+
 
 function showPasswordDialog({ title, description, requireConfirm = true }) {
   return new Promise((resolve, reject) => {
@@ -125,7 +130,7 @@ async function doImport(file) {
           envelope
         });
         if (!response || response.ok === false) {
-          throw new Error(response && response.error ? response.error : t("restoreFailed"));
+          throw new Error(response && response.error ? response.error : "Backup restore failed");
         }
         alert(t("restoreComplete"));
         setTimeout(() => window.location.reload(), 200);

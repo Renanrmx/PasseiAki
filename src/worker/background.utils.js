@@ -2,6 +2,18 @@ const ALLOWED_PROTOCOLS = typeof SUPPORTED_PROTOCOLS !== "undefined"
   ? SUPPORTED_PROTOCOLS
   : new Set(["http:", "https:"]);
 
+function i18n(key, substitutions) {
+  if (typeof api !== "undefined" && api?.i18n?.getMessage) {
+    const msg = api.i18n.getMessage(key, substitutions);
+    if (msg) return msg;
+  }
+  if (!key) return "";
+  if (Array.isArray(substitutions) && substitutions.length) {
+    return `${key} ${substitutions.join(" ")}`;
+  }
+  return key;
+}
+
 function decodeComponentSafe(value) {
   try {
     return decodeURIComponent(value);

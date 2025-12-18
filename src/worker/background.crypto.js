@@ -38,17 +38,17 @@ function ensureCryptoLibs() {
   }
 
   if (typeof ChaCha20Poly1305 === "undefined") {
-    console.warn("ChaCha20Poly1305 nao carregado no contexto do background");
+    console.warn("ChaCha20Poly1305 not loaded in background context");
   }
   if (typeof argon2 === "undefined") {
-    console.warn("Argon2 nao carregado no contexto do background");
+    console.warn("Argon2 not loaded in background context");
   }
 }
 
 async function deriveKeyFromPassword(password, salt) {
   ensureCryptoLibs();
   if (typeof argon2 === "undefined" || !argon2.hash) {
-    throw new Error("Argon2 nao carregado");
+    throw new Error("Argon2 not loaded");
   }
   const res = await argon2.hash({
     pass: password,
@@ -65,7 +65,7 @@ async function deriveKeyFromPassword(password, salt) {
 async function encryptWithPassword(password, plaintextBytes) {
   ensureCryptoLibs();
   if (typeof ChaCha20Poly1305 === "undefined") {
-    throw new Error("ChaCha20Poly1305 nao carregado");
+    throw new Error("ChaCha20Poly1305 not loaded");
   }
   const salt = randomBytes(16);
   const key = await deriveKeyFromPassword(password, salt);
@@ -83,20 +83,20 @@ async function encryptWithPassword(password, plaintextBytes) {
 async function decryptWithPassword(password, envelope) {
   ensureCryptoLibs();
   if (typeof ChaCha20Poly1305 === "undefined") {
-    throw new Error("ChaCha20Poly1305 nao carregado");
+    throw new Error("ChaCha20Poly1305 not loaded");
   }
 
   const salt = bytesFromBase64(envelope.salt);
   const nonce = bytesFromBase64(envelope.nonce);
   const data = bytesFromBase64(envelope.data);
   if (!salt || !nonce || !data) {
-    throw new Error("Envelope invalido");
+    throw new Error("Invalid envelope");
   }
   const key = await deriveKeyFromPassword(password, salt);
   const cipher = new ChaCha20Poly1305.ChaCha20Poly1305(key);
   const plaintext = cipher.open(nonce, data);
   if (!plaintext) {
-    throw new Error("Falha ao restaurar, senha incorreta ou arquivo inválido");
+    throw new Error("Restore failed: incorrect password or invalid file");
   }
   return plaintext;
 }

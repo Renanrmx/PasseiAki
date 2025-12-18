@@ -22,7 +22,7 @@
         }
         const overlay = container.querySelector("#export-choice-overlay");
         if (!overlay) {
-          throw new Error(t("exportModalInvalid"));
+          throw new Error("Invalid export modal");
         }
         document.body.appendChild(overlay);
         const cancelBtn = overlay.querySelector("[data-export-cancel]");
@@ -62,7 +62,7 @@
 
       const response = await apiExport.runtime.sendMessage({ type });
       if (!response || response.ok === false) {
-        throw new Error(response && response.error ? response.error : t("exportFailed"));
+        throw new Error(response && response.error ? response.error : "Export failed");
       }
       if (response.exported === 0) {
         alert(t("nothingToExport"));

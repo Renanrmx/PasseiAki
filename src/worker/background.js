@@ -149,7 +149,7 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
         await restoreBackup(message.password || "", message.envelope);
         return { ok: true };
       } catch (error) {
-        console.error("Falha na restauração:", error);
+        console.error("Backup restore fail:", error);
         return { ok: false, error: error && error.message ? error.message : String(error) };
       }
     }
@@ -236,7 +236,7 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
     .then(handler)
     .then((result) => sendResponse(result))
     .catch((error) => {
-      console.error("Erro no onMessage:", error);
+      console.error("Error in onMessage handler:", error);
       sendResponse({ ok: false, error: error && error.message ? error.message : String(error) });
     });
 
@@ -317,18 +317,19 @@ async function setActionState(tabId, state) {
         : state === MATCH_STATE.partial
           ? ACTION_ICONS.partial
           : ACTION_ICONS.default;
+    const titleKey =
+      state === MATCH_STATE.full
+        ? "actionVisited"
+        : state === MATCH_STATE.partial
+          ? "actionPartial"
+          : "actionNotVisited";
     await actionApi.setIcon({ tabId, path: icon });
     await actionApi.setTitle({
       tabId,
-      title:
-        state === MATCH_STATE.full
-          ? "Visualizado"
-          : state === MATCH_STATE.partial
-            ? "Parcial"
-            : "Nao visualizado"
+      title: i18n(titleKey)
     });
   } catch (error) {
-    console.warn("Nao foi possivel atualizar o icone:", error);
+    console.warn("The icon could not be updated:", error);
   }
 }
 
@@ -405,7 +406,7 @@ async function handleTabActivated(activeInfo) {
     lastMatchStateByTab.set(tab.id, state);
     await setActionState(tab.id, state);
   } catch (error) {
-    console.warn("Nao foi possivel atualizar estado da aba:", error);
+    console.warn("Could not update tab state:", error);
   }
 }
 
@@ -434,7 +435,7 @@ async function handleWindowFocusChanged(windowId) {
       await setActionState(tab.id, state);
     }
   } catch (error) {
-    console.warn("Nao foi possivel sincronizar janela:", error);
+    console.warn("Could not synchronize window:", error);
   }
 }
 
