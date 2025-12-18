@@ -11,7 +11,6 @@ const SUPPORTED_PROTOCOLS = new Set(["http:", "https:"]);
 const ACTION_ICONS = {
   viewed: {
     16: "icons/check-mark-16-viewed.png",
-    19: "icons/check-mark-19-viewed.png",
     24: "icons/check-mark-24-viewed.png",
     32: "icons/check-mark-32-viewed.png",
     38: "icons/check-mark-38-viewed.png",
@@ -20,7 +19,6 @@ const ACTION_ICONS = {
   },
   partial: {
     16: "icons/check-mark-16-partial.png",
-    19: "icons/check-mark-19-partial.png",
     24: "icons/check-mark-24-partial.png",
     32: "icons/check-mark-32-partial.png",
     38: "icons/check-mark-38-partial.png",
@@ -29,7 +27,6 @@ const ACTION_ICONS = {
   },
   default: {
     16: "icons/check-mark-16.png",
-    19: "icons/check-mark-19.png",
     24: "icons/check-mark-24.png",
     32: "icons/check-mark-32.png",
     38: "icons/check-mark-38.png",

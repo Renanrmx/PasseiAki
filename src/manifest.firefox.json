@@ -10,7 +10,6 @@
     "default_popup": "panel/index.html",
     "default_icon": {
       "16": "icons/check-mark-16.png",
-      "24": "icons/check-mark-24.png",
       "32": "icons/check-mark-32.png",
       "48": "icons/check-mark-48.png",
       "96": "icons/check-mark-96.png"

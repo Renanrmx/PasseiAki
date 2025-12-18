@@ -18,7 +18,8 @@
 
   "icons": {
     "48": "icons/check-mark-48.png",
-    "96": "icons/check-mark-96.png"
+    "96": "icons/check-mark-96.png",
+    "128": "icons/check-mark-128.png"
   },
 
   "content_security_policy": {
