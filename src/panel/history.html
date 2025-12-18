@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="pt-BR">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Últimos acessos - Passei Aki</title>
+    <title data-i18n="historyTitle">Últimos acessos - Passei Aki</title>
     <style>
       :root {
         font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
@@ -175,24 +175,24 @@
     </style>
   </head>
   <body>
-    <h1>Últimos acessos</h1>
+    <h1 data-i18n="recentVisits">Últimos acessos</h1>
     <ul id="history-list" style="flex: 1;"></ul>
     <footer>
       <div class="footer-text">
-        Exibidos apenas os últimos acessos<br />
-        Todos os registros disponiveis ao exportar os dados
+        <span data-i18n="recentOnlyNote">Exibidos apenas os últimos acessos</span><br />
+        <span data-i18n="exportAllNote">Todos os registros disponiveis ao exportar os dados</span>
       </div>
       <div style="display:flex; gap:8px;">
-        <button class="export-btn" id="export-history-btn" data-export-addresses-btn>Exportar acessos</button>
-        <button class="export-btn" data-import-addresses>Importar endereços</button>
+        <button class="export-btn" id="export-history-btn" data-export-addresses-btn data-i18n="exportVisits">Exportar acessos</button>
+        <button class="export-btn" data-import-addresses data-i18n="importAddresses">Importar endereços</button>
       </div>
     </footer>
     <div class="overlay" id="confirm-overlay">
       <div class="modal">
-        <p id="confirm-text">Excluir este registro de acesso?</p>
+        <p id="confirm-text" data-i18n="deleteConfirm">Excluir este registro de acesso?</p>
         <div class="modal-actions">
-          <button class="btn" id="confirm-cancel">Cancelar</button>
-          <button class="btn" id="confirm-ok">Excluir</button>
+          <button class="btn" id="confirm-cancel" data-i18n="cancel">Cancelar</button>
+          <button class="btn" id="confirm-ok" data-i18n="delete">Excluir</button>
         </div>
       </div>
     </div>
@@ -201,6 +201,7 @@
         ? SUPPORTED_PROTOCOLS
         : new Set(["http:", "https:"]);
     </script>
+    <script src="i18n.js"></script>
     <script src="../worker/background.utils.js"></script>
     <script src="import.js"></script>
     <script src="export.js"></script>

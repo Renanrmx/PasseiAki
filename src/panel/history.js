@@ -20,7 +20,7 @@ function renderHistory(items) {
   if (!items || items.length === 0) {
     const li = document.createElement("li");
     li.className = "entry";
-    li.textContent = "Nenhum acesso registrado.";
+    li.textContent = t("noVisits");
     historyList.appendChild(li);
     return;
   }
@@ -45,8 +45,8 @@ function renderHistory(items) {
     metaDiv.className = "meta";
     const metaText = document.createElement("span");
     metaText.textContent = isHashed
-      ? `Última visita: ${formatDate(item.lastVisited, false)}`
-      : `Última visita: ${formatDate(item.lastVisited, true)}`;
+      ? t("lastVisitWithDate", formatDate(item.lastVisited, false))
+      : t("lastVisitWithDate", formatDate(item.lastVisited, true));
 
     metaDiv.appendChild(metaText);
 
@@ -56,7 +56,7 @@ function renderHistory(items) {
 
     const deleteBtn = document.createElement("button");
     deleteBtn.className = "delete-btn";
-    deleteBtn.title = "Excluir registro";
+    deleteBtn.title = t("deleteRecord");
     deleteBtn.textContent = "✖";
     deleteBtn.addEventListener("click", async (event) => {
       event.stopPropagation();
@@ -65,11 +65,11 @@ function renderHistory(items) {
       try {
         const res = await api.runtime.sendMessage({ type: "DELETE_VISIT", id: item.id });
         if (!res || res.ok === false) {
-          throw new Error(res && res.error ? res.error : "Erro ao excluir");
+          throw new Error(res && res.error ? res.error : t("deleteError"));
         }
         await loadHistory();
       } catch (error) {
-        alert(error && error.message ? error.message : "Erro ao excluir registro");
+        alert(error && error.message ? error.message : t("deleteError"));
       }
     });
     actionsWrapper.appendChild(deleteBtn);
@@ -77,7 +77,7 @@ function renderHistory(items) {
     if (!isHashed && fullUrl) {
       const copyBtn = document.createElement("button");
       copyBtn.className = "copy-btn";
-      copyBtn.title = "Copiar URL";
+      copyBtn.title = t("copyUrl");
       copyBtn.textContent = "⧉";
       copyBtn.addEventListener("click", async (event) => {
         event.stopPropagation();
@@ -115,6 +115,8 @@ async function loadHistory() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+  applyI18n();
+  document.title = t("historyTitle");
   loadHistory();
 });
 

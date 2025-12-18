@@ -1,3 +1,11 @@
+function i18n(key, substitutions) {
+  if (typeof api !== "undefined" && api?.i18n?.getMessage) {
+    const msg = api.i18n.getMessage(key, substitutions);
+    if (msg) return msg;
+  }
+  return key;
+}
+
 function formatDateTime(timestamp) {
   if (!timestamp) {
     return "";
@@ -17,7 +25,7 @@ async function exportPlainVisitsCsv(filename) {
   const plainVisits = visits
     .filter((visit) => visit && visit.hashed === false)
     .sort((a, b) => (b.lastVisited || 0) - (a.lastVisited || 0));
-  const lines = ["Endereço;Último acesso;Número de acessos"];
+  const lines = [i18n("csvHeader")];
 
   for (const visit of plainVisits) {
     const address = buildAddressFromRecord(visit);
@@ -38,7 +46,7 @@ async function exportPlainVisitsCsv(filename) {
         saveAs: true
       });
     } else {
-      throw new Error("API de download indisponivel");
+      throw new Error(i18n("downloadApiUnavailable"));
     }
   } finally {
     setTimeout(() => URL.revokeObjectURL(objectUrl), 5000);
@@ -70,7 +78,7 @@ async function exportPlainVisitsTxt(filename) {
         saveAs: true
       });
     } else {
-      throw new Error("API de download indisponivel");
+      throw new Error(i18n("downloadApiUnavailable"));
     }
   } finally {
     setTimeout(() => URL.revokeObjectURL(objectUrl), 5000);

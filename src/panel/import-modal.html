@@ -52,23 +52,23 @@
 
 <div class="import-modal-overlay" id="import-invalid-overlay" aria-hidden="true">
   <div class="import-modal" role="dialog" aria-modal="true" aria-labelledby="import-modal-text">
-    <div class="import-modal-text" id="import-modal-text">
+    <div class="import-modal-text" id="import-modal-text" data-i18n="importInvalid">
       Foram encontradas URLs inválidas. Deseja incluir somente as válidas ou cancelar?
     </div>
     <div class="import-modal-actions">
-      <button type="button" class="import-modal-cancel" data-import-cancel>Cancelar</button>
-      <button type="button" class="import-modal-confirm" data-import-confirm>Incluir válidas</button>
+      <button type="button" class="import-modal-cancel" data-import-cancel data-i18n="cancel">Cancelar</button>
+      <button type="button" class="import-modal-confirm" data-import-confirm data-i18n="includeValid">Incluir válidas</button>
     </div>
   </div>
 </div>
 
 <div class="import-modal-overlay" id="import-success-overlay" aria-hidden="true">
   <div class="import-modal" role="dialog" aria-modal="true" aria-labelledby="import-success-text">
-    <div class="import-modal-text" id="import-success-text">
+    <div class="import-modal-text" id="import-success-text" data-i18n="importComplete">
       Importação concluída.
     </div>
     <div class="import-modal-actions">
-      <button type="button" class="import-modal-confirm" data-import-success-close>Fechar</button>
+      <button type="button" class="import-modal-confirm" data-import-success-close data-i18n="close">Fechar</button>
     </div>
   </div>
 </div>
