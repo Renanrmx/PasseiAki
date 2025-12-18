@@ -23,7 +23,7 @@ function showPasswordDialog({ title, description, requireConfirm = true }) {
   return new Promise((resolve, reject) => {
     passwordResolve = resolve;
     passwordReject = reject;
-    passwordTitle.textContent = title || "Senha";
+    passwordTitle.textContent = title || t("passwordLabel");
     passwordDesc.textContent = description || "";
     passwordError.textContent = "";
     passwordInput.value = "";
@@ -55,13 +55,13 @@ passwordCancel.addEventListener("click", () => {
 passwordConfirm.addEventListener("click", () => {
   if (!passwordResolve) return;
   if (!passwordInput.value) {
-    passwordError.textContent = "Defina uma senha";
+    passwordError.textContent = t("setPassword");
     return;
   }
   if (passwordConfirmInput.style.display !== "none") {
     const confirmVal = passwordConfirmInput.value || passwordInput.value;
     if (passwordInput.value !== confirmVal) {
-      passwordError.textContent = "As senhas não coincidem";
+      passwordError.textContent = t("passwordMismatch");
       return;
     }
   }
@@ -88,8 +88,8 @@ if (passwordForm) {
 
 async function doExport() {
     const password = await showPasswordDialog({
-      title: "Criar backup",
-      description: "Defina uma senha para proteger o backup",
+      title: t("createBackup"),
+      description: t("createBackupDesc"),
       requireConfirm: true
     });
   if (!password) return;
@@ -99,7 +99,7 @@ async function doExport() {
       password
     });
   } catch (error) {
-    alert("Erro ao exportar: " + error.message);
+    alert(t("backupExportError", error.message));
   }
 }
 
@@ -109,8 +109,8 @@ async function doImport(file) {
       return;
     }
     const password = await showPasswordDialog({
-      title: "Restaurar backup",
-      description: "Ao continuar os dados de acesso atuais serão perdidos. Informe a senha usada no backup.",
+      title: t("restoreBackup"),
+      description: t("restoreBackupDesc"),
       requireConfirm: false
     });
     if (!password) return;
@@ -125,30 +125,30 @@ async function doImport(file) {
           envelope
         });
         if (!response || response.ok === false) {
-          throw new Error(response && response.error ? response.error : "Restauração do backup falhou");
+          throw new Error(response && response.error ? response.error : t("restoreFailed"));
         }
-        alert("Restauração do backup concluída");        
+        alert(t("restoreComplete"));
         setTimeout(() => window.location.reload(), 200);
       } catch (error) {
-        alert("Erro ao restaurar: " + (error && error.message ? error.message : error));
+        alert(t("restoreError", error && error.message ? error.message : error));
       }
     };
-    reader.onerror = (e) => {
-      alert("Erro ao ler arquivo de backup");
+    reader.onerror = () => {
+      alert(t("backupReadError"));
     };
     reader.readAsText(file);
   } catch (error) {
-    alert("Erro ao restaurar: " + (error && error.message ? error.message : error));
+    alert(t("restoreError", error && error.message ? error.message : error));
   }
 }
 
 window.addEventListener("unhandledrejection", (event) => {
-  alert("Erro inesperado: " + (event.reason && event.reason.message ? event.reason.message : event.reason));
+  alert(t("unexpectedError", event.reason && event.reason.message ? event.reason.message : event.reason));
 });
 
 window.addEventListener("error", (event) => {
   if (event && (event.error || event.message)) {
-    alert("Erro: " + (event.error?.message || event.message));
+    alert(t("genericError", event.error?.message || event.message));
   }
 });
 
@@ -197,10 +197,10 @@ function updateEncryptionStatus(enabled) {
   if (!encryptionStatus) return;
   if (enabled) {
     encryptionStatus.textContent =
-      "Links criptografados e mantidos localmente";
+      t("encryptedStatus");
     encryptionStatus.classList.remove("bad");
   } else {
-    encryptionStatus.textContent = "Links não criptografados";
+    encryptionStatus.textContent = t("unencryptedStatus");
     encryptionStatus.classList.add("bad");
   }
 }

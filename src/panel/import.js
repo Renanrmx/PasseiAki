@@ -27,6 +27,7 @@ async function ensureConfirmModal() {
       const html = await res.text();
       const container = document.createElement("div");
       container.innerHTML = html;
+      applyI18n(container);
       const styleEl = container.querySelector("style");
       if (styleEl) {
         const styleClone = styleEl.cloneNode(true);
@@ -35,7 +36,7 @@ async function ensureConfirmModal() {
       const invalidOverlay = container.querySelector("#import-invalid-overlay");
       const successOverlay = container.querySelector("#import-success-overlay");
       if (!invalidOverlay || !successOverlay) {
-        throw new Error("Modal de importação inválido");
+        throw new Error(t("importModalInvalid"));
       }
       document.body.appendChild(invalidOverlay);
       document.body.appendChild(successOverlay);
@@ -104,7 +105,7 @@ async function onImportFileSelected(event) {
       preview: true
     });
     if (!preview || preview.ok === false) {
-      throw new Error(preview && preview.error ? preview.error : "Falha ao validar importação");
+      throw new Error(preview && preview.error ? preview.error : t("importValidationFailed"));
     }
 
     const validCount = preview.valid || 0;
@@ -112,7 +113,7 @@ async function onImportFileSelected(event) {
     const total = preview.total || validCount + invalidCount;
 
     if (total === 0 || validCount === 0) {
-      alert("Nenhuma URL válida encontrada no arquivo.");
+      alert(t("noValidUrls"));
       return;
     }
 
@@ -121,7 +122,7 @@ async function onImportFileSelected(event) {
       if (modal && modal.overlay) {
         const textEl = modal.overlay.querySelector("#import-modal-text");
         if (textEl) {
-          textEl.textContent = `Foram encontradas ${invalidCount} URLs inválidas. Deseja incluir somente as válidas ou cancelar a importação?`;
+          textEl.textContent = t("importInvalidWithCount", invalidCount);
         }
       }
       const proceed = await showInvalidModal();
@@ -135,13 +136,13 @@ async function onImportFileSelected(event) {
     if (!response || response.ok === false) {
       throw new Error(response && response.error ? response.error : "Falha ao importar");
     }
-    const msg = `Importação concluída. ${response.imported || 0} endereços adicionados.`;
+    const msg = t("importCompleteWithCount", response.imported || 0);
     await showSuccessModal(msg);
     if (window.loadHistory) {
       window.loadHistory();
     }
   } catch (error) {
-    alert("Erro ao importar endereços: " + (error && error.message ? error.message : error));
+    alert(t("importError", error && error.message ? error.message : error));
   } finally {
     input.value = "";
   }

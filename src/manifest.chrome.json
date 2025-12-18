@@ -1,11 +1,12 @@
 {
   "manifest_version": 3,
-  "name": "Passei Aki",
-  "description": "Registra páginas acessadas e indica quando um link já foi visitado",
+  "name": "__MSG_extensionName__",
+  "description": "__MSG_extensionDescription__",
   "version": "2.2.0",
+  "default_locale": "en",
 
   "action": {
-    "default_title": "Passei Aki",
+    "default_title": "__MSG_extensionName__",
     "default_popup": "panel/index.html",
     "default_icon": {
       "16": "icons/check-mark-16.png",

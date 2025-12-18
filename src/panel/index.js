@@ -34,6 +34,11 @@ function formatDateParts(timestamp) {
   };
 }
 
+function applyPanelTexts() {
+  applyI18n();
+  document.title = t("panelTitle");
+}
+
 async function loadStats() {
   try {
     const [tab] = await api.tabs.query({ active: true, currentWindow: true });
@@ -66,7 +71,10 @@ async function loadStats() {
   }
 }
 
-document.addEventListener("DOMContentLoaded", loadStats);
+document.addEventListener("DOMContentLoaded", () => {
+  applyPanelTexts();
+  loadStats();
+});
 
 function updateMatchStatus(url, state) {  
   if (!matchStatusInline) return;
@@ -77,15 +85,15 @@ function updateMatchStatus(url, state) {
   if (!isHttp) return;
 
   if (state === "viewed") {
-    matchStatusInline.textContent = "Já visitado";
+    matchStatusInline.textContent = t("statusVisited");
     matchStatusInline.classList.add("full");
     matchStatusInline.style.display = "block";
   } else if (state === "partial") {
-    matchStatusInline.textContent = "Visitado com parâmetro diferente";
+    matchStatusInline.textContent = t("statusPartial");
     matchStatusInline.classList.add("partial");
     matchStatusInline.style.display = "block";
   } else {
-    matchStatusInline.textContent = "Primeira visita";
+    matchStatusInline.textContent = t("statusFirst");
     matchStatusInline.classList.add("none");
     matchStatusInline.style.display = "block";
   }
@@ -151,8 +159,8 @@ async function loadPartialMatches(url) {
       meta.className = "meta";
       const parts = formatDateParts(item.lastVisited);
       meta.textContent = isHashed
-        ? `Última visita: ${parts.date}`
-        : `Última visita: ${parts.date} ${parts.time}`;
+        ? t("lastVisitWithDate", parts.date)
+        : t("lastVisitWithDate", `${parts.date} ${parts.time}`);
 
       li.appendChild(pathDiv);
       li.appendChild(meta);

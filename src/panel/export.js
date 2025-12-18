@@ -14,6 +14,7 @@
         const html = await res.text();
         const container = document.createElement("div");
         container.innerHTML = html;
+        applyI18n(container);
         const styleEl = container.querySelector("style");
         if (styleEl) {
           const styleClone = styleEl.cloneNode(true);
@@ -21,7 +22,7 @@
         }
         const overlay = container.querySelector("#export-choice-overlay");
         if (!overlay) {
-          throw new Error("Modal de exportação inválido");
+          throw new Error(t("exportModalInvalid"));
         }
         document.body.appendChild(overlay);
         const cancelBtn = overlay.querySelector("[data-export-cancel]");
@@ -61,17 +62,17 @@
 
       const response = await apiExport.runtime.sendMessage({ type });
       if (!response || response.ok === false) {
-        throw new Error(response && response.error ? response.error : "Falha ao exportar");
+        throw new Error(response && response.error ? response.error : t("exportFailed"));
       }
       if (response.exported === 0) {
-        alert("Nenhum endereço não anônimo para exportar.");
+        alert(t("nothingToExport"));
       }
     } catch (error) {
       const msg = error && error.message ? error.message : String(error);
       if (typeof msg === "string" && msg.toLowerCase().includes("canceled by the user")) {
         return;
       }
-      alert("Erro ao exportar endereços: " + msg);
+      alert(t("exportError", msg));
     }
   }
 

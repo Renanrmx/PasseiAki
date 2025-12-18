@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="pt-BR">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Passei Aki</title>
+    <title data-i18n="panelTitle">Passei Aki</title>
     <style>
       :root {
         color-scheme: light;
@@ -258,24 +258,24 @@
   </head>
   <body>
     <header class="header">
-      <h1>Passei Aki</h1>
+      <h1 data-i18n="panelTitle">Passei Aki</h1>
       <span class="match-inline" id="match-status-inline"></span>
     </header>
 
     <div class="summary">
       <div class="card">
-        <strong>Última visita</strong>
+        <strong data-i18n="lastVisitLabel">Última visita</strong>
         <span class="value" id="last-visit-date">—</span>
         <span class="value value-small" id="last-visit-time">—</span>
       </div>
       <div class="card">
-        <strong>Visitas desta pagina</strong>
+        <strong data-i18n="visitsThisPage">Visitas desta pagina</strong>
         <span class="value" id="total-visits">0</span>
       </div>
     </div>
 
     <div id="partial-container" style="display:none">
-      <h2>Semelhantes recentes</h2>
+      <h2 data-i18n="recentSimilar">Semelhantes recentes</h2>
       <ul id="partial-list"></ul>
     </div>
 
@@ -283,15 +283,15 @@
       <div class="footer-actions">
         <button class="btn default-btn" id="history-btn">
           <span aria-hidden="true">🕒</span>
-          <span>Últimos acessos</span>
+          <span data-i18n="recentVisits">Últimos acessos</span>
         </button>
         <button class="btn default-btn" id="settings-btn">
           <span aria-hidden="true">⚙️</span>
-          <span>Configurações</span>
+          <span data-i18n="settings">Configurações</span>
         </button>
       </div>
     </footer>
-
+    <script src="i18n.js"></script>
     <script src="index.js"></script>
   </body>
 </html>

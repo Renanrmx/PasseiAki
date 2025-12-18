@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="pt-BR">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" type="image/png" sizes="16x16" href="../icons/check-mark-16.png" />
-    <title>Passei Aki - Configurações</title>
+    <title data-i18n="settingsPageTitle">Passei Aki - Configurações</title>
     <style>
       :root {
         font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
@@ -177,39 +177,39 @@
     </style>
   </head>
   <body>
-    <h1>Passei Aki - Configurações</h1>
+    <h1 data-i18n="settingsPageTitle">Passei Aki - Configurações</h1>
 
     <div class="card">
-      <h3 style="margin:6px 0 4px; font-size:13px; color:#c5d6e2;">Marcador de links acessados</h3>
+      <h3 style="margin:6px 0 4px; font-size:13px; color:#c5d6e2;" data-i18n="visitedMarker">Marcador de links acessados</h3>
       <div class="indicator-row">
         <div class="indicator-group">
           <label class="switch" for="visited-color-toggle">
             <input type="checkbox" id="visited-color-toggle" checked />
-            <span id="visited-text-label" style="color:#0eb378;">Texto colorido</span>
+            <span id="visited-text-label" style="color:#0eb378;" data-i18n="coloredText">Texto colorido</span>
           </label>
           <label class="switch" for="visited-border-toggle">
             <input type="checkbox" id="visited-border-toggle" checked />
-            <span id="visited-border-label" style="padding:2px 6px; border:2px solid #0eb378; border-radius:6px;">Borda colorida</span>
+            <span id="visited-border-label" style="padding:2px 6px; border:2px solid #0eb378; border-radius:6px;" data-i18n="coloredBorder">Borda colorida</span>
           </label>
         </div>
-        <div class="color-swatch" title="Cor de links acessados">
+        <div class="color-swatch" title="" data-i18n="visitedColorTitle" data-i18n-attr="title">
           <input type="color" id="visited-color-picker" value="#0eb378" />
           <div aria-hidden="true" style="position:absolute; inset:2px; border-radius:4px; background:#0eb378;"></div>
         </div>
       </div>
-      <h3 style="margin:10px 0 4px; font-size:13px; color:#c5d6e2;">Marcador de links semelhantes</h3>
+      <h3 style="margin:10px 0 4px; font-size:13px; color:#c5d6e2;" data-i18n="partialMarker">Marcador de links semelhantes</h3>
       <div class="indicator-row">
         <div class="indicator-group">
           <label class="switch" for="partial-color-toggle">
             <input type="checkbox" id="partial-color-toggle" checked />
-            <span id="partial-text-label" style="color:#81c700;">Texto colorido</span>
+            <span id="partial-text-label" style="color:#81c700;" data-i18n="coloredText">Texto colorido</span>
           </label>
           <label class="switch" for="partial-border-toggle">
             <input type="checkbox" id="partial-border-toggle" checked />
-            <span id="partial-border-label" style="padding:2px 6px; border:2px solid #81c700; border-radius:6px;">Borda colorida</span>
+            <span id="partial-border-label" style="padding:2px 6px; border:2px solid #81c700; border-radius:6px;" data-i18n="coloredBorder">Borda colorida</span>
           </label>
         </div>
-        <div class="color-swatch" title="Cor de links parciais">
+        <div class="color-swatch" title="" data-i18n="partialColorTitle" data-i18n-attr="title">
           <input type="color" id="partial-color-picker" value="#81c700" />
           <div aria-hidden="true" style="position:absolute; inset:2px; border-radius:4px; background:#81c700;"></div>
         </div>
@@ -217,58 +217,63 @@
     </div>
 
     <div class="card">
-      <p>Anonimizar os endereços acessados ao registrá-los, evita que qualquer um veja nessa extensão</p>
-      <p style="margin-top:-6px;">Obs: Isso impede algumas funcionalidades</p>
+      <p data-i18n="anonymizeInfo">Anonimizar os endereços acessados ao registrá-los, evita que qualquer um veja nessa extensão</p>
+      <p style="margin-top:-6px;" data-i18n="anonymizeNote">Obs: Isso impede algumas funcionalidades</p>
       <div class="indicator-row">
         <label for="encryption-toggle">
           <input type="checkbox" id="encryption-toggle" />
-          <span>Ativar criptografia</span>
+          <span data-i18n="enableEncryption">Ativar criptografia</span>
         </label>
-        <div class="status" id="encryption-status">
+        <div class="status" id="encryption-status" data-i18n="encryptedStatus">
           Links criptografados e mantidos localmente
         </div>
       </div>
     </div>
 
     <div class="card">
-      <p>Criar ou restaurar backup completo dos acessos registrados</p>
+      <p data-i18n="backupInfo">Criar ou restaurar backup completo dos acessos registrados</p>
       <div class="actions">
-        <button class="btn" id="create-bkp-btn">Criar backup</button>
-        <button class="btn" id="restore-bkp-btn">Restaurar backup</button>
+        <button class="btn" id="create-bkp-btn" data-i18n="createBackup">Criar backup</button>
+        <button class="btn" id="restore-bkp-btn" data-i18n="restoreBackup">Restaurar backup</button>
         <input type="file" id="restore-bkp-file" accept=".bak" style="display:none" />
       </div>
     </div>
 
     <div class="card">
-      <p>Exportar para um arquivo todos os endereços salvos que não estejam anonimizados</p>
+      <p data-i18n="exportInfo">Exportar para um arquivo todos os endereços salvos que não estejam anonimizados</p>
       <div class="actions">
-        <button class="btn" id="export-addresses-btn" data-export-addresses-btn>Exportar endereços</button>
+        <button class="btn" id="export-addresses-btn" data-export-addresses-btn data-i18n="exportAddresses">Exportar endereços</button>
       </div>
     </div>
 
     <div class="card">
-      <p>Importar endereços a partir de um arquivo de texto (.txt) com apenas uma URL por linha</p>
+      <p data-i18n="importInfo">Importar endereços a partir de um arquivo de texto (.txt) com apenas uma URL por linha</p>
       <div class="actions">
-        <button class="btn" data-import-addresses>Importar endereços</button>
+        <button class="btn" data-import-addresses data-i18n="importAddresses">Importar endereços</button>
       </div>
     </div>
 
     <div class="overlay" id="password-overlay">
       <div class="modal">
         <form id="password-form">
-          <h3 id="password-title">Senha</h3>
+          <h3 id="password-title" data-i18n="passwordLabel">Senha</h3>
           <p id="password-desc"></p>
-          <input type="password" id="password-input" autocomplete="off" placeholder="Senha" />
-          <input type="password" id="password-confirm-input" autocomplete="off" placeholder="Confirmar senha" />
+          <input type="password" id="password-input" autocomplete="off" placeholder="Senha" data-i18n="passwordPlaceholder" />
+          <input type="password" id="password-confirm-input" autocomplete="off" placeholder="Confirmar senha" data-i18n="confirmPasswordPlaceholder" />
           <div class="error" id="password-error"></div>
           <div class="modal-actions">
-            <button class="btn" id="password-cancel" type="button">Cancelar</button>
-            <button class="btn" id="password-confirm" type="submit">Confirmar</button>
+            <button class="btn" id="password-cancel" type="button" data-i18n="cancel">Cancelar</button>
+            <button class="btn" id="password-confirm" type="submit" data-i18n="confirm">Confirmar</button>
           </div>
         </form>
       </div>
     </div>
 
+    <script src="i18n.js"></script>
+    <script>
+      applyI18n();
+      document.title = t("settingsPageTitle");
+    </script>
     <script src="../vendor/iro.min.js"></script>
     <script src="backup.js"></script>
     <script src="export.js"></script>
