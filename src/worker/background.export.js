@@ -28,7 +28,7 @@ async function exportPlainVisitsCsv(filename) {
 
   const csvContent = "\uFEFF" + lines.join("\n");
   const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8" });
-  const objectUrl = URL.createObjectURL(blob);
+  const { url: objectUrl, revoke } = await buildDownloadUrl(blob, "text/csv;charset=utf-8");
 
   try {
     if (api && api.downloads && api.downloads.download) {
@@ -41,7 +41,9 @@ async function exportPlainVisitsCsv(filename) {
       throw new Error("Download API unavailable");
     }
   } finally {
-    setTimeout(() => URL.revokeObjectURL(objectUrl), 5000);
+    if (revoke) {
+      setTimeout(() => revoke(), 5000);
+    }
   }
 
   return { exported: plainVisits.length };
@@ -60,7 +62,7 @@ async function exportPlainVisitsTxt(filename) {
 
   const txtContent = lines.join("\n");
   const blob = new Blob([txtContent], { type: "text/plain;charset=utf-8" });
-  const objectUrl = URL.createObjectURL(blob);
+  const { url: objectUrl, revoke } = await buildDownloadUrl(blob, "text/plain;charset=utf-8");
 
   try {
     if (api && api.downloads && api.downloads.download) {
@@ -73,7 +75,9 @@ async function exportPlainVisitsTxt(filename) {
       throw new Error("Download API unavailable");
     }
   } finally {
-    setTimeout(() => URL.revokeObjectURL(objectUrl), 5000);
+    if (revoke) {
+      setTimeout(() => revoke(), 5000);
+    }
   }
 
   return { exported: plainVisits.length };

@@ -85,3 +85,30 @@ function buildAddressFromRecord(item) {
   const fragment = item.fragment ? `#${item.fragment}` : "";
   return `${host}${path}${query}${fragment}`;
 }
+
+async function buildDownloadUrl(blob, fallbackMime) {
+  const urlFactory =
+    (typeof self !== "undefined" &&
+      self.URL &&
+      typeof self.URL.createObjectURL === "function" &&
+      self.URL) ||
+    (typeof URL !== "undefined" && typeof URL.createObjectURL === "function" && URL) ||
+    (typeof webkitURL !== "undefined" &&
+      typeof webkitURL.createObjectURL === "function" &&
+      webkitURL);
+
+  if (urlFactory) {
+    const objectUrl = urlFactory.createObjectURL(blob);
+    return { url: objectUrl, revoke: () => urlFactory.revokeObjectURL(objectUrl) };
+  }
+
+  const buffer = await blob.arrayBuffer();
+  let binary = "";
+  const bytes = new Uint8Array(buffer);
+  for (let i = 0; i < bytes.length; i += 1) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  const base64 = btoa(binary);
+  const mime = blob.type || fallbackMime || "application/octet-stream";
+  return { url: `data:${mime};base64,${base64}`, revoke: null };
+}

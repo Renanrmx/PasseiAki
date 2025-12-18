@@ -124,8 +124,8 @@ async function restoreBackup(password, envelope) {
 }
 
 async function downloadBackup(envelope, filename) {
-  const blob = new Blob([JSON.stringify(envelope)], { type: "application/json" });
-  const objectUrl = URL.createObjectURL(blob);
+  const blob = new Blob([JSON.stringify(envelope)], { type: "application/octet-stream" });
+  const { url: objectUrl, revoke } = await buildDownloadUrl(blob, "application/octet-stream");
   try {
     if (api && api.downloads && api.downloads.download) {
       await api.downloads.download({
@@ -135,6 +135,8 @@ async function downloadBackup(envelope, filename) {
       });
     }
   } finally {
-    setTimeout(() => URL.revokeObjectURL(objectUrl), 5000);
+    if (revoke) {
+      setTimeout(() => revoke(), 5000);
+    }
   }
 }

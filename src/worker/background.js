@@ -38,6 +38,15 @@ const ACTION_ICONS = {
   }
 };
 
+function resolveActionIcons(iconMap) {
+  if (!api?.runtime?.getURL) return iconMap;
+  const resolved = {};
+  Object.entries(iconMap).forEach(([size, path]) => {
+    resolved[size] = api.runtime.getURL(path);
+  });
+  return resolved;
+}
+
 const textEncoder = new TextEncoder();
 const pendingFirstVisit = new Set();
 const lastSavedByTab = new Map();
@@ -49,6 +58,8 @@ let encryptionEnabledCache = null;
 
 if (typeof importScripts === "function") {
   importScripts(
+    "../vendor/chacha20poly1305.js",
+    "../vendor/argon2-bundled.min.js",
     "background.crypto.js",
     "background.hash.js",
     "background.database.js",
@@ -318,12 +329,13 @@ async function upsertVisit(urlString) {
 
 async function setActionState(tabId, state) {
   try {
-    const icon =
+    const iconMap =
       state === MATCH_STATE.full
         ? ACTION_ICONS.viewed
         : state === MATCH_STATE.partial
           ? ACTION_ICONS.partial
           : ACTION_ICONS.default;
+    const icon = resolveActionIcons(iconMap);
     const titleKey =
       state === MATCH_STATE.full
         ? "actionVisited"

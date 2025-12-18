@@ -22,18 +22,20 @@ function randomBytes(length) {
 }
 
 function ensureCryptoLibs() {
+  const urlFor = (path) => (typeof api !== "undefined" && api.runtime?.getURL ? api.runtime.getURL(path) : path);
+
   if (typeof ChaCha20Poly1305 === "undefined" && typeof importScripts === "function") {
     try {
-      importScripts("vendor/chacha20poly1305.js");
+      importScripts(urlFor("vendor/chacha20poly1305.js"));
     } catch (error) {
-      // ignore
+      console.warn("Failed to import ChaCha20Poly1305:", error);
     }
   }
   if (typeof argon2 === "undefined" && typeof importScripts === "function") {
     try {
-      importScripts("vendor/argon2-bundled.min.js");
+      importScripts(urlFor("vendor/argon2-bundled.min.js"));
     } catch (error) {
-      // ignore
+      console.warn("Failed to import argon2:", error);
     }
   }
 
