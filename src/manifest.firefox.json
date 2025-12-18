@@ -25,7 +25,8 @@
   "permissions": [
     "tabs",
     "activeTab",
-    "downloads",
+    "webNavigation",
+    "downloads",    
     "http://*/*",
     "https://*/*"
   ],

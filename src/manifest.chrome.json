@@ -28,7 +28,8 @@
   "permissions": [
     "tabs",
     "activeTab",
-    "downloads"
+    "webNavigation",
+    "downloads"    
   ],
 
   "host_permissions": [

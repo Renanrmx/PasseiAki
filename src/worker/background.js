@@ -44,6 +44,7 @@ const lastSavedByTab = new Map();
 const lastMatchStateByTab = new Map();
 const lastPrevVisitByTab = new Map();
 const forcedPartialByTab = new Set();
+const firstNavigationUrlByTab = new Map();
 let encryptionEnabledCache = null;
 
 if (typeof importScripts === "function") {
@@ -70,7 +71,13 @@ api.tabs.onRemoved.addListener((tabId) => {
   lastMatchStateByTab.delete(tabId);
   lastPrevVisitByTab.delete(tabId);
   forcedPartialByTab.delete(tabId);
+  firstNavigationUrlByTab.delete(tabId);
 });
+
+if (api.webNavigation && api.webNavigation.onBeforeNavigate && api.webNavigation.onCommitted) {
+  api.webNavigation.onBeforeNavigate.addListener(handleBeforeNavigate);
+  api.webNavigation.onCommitted.addListener(handleNavigationCommitted);
+}
 
 api.runtime.onMessage.addListener((message, sender, sendResponse) => {
   const handler = async () => {
@@ -437,6 +444,30 @@ async function handleWindowFocusChanged(windowId) {
   } catch (error) {
     console.warn("Could not synchronize window:", error);
   }
+}
+
+function handleBeforeNavigate(details) {
+  if (!details || details.frameId !== 0 || typeof details.tabId !== "number") {
+    return;
+  }
+  firstNavigationUrlByTab.set(details.tabId, details.url || "");
+}
+
+async function handleNavigationCommitted(details) {
+  if (!details || details.frameId !== 0 || typeof details.tabId !== "number") {
+    return;
+  }
+
+  const initialUrl = firstNavigationUrlByTab.get(details.tabId);
+  if (initialUrl && initialUrl !== details.url) {
+    try {
+      await upsertVisit(initialUrl);
+    } catch (error) {
+      // ignore redirect tracking errors
+    }
+  }
+
+  firstNavigationUrlByTab.set(details.tabId, details.url || "");
 }
 
 async function handleGetVisitForUrl(urlString, tabId) {
