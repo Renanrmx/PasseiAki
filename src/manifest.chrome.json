@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Passei Aki",
   "description": "Registra páginas acessadas e indica quando um link já foi visitado",
-  "version": "2.1.0",
+  "version": "2.2.0",
 
   "action": {
     "default_title": "Passei Aki",
