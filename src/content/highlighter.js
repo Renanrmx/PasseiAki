@@ -253,6 +253,18 @@ function startObservers() {
   observer.observe(document.body, { childList: true, subtree: true });
 }
 
+function handleAnchorActivate(event) {
+  const anchor = event.target.closest && event.target.closest("a[href]");
+  if (!anchor) return;
+  try {
+    const url = new URL(anchor.href, window.location.href);
+    if (!SUPPORTED_PROTOCOLS.has(url.protocol)) return;
+    paintAnchor(anchor, false);
+  } catch (error) {
+    // ignore malformed href
+  }
+}
+
 function init() {
   if (!SUPPORTED_PROTOCOLS.has(window.location.protocol)) {
     return;
@@ -271,6 +283,8 @@ function init() {
   injectStyle();
   scanAndMark();
   startObservers();
+  document.addEventListener("click", handleAnchorActivate, true);
+  document.addEventListener("auxclick", handleAnchorActivate, true);
 }
 
 if (document.readyState === "loading") {

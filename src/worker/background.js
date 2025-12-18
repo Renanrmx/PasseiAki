@@ -450,7 +450,9 @@ function handleBeforeNavigate(details) {
   if (!details || details.frameId !== 0 || typeof details.tabId !== "number") {
     return;
   }
-  firstNavigationUrlByTab.set(details.tabId, details.url || "");
+  if (!firstNavigationUrlByTab.has(details.tabId)) {
+    firstNavigationUrlByTab.set(details.tabId, details.url || "");
+  }
 }
 
 async function handleNavigationCommitted(details) {
@@ -467,7 +469,7 @@ async function handleNavigationCommitted(details) {
     }
   }
 
-  firstNavigationUrlByTab.set(details.tabId, details.url || "");
+  firstNavigationUrlByTab.delete(details.tabId);
 }
 
 async function handleGetVisitForUrl(urlString, tabId) {
