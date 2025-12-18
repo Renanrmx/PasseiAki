@@ -127,10 +127,8 @@ async function doImport(file) {
         if (!response || response.ok === false) {
           throw new Error(response && response.error ? response.error : "Restauração do backup falhou");
         }
-        alert("Restauração do backup concluída");
-        if (window.loadStats) {
-          window.loadStats();
-        }
+        alert("Restauração do backup concluída");        
+        setTimeout(() => window.location.reload(), 200);
       } catch (error) {
         alert("Erro ao restaurar: " + (error && error.message ? error.message : error));
       }

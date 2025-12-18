@@ -284,5 +284,8 @@ if (api.runtime && api.runtime.onMessage) {
     if (message && message.type === "LINK_COLORS_UPDATED" && message.colors) {
       applyColors(message.colors, { refreshMarked: true });
     }
+    if (message && message.type === "REFRESH_HIGHLIGHT") {
+      scanAndMark();
+    }
   });
 }
