@@ -35,11 +35,7 @@ function buildStyleText() {
       color: ${matchColor} !important;
       text-decoration-color: ${matchColor} !important;
     }`
-    : `
-    a.${VISITED_TEXT_CLASS} {
-      color: inherit !important;
-      text-decoration-color: inherit !important;
-    }`;
+    : "";
 
   const partialTextRule = partialColor
     ? `
@@ -47,11 +43,7 @@ function buildStyleText() {
       color: ${partialColor} !important;
       text-decoration-color: ${partialColor} !important;
     }`
-    : `
-    a.${PARTIAL_TEXT_CLASS} {
-      color: inherit !important;
-      text-decoration-color: inherit !important;
-    }`;
+    : "";
 
   const matchBorderRule = `
     a.${VISITED_BORDER_CLASS} {
@@ -169,9 +161,14 @@ function refreshMarkedAnchors() {
 }
 
 function paintAnchor(anchor, isPartial) {
-  anchor.classList.remove(VISITED_TEXT_CLASS, PARTIAL_TEXT_CLASS, VISITED_BORDER_CLASS, PARTIAL_BORDER_CLASS);
-  anchor.style.color = "";
-  anchor.style.textDecorationColor = "";
+  anchor.classList.remove(
+    VISITED_TEXT_CLASS,
+    PARTIAL_TEXT_CLASS,
+    VISITED_BORDER_CLASS,
+    PARTIAL_BORDER_CLASS
+  );
+  anchor.style.removeProperty("color");
+  anchor.style.removeProperty("text-decoration-color");
   anchor.style.outline = "";
   anchor.style.outlineOffset = "";
   anchor.style.borderRadius = "";
@@ -254,6 +251,13 @@ function startObservers() {
 }
 
 function handleAnchorActivate(event) {
+  if (event.type === "auxclick") {
+    // allow only middle-click to trigger marking
+    if (event.button !== 1) return;
+  } else {
+    // for regular clicks, ignore non-primary buttons
+    if (typeof event.button === "number" && event.button !== 0) return;
+  }
   const anchor = event.target.closest && event.target.closest("a[href]");
   if (!anchor) return;
   try {
