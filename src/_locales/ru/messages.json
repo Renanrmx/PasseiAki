@@ -49,7 +49,6 @@
   "noValidUrls": { "message": "В файле не найдено действительных URL." },
   "noVisits": { "message": "Нет зарегистрированных посещений." },
   "nothingToExport": { "message": "Нет неанонимных адресов для экспорта." },
-  "panelTitle": { "message": "Passei Aki" },
   "partialColorTitle": { "message": "Цвет частичных ссылок" },
   "partialMarker": { "message": "Маркер похожих ссылок" },
   "passwordConfirmation": { "message": "Заполните поле подтверждения" },

@@ -49,7 +49,6 @@
   "noValidUrls": { "message": "파일에서 유효한 URL을 찾지 못했습니다." },
   "noVisits": { "message": "등록된 방문이 없습니다." },
   "nothingToExport": { "message": "내보낼 익명화되지 않은 주소가 없습니다." },
-  "panelTitle": { "message": "Passei Aki" },
   "partialColorTitle": { "message": "부분 링크 색상" },
   "partialMarker": { "message": "유사 링크 표시" },
   "passwordConfirmation": { "message": "확인란을 입력하세요" },

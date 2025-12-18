@@ -36,7 +36,7 @@ function formatDateParts(timestamp) {
 
 function applyPanelTexts() {
   applyI18n();
-  document.title = t("panelTitle");
+  document.title = t("extensionName");
 }
 
 async function loadStats() {

@@ -49,7 +49,6 @@
   "noValidUrls": { "message": "No valid URLs found in the file." },
   "noVisits": { "message": "No visits recorded." },
   "nothingToExport": { "message": "No non-anonymized addresses to export." },
-  "panelTitle": { "message": "Passei Aki" },
   "partialColorTitle": { "message": "Partial links color" },
   "partialMarker": { "message": "Similar links marker" },
   "passwordConfirmation": { "message": "Fill the confirmation field" },

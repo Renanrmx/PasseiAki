@@ -49,7 +49,6 @@
   "noValidUrls": { "message": "لم يتم العثور على أي عنوان URL صالح في الملف." },
   "noVisits": { "message": "لا توجد عمليات وصول مسجلة." },
   "nothingToExport": { "message": "لا توجد عناوين غير مجهولة لتصديرها." },
-  "panelTitle": { "message": "Passei Aki" },
   "partialColorTitle": { "message": "لون الروابط الجزئية" },
   "partialMarker": { "message": "علامة الروابط المشابهة" },
   "passwordConfirmation": { "message": "يرجى ملء حقل التأكيد" },

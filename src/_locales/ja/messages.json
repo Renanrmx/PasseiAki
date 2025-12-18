@@ -49,7 +49,6 @@
   "noValidUrls": { "message": "ファイル内に有効なURLが見つかりませんでした。" },
   "noVisits": { "message": "登録されたアクセスはありません。" },
   "nothingToExport": { "message": "エクスポートする非匿名アドレスがありません。" },
-  "panelTitle": { "message": "Passei Aki" },
   "partialColorTitle": { "message": "部分一致リンクの色" },
   "partialMarker": { "message": "類似リンクのマーカー" },
   "passwordConfirmation": { "message": "確認欄を入力してください" },

@@ -49,7 +49,6 @@
   "noValidUrls": { "message": "檔案中找不到有效的 URL。" },
   "noVisits": { "message": "沒有任何造訪記錄。" },
   "nothingToExport": { "message": "沒有可匯出的非匿名地址。" },
-  "panelTitle": { "message": "Passei Aki" },
   "partialColorTitle": { "message": "部分相符連結的顏色" },
   "partialMarker": { "message": "相似連結的標記" },
   "passwordConfirmation": { "message": "請填寫確認欄位" },

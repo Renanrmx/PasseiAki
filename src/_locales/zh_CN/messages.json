@@ -49,7 +49,6 @@
   "noValidUrls": { "message": "文件中未找到有效的 URL。" },
   "noVisits": { "message": "没有记录到访问。" },
   "nothingToExport": { "message": "没有可导出的非匿名地址。" },
-  "panelTitle": { "message": "Passei Aki" },
   "partialColorTitle": { "message": "部分匹配链接的颜色" },
   "partialMarker": { "message": "相似链接的标记" },
   "passwordConfirmation": { "message": "请填写确认字段" },

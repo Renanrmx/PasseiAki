@@ -49,7 +49,6 @@
   "noValidUrls": { "message": "Nenhuma URL válida encontrada no arquivo." },
   "noVisits": { "message": "Nenhum acesso registrado." },
   "nothingToExport": { "message": "Nenhum endereço não anônimo para exportar." },
-  "panelTitle": { "message": "Passei Aki" },
   "partialColorTitle": { "message": "Cor de links parciais" },
   "partialMarker": { "message": "Marcador de links semelhantes" },
   "passwordConfirmation": { "message": "Preencha o campo de confirmação" },

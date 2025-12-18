@@ -49,7 +49,6 @@
   "noValidUrls": { "message": "फ़ाइल में कोई मान्य URL नहीं मिला।" },
   "noVisits": { "message": "कोई एक्सेस दर्ज नहीं है।" },
   "nothingToExport": { "message": "निर्यात करने के लिए कोई गैर-अनाम पता नहीं है।" },
-  "panelTitle": { "message": "Passei Aki" },
   "partialColorTitle": { "message": "आंशिक लिंक का रंग" },
   "partialMarker": { "message": "समान लिंक का मार्कर" },
   "passwordConfirmation": { "message": "पुष्टि वाले फ़ील्ड को भरें" },
