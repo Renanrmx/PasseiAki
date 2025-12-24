@@ -29,3 +29,10 @@ O histórico fica em base local segura sem coleta de dados, o usuário pode esco
 ## Build
 1. Instale dependências: `npm install`.
 2. Crie o build para Firefox (`npm run build:firefox`) ou Chrome (`npm run build:chrome`).
+
+## Permissões
+- tabs: Utilizada para ler o URL da aba ativa e atualizar o ícone e o estado da extensão de acordo com a página visitada.
+Também é usada para ouvir eventos de abas (onUpdated, onActivated, onRemoved), garantindo que o estado interno da extensão permaneça sincronizado com a navegação do usuário.
+- activeTab: Concede acesso temporário à aba ativa somente após interação explícita do usuário, permitindo a leitura do URL atual de forma pontual.
+- webNavigation: Utilizada para observar eventos de navegação e redirecionamento no frame principal da aba, possibilitando registrar corretamente URLs iniciais e finais, inclusive em casos de redirecionamento, garantindo a integridade dos registros armazenados localmente.
+- downloads: Utilizada exclusivamente para exportação manual de dados pelo usuário, permitindo a criação de arquivos locais de backup (.bak) e exportações em .csv e .txt, os downloads só ocorrem mediante ação explícita do usuário e nenhum conteúdo remoto é baixado.
