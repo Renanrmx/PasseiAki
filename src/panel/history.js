@@ -15,8 +15,14 @@ function formatDate(timestamp, withTime) {
   return d.toLocaleDateString();
 }
 
+function clearList() {
+  while (historyList.firstChild) {
+    historyList.removeChild(historyList.firstChild);
+  }
+}
+
 function renderHistory(items) {
-  historyList.innerHTML = "";
+  clearList();
   if (!items || items.length === 0) {
     const li = document.createElement("li");
     li.className = "entry";

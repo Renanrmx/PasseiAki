@@ -25,19 +25,19 @@ async function ensureConfirmModal() {
       const url = apiImport.runtime.getURL("panel/import-modal.html");
       const res = await fetch(url);
       const html = await res.text();
-      const container = document.createElement("div");
-      container.innerHTML = html;
-      applyI18n(container);
-      const styleEl = container.querySelector("style");
+      const doc = new DOMParser().parseFromString(html, "text/html");
+      const styleEl = doc.querySelector("style");
       if (styleEl) {
         const styleClone = styleEl.cloneNode(true);
         document.head.appendChild(styleClone);
       }
-      const invalidOverlay = container.querySelector("#import-invalid-overlay");
-      const successOverlay = container.querySelector("#import-success-overlay");
+      const invalidOverlay = doc.querySelector("#import-invalid-overlay");
+      const successOverlay = doc.querySelector("#import-success-overlay");
       if (!invalidOverlay || !successOverlay) {
         throw new Error("Invalid import modal");
       }
+      applyI18n(invalidOverlay);
+      applyI18n(successOverlay);
       document.body.appendChild(invalidOverlay);
       document.body.appendChild(successOverlay);
       const cancelBtn = invalidOverlay.querySelector("[data-import-cancel]");

@@ -12,18 +12,17 @@
         const url = apiExport.runtime.getURL("panel/export-modal.html");
         const res = await fetch(url);
         const html = await res.text();
-        const container = document.createElement("div");
-        container.innerHTML = html;
-        applyI18n(container);
-        const styleEl = container.querySelector("style");
+        const doc = new DOMParser().parseFromString(html, "text/html");
+        const styleEl = doc.querySelector("style");
         if (styleEl) {
           const styleClone = styleEl.cloneNode(true);
           document.head.appendChild(styleClone);
         }
-        const overlay = container.querySelector("#export-choice-overlay");
+        const overlay = doc.querySelector("#export-choice-overlay");
         if (!overlay) {
           throw new Error("Invalid export modal");
         }
+        applyI18n(overlay);
         document.body.appendChild(overlay);
         const cancelBtn = overlay.querySelector("[data-export-cancel]");
         const csvBtn = overlay.querySelector("[data-export-table]");

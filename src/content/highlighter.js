@@ -1,11 +1,11 @@
 const api = typeof browser !== "undefined" ? browser : chrome;
 
 const SUPPORTED_PROTOCOLS = new Set(["http:", "https:"]);
-const VISITED_TEXT_CLASS = "passei-aki-visited";
-const PARTIAL_TEXT_CLASS = "passei-aki-partial";
-const VISITED_BORDER_CLASS = "passei-aki-visited-border";
-const PARTIAL_BORDER_CLASS = "passei-aki-partial-border";
-const STYLE_ID = "passei-aki-style";
+const VISITED_TEXT_CLASS = "aki-visited-text";
+const PARTIAL_TEXT_CLASS = "aki-partial-text";
+const VISITED_BORDER_CLASS = "aki-visited-border";
+const PARTIAL_BORDER_CLASS = "aki-partial-border";
+const STYLE_ID = "aki-style";
 const SCAN_DEBOUNCE_MS = 400;
 
 let scanTimer = null;
@@ -153,7 +153,7 @@ function markVisited(urlToAnchors, visitedLinks) {
 }
 
 function refreshMarkedAnchors() {
-  const anchors = document.querySelectorAll("a[data-passei-aki-visited]");
+  const anchors = document.querySelectorAll("a[data-aki-visited-text]");
   anchors.forEach((anchor) => {
     const isPartial = anchor.dataset.passeiAkiVisited === "partial";
     paintAnchor(anchor, isPartial);

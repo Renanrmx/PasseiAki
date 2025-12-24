@@ -103,7 +103,9 @@ window.loadStats = loadStats;
 
 async function loadPartialMatches(url) {
   if (!partialContainer || !partialList) return;
-  partialList.innerHTML = "";
+  while (partialList.firstChild) {
+    partialList.removeChild(partialList.firstChild);
+  }
   const currentParamsSet = new Set(normalizeParamsLocal((new URL(url)).search));
   try {
     const res = await api.runtime.sendMessage({
