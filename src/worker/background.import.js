@@ -14,6 +14,9 @@ async function importAddressesFromText(content, options = {}) {
 
   const now = Date.now();
   const records = [];
+  let validCount = 0;
+  const existingIds = new Set();
+  const missingIds = new Set();
 
   for (const raw of lines) {
     let urlString = raw;
@@ -23,11 +26,28 @@ async function importAddressesFromText(content, options = {}) {
     const fingerprint = await computeFingerprint(urlString);
     if (!fingerprint) continue;
 
+    validCount += 1;
+
+    if (options.preview) continue;
+
     const hashed = fingerprint.storedHashed;
     const keySet = hashed ? fingerprint.keys.hash : fingerprint.keys.plain;
     const recordId = hashed ? fingerprint.ids?.hash || fingerprint.id : fingerprint.ids?.plain || fingerprint.id;
 
-    const record = {
+    if (missingIds.has(recordId)) continue;
+
+    if (existingIds.has(recordId)) continue;
+
+    if (!missingIds.has(recordId)) {
+      const existing = await getVisitById(recordId);
+      if (existing) {
+        existingIds.add(recordId);
+        continue;
+      }
+      missingIds.add(recordId);
+    }
+
+    records.push({
       id: recordId,
       hostHash: keySet.host,
       pathHash: keySet.path,
@@ -41,35 +61,30 @@ async function importAddressesFromText(content, options = {}) {
       fragment: fingerprint.parts.fragment,
       lastVisited: now,
       visitCount: 1
-    };
-
-    if (options.preview) {
-      records.push(null); // placeholder to count valid
-    } else {
-      records.push(record);
-    }
+    });
   }
 
-  if (!records.length) {
+  if (!validCount) {
     return { imported: 0, invalid: lines.length, total: lines.length };
   }
 
-  const validCount = records.length;
   const invalidCount = lines.length - validCount;
 
   if (options.preview) {
     return { imported: 0, valid: validCount, invalid: invalidCount, total: lines.length };
   }
 
-  const imported = validCount;
+  const imported = records.length;
 
-  await putVisits(records);
-  try {
-    if (api.runtime && api.runtime.sendMessage) {
-      api.runtime.sendMessage({ type: "HISTORY_UPDATED" });
+  if (records.length) {
+    await putVisits(records);
+    try {
+      if (api.runtime && api.runtime.sendMessage) {
+        api.runtime.sendMessage({ type: "HISTORY_UPDATED" });
+      }
+    } catch (error) {
+      // ignore broadcast errors
     }
-  } catch (error) {
-    // ignore broadcast errors
   }
 
   return { imported, invalid: invalidCount, total: lines.length };
