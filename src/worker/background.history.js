@@ -24,7 +24,8 @@ async function handleGetStats() {
       lastVisited: value.lastVisited,
       host: value.host,
       path: value.path,
-      hashed: value.hashed !== false ? true : false
+      hashed: value.hashed !== false ? true : false,
+      download: value.download === true
     }));
 
   return {

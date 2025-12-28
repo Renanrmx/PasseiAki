@@ -54,7 +54,17 @@ function renderHistory(items) {
       ? t("lastVisitWithDate", formatDate(item.lastVisited, false))
       : t("lastVisitWithDate", formatDate(item.lastVisited, true));
 
-    metaDiv.appendChild(metaText);
+    const metaLeft = document.createElement("div");
+    metaLeft.className = "meta-left";
+    metaLeft.appendChild(metaText);
+    
+    if (item.download === true) {
+      const downloadLabel = document.createElement("span");
+      downloadLabel.className = "download-label";
+      downloadLabel.textContent = t("downloadLabel");
+      metaLeft.appendChild(downloadLabel);
+    }
+    metaDiv.appendChild(metaLeft);
 
     const actionsWrapper = document.createElement("div");
     actionsWrapper.style.display = "flex";

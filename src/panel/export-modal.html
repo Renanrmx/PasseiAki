@@ -32,6 +32,31 @@
     display: flex;
     justify-content: center;
     gap: 10px;
+    margin-top: 15px;
+  }
+  .export-modal-filters {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    margin: 8px 0 1px;
+    font-size: 13px;
+  }
+  .export-modal-filters label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .export-modal-filters input[type="checkbox"] {
+    accent-color: #7ecdc4;
+    margin: 3px 0 0 0;
+  }
+  .export-modal-validation {
+    display: none;
+    margin: 1px 0 15px;
+    font-size: 12px;
+    color: #ff9a9a;
+    text-align: left;
   }
   .export-modal-actions button {
     padding: 8px 12px;
@@ -59,11 +84,24 @@
     <div class="export-modal-text" id="export-modal-text" data-i18n="exportChoiceText">
       Escolha como deseja exportar os endereços:
     </div>
+    <div class="export-modal-filters">
+      <label>
+        <input type="checkbox" data-export-pages checked />
+        <span data-i18n="exportPages">Páginas</span>
+      </label>
+      <label>
+        <input type="checkbox" data-export-downloads />
+        <span data-i18n="exportDownloads">Downloads</span>
+      </label>
+    </div>
+    <div class="export-modal-validation" data-export-validation data-i18n="exportSelectAtLeastOne">
+      Deve selecionar ao menos um tipo para exportar
+    </div>
     <div class="export-modal-actions">
       <button type="button" class="export-modal-table" data-export-table data-i18n="exportCsv">Exportar como tabela (CSV)</button>
       <button type="button" class="export-modal-text-btn" data-export-text data-i18n="exportTxt">Exportar como texto (TXT)</button>
     </div>
-    <div style="margin-top:10px" class="export-modal-actions">
+    <div style="margin-top:15px" class="export-modal-actions">
       <button type="button" class="export-modal-cancel" data-export-cancel data-i18n="cancel">Cancelar</button>
     </div>
   </div>

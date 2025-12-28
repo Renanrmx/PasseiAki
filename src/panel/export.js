@@ -27,7 +27,25 @@
         const cancelBtn = overlay.querySelector("[data-export-cancel]");
         const csvBtn = overlay.querySelector("[data-export-table]");
         const txtBtn = overlay.querySelector("[data-export-text]");
-        exportModal = { overlay, cancelBtn, csvBtn, txtBtn };
+        const pagesCheckbox = overlay.querySelector("[data-export-pages]");
+        const downloadsCheckbox = overlay.querySelector("[data-export-downloads]");
+        const validation = overlay.querySelector("[data-export-validation]");
+        const clearValidation = () => {
+          if (validation) validation.style.display = "none";
+        };
+
+        if (pagesCheckbox) pagesCheckbox.addEventListener("change", clearValidation);
+        if (downloadsCheckbox) downloadsCheckbox.addEventListener("change", clearValidation);
+        
+        exportModal = {
+          overlay,
+          cancelBtn,
+          csvBtn,
+          txtBtn,
+          pagesCheckbox,
+          downloadsCheckbox,
+          validation
+        };
         return exportModal;
       })();
     }
@@ -38,6 +56,10 @@
     const modal = await ensureExportModal();
     return new Promise((resolve) => {
       modal.overlay.style.display = "flex";
+      if (modal.pagesCheckbox) modal.pagesCheckbox.checked = true;
+      if (modal.downloadsCheckbox) modal.downloadsCheckbox.checked = false;
+      if (modal.validation) modal.validation.style.display = "none";
+      
       [modal.cancelBtn, modal.csvBtn, modal.txtBtn].forEach((btn) => btn && btn.blur());
       const cleanup = (result) => {
         modal.overlay.style.display = "none";
@@ -47,8 +69,28 @@
         resolve(result);
       };
       if (modal.cancelBtn) modal.cancelBtn.onclick = () => cleanup(null);
-      if (modal.csvBtn) modal.csvBtn.onclick = () => cleanup("csv");
-      if (modal.txtBtn) modal.txtBtn.onclick = () => cleanup("txt");
+      if (modal.csvBtn) {
+        modal.csvBtn.onclick = () =>
+          handleChoice("csv", modal, cleanup);
+      }
+      if (modal.txtBtn) {
+        modal.txtBtn.onclick = () =>
+          handleChoice("txt", modal, cleanup);
+      }
+    });
+  }
+
+  function handleChoice(format, modal, cleanup) {
+    const includePages = modal.pagesCheckbox ? modal.pagesCheckbox.checked : true;
+    const includeDownloads = modal.downloadsCheckbox ? modal.downloadsCheckbox.checked : false;
+    if (!includePages && !includeDownloads) {
+      if (modal.validation) modal.validation.style.display = "block";
+      return;
+    }
+    cleanup({
+      format,
+      includePages,
+      includeDownloads
     });
   }
 
@@ -57,9 +99,13 @@
     try {
       const choice = await showExportModal();
       if (!choice) return;
-      const type = choice === "txt" ? "EXPORT_VISITS_TXT" : "EXPORT_VISITS_CSV";
+      const type = choice.format === "txt" ? "EXPORT_VISITS_TXT" : "EXPORT_VISITS_CSV";
 
-      const response = await apiExport.runtime.sendMessage({ type });
+      const response = await apiExport.runtime.sendMessage({
+        type,
+        includePages: choice.includePages,
+        includeDownloads: choice.includeDownloads
+      });
       if (!response || response.ok === false) {
         throw new Error(response && response.error ? response.error : "Export failed");
       }

@@ -87,6 +87,10 @@ if (api.webNavigation && api.webNavigation.onBeforeNavigate && api.webNavigation
   api.webNavigation.onCommitted.addListener(handleNavigationCommitted);
 }
 
+if (api.downloads && api.downloads.onCreated) {
+  api.downloads.onCreated.addListener(handleDownloadCreated);
+}
+
 api.runtime.onMessage.addListener((message, sender, sendResponse) => {
   const handler = async () => {
     if (!message || !message.type) {
@@ -168,7 +172,10 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     if (message.type === "EXPORT_VISITS_CSV") {
       return (async () => {
-        const result = await exportPlainVisitsCsv(message.filename);
+        const result = await exportPlainVisitsCsv(message.filename, {
+          includePages: message.includePages,
+          includeDownloads: message.includeDownloads
+        });
         return { ok: true, exported: result.exported };
       })().catch((error) => ({
         ok: false,
@@ -178,7 +185,10 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     if (message.type === "EXPORT_VISITS_TXT") {
       return (async () => {
-        const result = await exportPlainVisitsTxt(message.filename);
+        const result = await exportPlainVisitsTxt(message.filename, {
+          includePages: message.includePages,
+          includeDownloads: message.includeDownloads
+        });
         return { ok: true, exported: result.exported };
       })().catch((error) => ({
         ok: false,
@@ -273,7 +283,7 @@ api.runtime.onInstalled.addListener(async (details) => {
   }
 });
 
-async function upsertVisit(urlString) {
+async function upsertVisit(urlString, options = {}) {
   const fingerprint = await computeFingerprint(urlString);
   if (!fingerprint) {
     return null;
@@ -298,7 +308,8 @@ async function upsertVisit(urlString) {
   const keySet = hashed ? fingerprint.keys.hash : fingerprint.keys.plain;
   const recordId = hashed ? fingerprint.ids?.hash || fingerprint.id : fingerprint.ids?.plain || fingerprint.id;
   const paramKeys = hashed ? fingerprint.keys.hash.params : fingerprint.keys.plain.params;
-
+  const download = options.download === true || (existing && existing.download === true);
+  
   const baseRecord = {
     id: recordId,
     hostHash: keySet.host,
@@ -311,7 +322,8 @@ async function upsertVisit(urlString) {
     path: fingerprint.parts.path,
     query: fingerprint.parts.query,
     fragment: fingerprint.parts.fragment,
-    lastVisited: now
+    lastVisited: now,
+    download
   };
 
   const record = existedBefore
@@ -484,6 +496,31 @@ async function handleNavigationCommitted(details) {
   }
 
   firstNavigationUrlByTab.delete(details.tabId);
+}
+
+function handleDownloadCreated(item) {
+  if (!item) return;
+  if (item.byExtensionId && api?.runtime?.id && item.byExtensionId === api.runtime.id) {
+    return;
+  }
+  const urls = new Set();
+  if (typeof item.url === "string") {
+    urls.add(item.url);
+  }
+  if (typeof item.finalUrl === "string") {
+    urls.add(item.finalUrl);
+  }
+  if (urls.size === 0) {
+    return;
+  }
+  urls.forEach((url) => {
+    if (url.startsWith("blob:") || url.startsWith("data:")) {
+      return;
+    }
+    upsertVisit(url, { download: true }).catch(() => {
+      // ignore download tracking errors
+    });
+  });
 }
 
 async function handleGetVisitForUrl(urlString, tabId) {
