@@ -75,6 +75,7 @@
   "welcomeSubtitle1": { "message": "Adjust the settings below if you like." },
   "welcomeSubtitle2": { "message": "Some features start disabled but may be useful depending on your usage." },
   "welcomeSubtitle3": { "message": "You can change them later in this extension's menu settings." },
+  "welcomeSubtitle4": { "message": "It is recommended to pin this extension in the browser so it is always visible because the icon indicates visited pages." },
   "welcomeTitle": { "message": "Welcome" },
   "welcomeTitlePart": { "message": "Welcome to" }
 }

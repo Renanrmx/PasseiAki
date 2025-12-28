@@ -75,6 +75,7 @@
   "welcomeSubtitle1": { "message": "必要に応じて下の設定を調整してください。" },
   "welcomeSubtitle2": { "message": "一部の機能は初期状態で無効ですが、使い方によっては有用です。" },
   "welcomeSubtitle3": { "message": "後で拡張機能のメニュー設定から変更できます。" },
+  "welcomeSubtitle4": { "message": "この拡張機能をブラウザに固定して常に表示されるようにすることをおすすめします。アイコンで訪問済みのページが示されるためです。" },
   "welcomeTitle": { "message": "ようこそ" },
   "welcomeTitlePart": { "message": "へようこそ" }
 }

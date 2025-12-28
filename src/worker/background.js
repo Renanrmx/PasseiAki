@@ -265,7 +265,7 @@ api.runtime.onInstalled.addListener(async (details) => {
         url: api.runtime.getURL("panel/welcome.html"),
         type: "popup",
         width: 480,
-        height: 450
+        height: 480
       });
     }
   } catch (error) {

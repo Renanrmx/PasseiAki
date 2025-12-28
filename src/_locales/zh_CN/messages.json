@@ -75,6 +75,7 @@
   "welcomeSubtitle1": { "message": "如果需要，可调整下方设置。" },
   "welcomeSubtitle2": { "message": "部分功能默认关闭，但根据使用需求可能有用。" },
   "welcomeSubtitle3": { "message": "您可以稍后在此扩展的菜单设置中进行更改。" },
+  "welcomeSubtitle4": { "message": "建议将此扩展固定在浏览器中以便始终可见，因为图标会指示已访问的页面。" },
   "welcomeTitle": { "message": "欢迎" },
   "welcomeTitlePart": { "message": "欢迎使用" }
 }

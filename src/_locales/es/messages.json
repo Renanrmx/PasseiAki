@@ -75,6 +75,7 @@
   "welcomeSubtitle1": { "message": "Ajusta la configuración de abajo si lo deseas." },
   "welcomeSubtitle2": { "message": "Algunas funciones empiezan desactivadas pero pueden ser útiles según tu uso." },
   "welcomeSubtitle3": { "message": "Puedes cambiarlas después en el menú de configuración de esta extensión." },
+  "welcomeSubtitle4": { "message": "Se recomienda fijar esta extensión en el navegador para que esté siempre visible, ya que el ícono indica las páginas visitadas." },
   "welcomeTitle": { "message": "Bienvenido" },
   "welcomeTitlePart": { "message": "Bienvenido a" }
 }

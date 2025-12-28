@@ -75,6 +75,7 @@
   "welcomeSubtitle1": { "message": "如有需要，可調整下方設定。" },
   "welcomeSubtitle2": { "message": "部分功能預設關閉，但依使用情境可能有用。" },
   "welcomeSubtitle3": { "message": "您可以稍後在此擴充的功能表設定中變更。" },
+  "welcomeSubtitle4": { "message": "建議將此擴充固定在瀏覽器中以便始終可見，因為圖示會指示已訪問的頁面。" },
   "welcomeTitle": { "message": "歡迎" },
   "welcomeTitlePart": { "message": "歡迎使用" }
 }

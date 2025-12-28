@@ -75,6 +75,7 @@
   "welcomeSubtitle1": { "message": "Ajustez les paramètres ci-dessous si vous le souhaitez." },
   "welcomeSubtitle2": { "message": "Certaines fonctionnalités sont désactivées par défaut mais peuvent être utiles selon votre usage." },
   "welcomeSubtitle3": { "message": "Vous pourrez les modifier plus tard dans le menu des paramètres de l’extension." },
+  "welcomeSubtitle4": { "message": "Il est recommandé d’épingler cette extension dans le navigateur pour qu’elle soit toujours visible, car l’icône indique les pages visitées." },
   "welcomeTitle": { "message": "Bienvenue" },
   "welcomeTitlePart": { "message": "Bienvenue sur" }
 }
