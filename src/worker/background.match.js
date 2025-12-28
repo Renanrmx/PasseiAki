@@ -106,18 +106,13 @@ async function computeFingerprint(urlString) {
 }
 
 async function findVisitMatch(fingerprint) {
-  const db = await openDatabase();
-
   // busca exata em ids hash/plain
   const idsToTry = Array.from(
     new Set([fingerprint.id, fingerprint.ids?.hash, fingerprint.ids?.plain].filter(Boolean))
   );
 
   for (const id of idsToTry) {
-    const txExact = db.transaction(VISITS_STORE, "readonly");
-    const storeExact = txExact.objectStore(VISITS_STORE);
-    const exact = await requestToPromise(storeExact.get(id));
-    await waitForTransaction(txExact);
+    const exact = await getVisitById(id);
     if (exact) {
       return { state: MATCH_STATE.full, record: exact };
     }
@@ -128,82 +123,38 @@ async function findVisitMatch(fingerprint) {
     new Set([fingerprint.keys.hash.host, fingerprint.keys.plain.host].filter(Boolean))
   );
 
-  return new Promise((resolve, reject) => {
-    const searchNextHost = () => {
-      if (hostCandidates.length === 0) {
-        resolve({ state: MATCH_STATE.none });
-        return;
+  for (const hostKey of hostCandidates) {
+    const matches = await getVisitsByHost(hostKey);
+    for (const value of matches) {
+      if (isPartialMatch(value, fingerprint)) {
+        return { state: MATCH_STATE.partial, record: value };
       }
+    }
+  }
 
-      const hostKey = hostCandidates.shift();
-      const tx = db.transaction(VISITS_STORE, "readonly");
-      const store = tx.objectStore(VISITS_STORE);
-      const index = store.index("hostHash");
-      const range = IDBKeyRange.only(hostKey);
-      const cursorReq = index.openCursor(range);
-
-      cursorReq.onsuccess = async (event) => {
-        const cursor = event.target.result;
-        if (cursor) {
-          const value = cursor.value;
-          if (isPartialMatch(value, fingerprint)) {
-            resolve({ state: MATCH_STATE.partial, record: value });
-            return;
-          }
-          cursor.continue();
-        } else {
-          try {
-            await waitForTransaction(tx);
-            searchNextHost();
-          } catch (error) {
-            reject(error);
-          }
-        }
-      };
-      cursorReq.onerror = () => reject(cursorReq.error);
-    };
-
-    searchNextHost();
-  });
+  return { state: MATCH_STATE.none };
 }
 
 async function findPartialMatches(fingerprint, limit = 5) {
-  const db = await openDatabase();
   const hostCandidates = Array.from(
     new Set([fingerprint.keys.hash.host, fingerprint.keys.plain.host].filter(Boolean))
   );
   const results = [];
 
-  await Promise.all(
-    hostCandidates.map(async (hostKey) => {
-      const tx = db.transaction(VISITS_STORE, "readonly");
-      const store = tx.objectStore(VISITS_STORE);
-      const index = store.index("hostHash");
-      const range = IDBKeyRange.only(hostKey);
-      const cursorReq = index.openCursor(range);
-
-      await new Promise((resolve, reject) => {
-        cursorReq.onsuccess = (event) => {
-          const cursor = event.target.result;
-          if (cursor) {
-            const value = cursor.value;
-            if (isPartialMatch(value, fingerprint)) {
-              results.push(value);
-              if (results.length >= limit) {
-                resolve();
-                return;
-              }
-            }
-            cursor.continue();
-          } else {
-            resolve();
-          }
-        };
-        cursorReq.onerror = () => reject(cursorReq.error);
-      });
-      await waitForTransaction(tx);
-    })
-  );
+  for (const hostKey of hostCandidates) {
+    const matches = await getVisitsByHost(hostKey);
+    for (const value of matches) {
+      if (isPartialMatch(value, fingerprint)) {
+        results.push(value);
+        if (results.length >= limit) {
+          break;
+        }
+      }
+    }
+    if (results.length >= limit) {
+      break;
+    }
+  }
 
   results.sort((a, b) => (b.lastVisited || 0) - (a.lastVisited || 0));
   return results.slice(0, limit);

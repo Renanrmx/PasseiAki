@@ -61,16 +61,9 @@ async function importAddressesFromText(content, options = {}) {
     return { imported: 0, valid: validCount, invalid: invalidCount, total: lines.length };
   }
 
-  const db = await openDatabase();
-  const tx = db.transaction(VISITS_STORE, "readwrite");
-  const store = tx.objectStore(VISITS_STORE);
   const imported = validCount;
 
-  for (const record of records) {
-    store.put(record);
-  }
-
-  await waitForTransaction(tx);
+  await putVisits(records);
   try {
     if (api.runtime && api.runtime.sendMessage) {
       api.runtime.sendMessage({ type: "HISTORY_UPDATED" });

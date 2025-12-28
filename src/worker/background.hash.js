@@ -28,11 +28,7 @@ async function ensurePepperKey() {
   }
 
   pepperKeyPromise = (async () => {
-    const db = await openDatabase();
-    const readTx = db.transaction(META_STORE, "readonly");
-    const metaStore = readTx.objectStore(META_STORE);
-    const stored = await requestToPromise(metaStore.get(META_PEPPER_KEY));
-    await waitForTransaction(readTx);
+    const stored = await readMetaEntry(META_PEPPER_KEY);
 
     let rawPepper = stored && stored.value
       ? base64ToBuffer(stored.value)
@@ -41,12 +37,7 @@ async function ensurePepperKey() {
     if (!rawPepper) {
       const generated = crypto.getRandomValues(new Uint8Array(32));
       rawPepper = generated.buffer;
-      const writeTx = db.transaction(META_STORE, "readwrite");
-      writeTx.objectStore(META_STORE).put({
-        key: META_PEPPER_KEY,
-        value: bufferToBase64(rawPepper)
-      });
-      await waitForTransaction(writeTx);
+      await writeMetaEntry(META_PEPPER_KEY, bufferToBase64(rawPepper));
     }
 
     return crypto.subtle.importKey(

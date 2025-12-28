@@ -112,10 +112,7 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   if (message.type === "DELETE_VISIT") {
     return (async () => {
-      const db = await openDatabase();
-      const tx = db.transaction(VISITS_STORE, "readwrite");
-      tx.objectStore(VISITS_STORE).delete(message.id);
-      await waitForTransaction(tx);
+      await deleteVisitById(message.id);
       try {
         if (api.runtime && api.runtime.sendMessage) {
           api.runtime.sendMessage({ type: "HISTORY_UPDATED" });
@@ -282,16 +279,12 @@ async function upsertVisit(urlString) {
     return null;
   }
 
-  const db = await openDatabase();
-  const tx = db.transaction(VISITS_STORE, "readwrite");
-  const store = tx.objectStore(VISITS_STORE);
-
   let existing = null;
   const idsToTry = Array.from(
     new Set([fingerprint.id, fingerprint.ids?.hash, fingerprint.ids?.plain].filter(Boolean))
   );
   for (const id of idsToTry) {
-    const found = await requestToPromise(store.get(id));
+    const found = await getVisitById(id);
     if (found) {
       existing = found;
       break;
@@ -325,8 +318,7 @@ async function upsertVisit(urlString) {
     ? { ...existing, ...baseRecord, visitCount: (existing.visitCount || 0) + 1 }
     : { ...baseRecord, visitCount: 1 };
 
-  store.put(record);
-  await waitForTransaction(tx);
+  await putVisit(record);
   try {
     if (api.runtime && api.runtime.sendMessage) {
       api.runtime.sendMessage({ type: "HISTORY_UPDATED" });
