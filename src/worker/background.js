@@ -252,7 +252,7 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
       sendResponse({ ok: false, error: error && error.message ? error.message : String(error) });
     });
 
-  return true; // indica que respondere async
+  return true; // indicates it will respond async
 });
 
 api.runtime.onInstalled.addListener(async (details) => {

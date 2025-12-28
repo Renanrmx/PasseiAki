@@ -60,7 +60,7 @@ function normalizeUrlParts(urlString) {
 
     const hostDecoded = decodeComponentSafe(url.host.toLowerCase());
     const rawPath = decodeComponentSafe(url.pathname.toLowerCase() || "/");
-    // normaliza removendo barras finais (exceto raiz) para evitar /foo e /foo/ contarem como diferentes
+    // normalize by removing trailing slashes (except root) to avoid /foo and /foo/ counting as different
     let pathDecoded = rawPath.replace(/\/+$/, "");
     if (pathDecoded === "") {
       pathDecoded = "/";

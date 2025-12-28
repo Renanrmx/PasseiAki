@@ -21,7 +21,7 @@ let passwordRequireConfirm = true;
 
 const MIN_PASSWORD_LENGTH = 3;
 
-// Garantir tradução caso o applyI18n não tenha sido executado por outro script
+// Ensure translation in case applyI18n was not executed by another script
 if (typeof applyI18n === "function") {
   applyI18n();
 }

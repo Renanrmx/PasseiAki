@@ -75,7 +75,7 @@ async function encryptWithPassword(password, plaintextBytes) {
   const cipher = new ChaCha20Poly1305.ChaCha20Poly1305(key);
   const ciphertext = cipher.seal(nonce, plaintextBytes);
   return {
-    v: 1, // versao do envelope, alterar se mudar de criptografia
+    v: 1, // envelope version, update if encryption changes
     salt: base64FromBytes(salt),
     nonce: base64FromBytes(nonce),
     data: base64FromBytes(ciphertext)

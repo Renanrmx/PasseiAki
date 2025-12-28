@@ -484,7 +484,7 @@ async function getLinkColors() {
   const partialBorderEnabled =
     partialBorderEnabledEntry && typeof partialBorderEnabledEntry.value === "boolean" ? partialBorderEnabledEntry.value : false;
 
-  // persist defaults on first fetch to avoid undefined in futuras execuções
+  // persist defaults on first fetch to avoid undefined in future runs
   if (!matchColorEntry || !partialColorEntry || !matchTextEnabledEntry || !partialTextEnabledEntry) {
     await writeMetaEntries([
       { key: "matchHexColor", value: matchHexColor },

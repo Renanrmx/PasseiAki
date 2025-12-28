@@ -106,7 +106,7 @@ async function computeFingerprint(urlString) {
 }
 
 async function findVisitMatch(fingerprint) {
-  // busca exata em ids hash/plain
+  // exact search in hash/plain ids
   const idsToTry = Array.from(
     new Set([fingerprint.id, fingerprint.ids?.hash, fingerprint.ids?.plain].filter(Boolean))
   );
@@ -118,7 +118,7 @@ async function findVisitMatch(fingerprint) {
     }
   }
 
-  // busca parcial: mesmo host/path, parametros/fragmento com interseção
+  // partial search: same host/path, params/fragment with intersection
   const hostCandidates = Array.from(
     new Set([fingerprint.keys.hash.host, fingerprint.keys.plain.host].filter(Boolean))
   );

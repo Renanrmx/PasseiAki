@@ -30,7 +30,7 @@ async function restoreBackup(password, envelope) {
     await writeMetaEntries(decoded.meta);
     await putVisits(decoded.visits);
 
-    // resetar caches
+    // reset caches
     pepperKeyPromise = null;
     const encryptionEntry = decoded.meta.find((m) => m && m.key === "encryptionEnabled");
     encryptionEnabledCache = encryptionEntry && typeof encryptionEntry.value === "boolean" ? encryptionEntry.value : null;
@@ -38,7 +38,7 @@ async function restoreBackup(password, envelope) {
     lastMatchStateByTab.clear();
     lastPrevVisitByTab.clear();
 
-    // notifica abas para atualizar visual e reprocessar destaques
+    // notify tabs to update visuals and reprocess highlights
     try {
       const colors = await getLinkColors();
       api.runtime.sendMessage({ type: "LINK_COLORS_UPDATED", colors });
