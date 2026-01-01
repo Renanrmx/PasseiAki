@@ -108,6 +108,23 @@
         opacity: 0;
         pointer-events: none;
       }
+      .badge-settings {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .badge-duration-input {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: #e8f1f2;
+        padding: 6px 8px;
+        border-radius: 6px;
+        font-size: 12px;
+      }
+      .badge-duration-input {
+        width: 100px;
+      }
       .toggle {
         display: flex;
         align-items: center;
@@ -218,6 +235,35 @@
           <input type="color" id="partial-color-picker" value="#81c700" />
           <div aria-hidden="true" style="position:absolute; inset:2px; border-radius:4px; background:#81c700;"></div>
         </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="indicator-row">
+        <label class="toggle" for="download-badge-toggle">
+          <input type="checkbox" id="download-badge-toggle" checked />
+          <span data-i18n="downloadBadgeInfo">Mostrar badge quando um link de download já tiver sido acessado</span>
+        </label>
+      </div>
+      <div class="indicator-row">
+        <label for="download-badge-color-picker" data-i18n="downloadBadgeColorLabel">Cor do badge</label>
+        <div class="badge-settings">
+          <div class="color-swatch" title="" data-i18n="downloadBadgeColorLabel" data-i18n-attr="title">
+            <input type="color" id="download-badge-color-picker" value="#0e9a69" />
+            <div aria-hidden="true" style="position:absolute; inset:2px; border-radius:4px; background:#0e9a69;"></div>
+          </div>
+        </div>
+      </div>
+      <div class="indicator-row">
+        <label for="download-badge-duration" data-i18n="downloadBadgeDurationLabel">Tempo de exibição (segundos)</label>
+        <input
+          type="number"
+          id="download-badge-duration"
+          class="badge-duration-input"
+          min="1"
+          step="1"
+          value="60"
+        />
       </div>
     </div>
 

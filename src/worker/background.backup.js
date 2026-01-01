@@ -34,6 +34,10 @@ async function restoreBackup(password, envelope) {
     pepperKeyPromise = null;
     const encryptionEntry = decoded.meta.find((m) => m && m.key === "encryptionEnabled");
     encryptionEnabledCache = encryptionEntry && typeof encryptionEntry.value === "boolean" ? encryptionEntry.value : null;
+    downloadBadgeSettingsCache = null;
+    if (typeof clearDownloadBadge === "function") {
+      clearDownloadBadge();
+    }
     lastSavedByTab.clear();
     lastMatchStateByTab.clear();
     lastPrevVisitByTab.clear();

@@ -10,6 +10,10 @@
   const partialTextLabel = document.getElementById("partial-text-label");
   const visitedBorderLabel = document.getElementById("visited-border-label");
   const partialBorderLabel = document.getElementById("partial-border-label");
+  const badgePickerInput = document.getElementById("download-badge-color-picker");
+  const badgeSwatch = badgePickerInput ? badgePickerInput.parentElement : null;
+  const badgeDurationInput = document.getElementById("download-badge-duration");
+  const badgeToggle = document.getElementById("download-badge-toggle");
 
   let picker = null;
   let pickerPopover = null;
@@ -22,6 +26,11 @@
     matchBorderEnabled: false,
     partialBorderEnabled: false
   };
+  let badgeState = {
+    downloadBadgeColor: "#0e9a69ff",
+    downloadBadgeDurationMs: 60000,
+    downloadBadgeEnabled: true
+  };
 
   function normalizeHexColor(value, fallback) {
     if (typeof value !== "string") return fallback;
@@ -29,6 +38,42 @@
     const match = cleaned.match(/^#?[0-9a-f]{6}$/);
     if (!match) return fallback;
     return cleaned.startsWith("#") ? cleaned : `#${cleaned}`;
+  }
+
+  function normalizeBadgeColor(value, fallback) {
+    if (typeof value !== "string") return fallback;
+    const cleaned = value.trim().toLowerCase();
+    const match = cleaned.match(/^#?[0-9a-f]{6}([0-9a-f]{2})?$/);
+    if (!match) return fallback;
+    let hex = cleaned.startsWith("#") ? cleaned : `#${cleaned}`;
+    if (hex.length === 7) {
+      hex += "ff";
+    }
+    return hex;
+  }
+
+  function normalizeBadgeDuration(value, fallback) {
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed) || parsed <= 0) {
+      return fallback;
+    }
+    return Math.round(parsed);
+  }
+
+  function stripAlpha(hex) {
+    if (typeof hex !== "string") return hex;
+    if (hex.length === 9) {
+      return hex.slice(0, 7);
+    }
+    return hex;
+  }
+
+  function ensureAlpha(hex) {
+    if (typeof hex !== "string") return hex;
+    if (hex.length === 7) {
+      return `${hex}ff`;
+    }
+    return hex;
   }
 
   function setSwatchColor(el, color) {
@@ -88,6 +133,38 @@
     setBorderLabel(partialBorderLabel, colorsState.partialHexColor);
   }
 
+  async function loadBadgeSettings() {
+    if (!badgeSwatch || !badgeDurationInput) return;
+    try {
+      const res = await apiColors.runtime.sendMessage({ type: "GET_DOWNLOAD_BADGE_SETTINGS" });
+      if (res && res.settings) {
+        badgeState = {
+          downloadBadgeColor: normalizeBadgeColor(
+            res.settings.downloadBadgeColor,
+            badgeState.downloadBadgeColor
+          ),
+          downloadBadgeDurationMs: normalizeBadgeDuration(
+            res.settings.downloadBadgeDurationMs,
+            badgeState.downloadBadgeDurationMs
+          ),
+          downloadBadgeEnabled:
+            typeof res.settings.downloadBadgeEnabled === "boolean"
+              ? res.settings.downloadBadgeEnabled
+              : badgeState.downloadBadgeEnabled
+        };
+      }
+    } catch (error) {
+      // ignore, keep defaults
+    }
+
+    const displayColor = stripAlpha(badgeState.downloadBadgeColor);
+    setSwatchColor(badgeSwatch, displayColor);
+    badgeDurationInput.value = Math.max(1, Math.round(badgeState.downloadBadgeDurationMs / 1000));
+    if (badgeToggle) {
+      badgeToggle.checked = badgeState.downloadBadgeEnabled !== false;
+    }
+  }
+
   async function saveColors(partialUpdate = {}) {
     colorsState = {
       ...colorsState,
@@ -102,6 +179,23 @@
         partialTextEnabled: colorsState.partialTextEnabled,
         matchBorderEnabled: colorsState.matchBorderEnabled,
         partialBorderEnabled: colorsState.partialBorderEnabled
+      });
+    } catch (error) {
+      // ignore save errors
+    }
+  }
+
+  async function saveBadgeSettings(partialUpdate = {}) {
+    badgeState = {
+      ...badgeState,
+      ...partialUpdate
+    };
+    try {
+      await apiColors.runtime.sendMessage({
+        type: "SET_DOWNLOAD_BADGE_SETTINGS",
+        downloadBadgeColor: badgeState.downloadBadgeColor,
+        downloadBadgeDurationMs: badgeState.downloadBadgeDurationMs,
+        downloadBadgeEnabled: badgeState.downloadBadgeEnabled
       });
     } catch (error) {
       // ignore save errors
@@ -142,6 +236,10 @@
         setLabelColor(partialTextLabel, hex);
         setBorderLabel(partialBorderLabel, hex);
         saveColors({ partialHexColor: hex });
+      } else if (activeTarget === "badge") {
+        const withAlpha = ensureAlpha(hex);
+        setSwatchColor(badgeSwatch, hex);
+        saveBadgeSettings({ downloadBadgeColor: withAlpha });
       }
     });
 
@@ -149,14 +247,15 @@
       "click",
       (event) => {
         if (!pickerPopover || pickerPopover.style.display === "none") return;
-        if (pickerPopover.contains(event.target)) return;
-        if (visitedSwatch && visitedSwatch.contains(event.target)) return;
-        if (partialSwatch && partialSwatch.contains(event.target)) return;
-        pickerPopover.style.display = "none";
-        activeTarget = null;
-      },
-      true
-    );
+      if (pickerPopover.contains(event.target)) return;
+      if (visitedSwatch && visitedSwatch.contains(event.target)) return;
+      if (partialSwatch && partialSwatch.contains(event.target)) return;
+      if (badgeSwatch && badgeSwatch.contains(event.target)) return;
+      pickerPopover.style.display = "none";
+      activeTarget = null;
+    },
+    true
+  );
 
     return picker;
   }
@@ -181,8 +280,12 @@
     if (!swatchEl) return;
     swatchEl.addEventListener("click", (event) => {
       event.stopPropagation();
-      const color =
-        targetKey === "match" ? colorsState.matchHexColor : colorsState.partialHexColor;
+      let color = colorsState.matchHexColor;
+      if (targetKey === "partial") {
+        color = colorsState.partialHexColor;
+      } else if (targetKey === "badge") {
+        color = stripAlpha(badgeState.downloadBadgeColor);
+      }
       showPickerFor(targetKey, swatchEl, color);
     });
   }
@@ -203,12 +306,28 @@
     });
   }
 
-  loadColors().then(() => {
+  Promise.all([loadColors(), loadBadgeSettings()]).then(() => {
     bindSwatch(visitedSwatch, "match");
     bindSwatch(partialSwatch, "partial");
+    bindSwatch(badgeSwatch, "badge");
     bindToggle(visitedToggle, "match");
     bindToggle(partialToggle, "partial");
     bindToggle(document.getElementById("visited-border-toggle"), "matchBorder");
     bindToggle(document.getElementById("partial-border-toggle"), "partialBorder");
+    if (badgeDurationInput) {
+      badgeDurationInput.addEventListener("change", () => {
+        const seconds = normalizeBadgeDuration(
+          badgeDurationInput.value,
+          Math.max(1, Math.round(badgeState.downloadBadgeDurationMs / 1000))
+        );
+        badgeDurationInput.value = seconds;
+        saveBadgeSettings({ downloadBadgeDurationMs: seconds * 1000 });
+      });
+    }
+    if (badgeToggle) {
+      badgeToggle.addEventListener("change", (event) => {
+        saveBadgeSettings({ downloadBadgeEnabled: event.target.checked });
+      });
+    }
   });
 })();

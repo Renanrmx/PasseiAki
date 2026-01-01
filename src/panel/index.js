@@ -8,6 +8,9 @@ const settingsBtn = document.getElementById("settings-btn");
 const historyBtn = document.getElementById("history-btn");
 const partialContainer = document.getElementById("partial-container");
 const partialList = document.getElementById("partial-list");
+const downloadBadgeContainer = document.getElementById("download-badge-container");
+const downloadBadgeList = document.getElementById("download-badge-list");
+const downloadBadgeDismiss = document.getElementById("download-badge-dismiss");
 
 
 function normalizeParamsLocal(paramString) {
@@ -74,6 +77,7 @@ async function loadStats() {
 document.addEventListener("DOMContentLoaded", () => {
   applyPanelTexts();
   loadStats();
+  loadDownloadBadgeState();
 });
 
 function updateMatchStatus(url, state) {  
@@ -100,6 +104,66 @@ function updateMatchStatus(url, state) {
 }
 
 window.loadStats = loadStats;
+
+function clearDownloadBadgeList() {
+  if (!downloadBadgeList) return;
+  while (downloadBadgeList.firstChild) {
+    downloadBadgeList.removeChild(downloadBadgeList.firstChild);
+  }
+}
+
+function renderDownloadBadgeList(items, visible) {
+  if (!downloadBadgeContainer || !downloadBadgeList) return;
+  clearDownloadBadgeList();
+  if (!visible || !items || !items.length) {
+    downloadBadgeContainer.style.display = "none";
+    return;
+  }
+  items.forEach((item) => {
+    const li = document.createElement("li");
+    li.className = "entry";
+
+    const pathDiv = document.createElement("div");
+    pathDiv.className = "path";
+    if (item.hashed !== false) {
+      pathDiv.textContent = "???";
+    } else {
+      pathDiv.textContent = buildAddressFromRecord(item);
+    }
+
+    const meta = document.createElement("div");
+    meta.className = "download-meta";
+    const parts = formatDateParts(item.lastVisited);
+    const dateText = t("lastVisitWithDate", `${parts.date} ${parts.time}`);
+    const metaText = document.createElement("span");
+    metaText.textContent = dateText;
+
+    const badge = document.createElement("span");
+    badge.className = "download-label";
+    badge.textContent = t("downloadLabel");
+
+    meta.appendChild(metaText);
+    meta.appendChild(badge);
+
+    li.appendChild(pathDiv);
+    li.appendChild(meta);
+    downloadBadgeList.appendChild(li);
+  });
+  downloadBadgeContainer.style.display = "block";
+}
+
+async function loadDownloadBadgeState() {
+  try {
+    const res = await api.runtime.sendMessage({ type: "GET_DOWNLOAD_BADGE_STATE" });
+    if (res && res.ok) {
+      renderDownloadBadgeList(res.items || [], res.visible);
+    } else {
+      renderDownloadBadgeList([], false);
+    }
+  } catch (error) {
+    renderDownloadBadgeList([], false);
+  }
+}
 
 async function loadPartialMatches(url) {
   if (!partialContainer || !partialList) return;
@@ -239,5 +303,23 @@ if (historyBtn) {
       }
     }
     window.close();
+  });
+}
+
+if (api.runtime && api.runtime.onMessage) {
+  api.runtime.onMessage.addListener((message) => {
+    if (message && message.type === "DOWNLOAD_BADGE_UPDATED") {
+      renderDownloadBadgeList(message.items || [], message.visible);
+    }
+  });
+}
+
+if (downloadBadgeDismiss) {
+  downloadBadgeDismiss.addEventListener("click", async () => {
+    try {
+      await api.runtime.sendMessage({ type: "DISMISS_DOWNLOAD_BADGE" });
+    } catch (error) {
+      // ignore dismiss errors
+    }
   });
 }

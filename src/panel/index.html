@@ -16,6 +16,9 @@
         margin: 0;
         padding: 12px;
         min-width: 320px;
+        max-width: 500px;
+        width: 100%;
+        box-sizing: border-box;
         background: linear-gradient(135deg, #0b0c10 0%, #1f2833 55%, #0b1727 100%);
       }
 
@@ -132,6 +135,52 @@
         gap: 10px;
         font-size: 11px;
         color: #c5d6e2;
+      }
+
+      .download-badge-container {
+        margin-top: 10px;
+      }
+
+      .download-badge-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+      }
+
+      .download-badge-dismiss {
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        background: rgba(255, 255, 255, 0.06);
+        color: #e8f1f2;
+        padding: 4px 8px;
+        border-radius: 6px;
+        font-size: 11px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .download-badge-dismiss:hover {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: rgba(255, 255, 255, 0.3);
+      }
+
+      .download-meta {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 11px;
+        color: #c5d6e2;
+      }
+
+      .download-label {
+        background: #8b6ee8;
+        color: #ffffff;
+        font-weight: 600;
+        font-size: 11px;
+        padding: 2px 6px;
+        border-radius: 999px;
       }
 
       footer {
@@ -291,7 +340,16 @@
         </button>
       </div>
     </footer>
+
+    <div class="download-badge-container" id="download-badge-container" style="display:none;">
+      <div class="download-badge-header">
+        <h2 data-i18n="downloadListTitle">Downloads já acessados</h2>
+        <button class="download-badge-dismiss" id="download-badge-dismiss" data-i18n="downloadBadgeDismiss">Ignorar</button>
+      </div>
+      <ul id="download-badge-list"></ul>
+    </div>
     <script src="i18n.js"></script>
+    <script src="../worker/background.utils.js"></script>
     <script src="index.js"></script>
   </body>
 </html>

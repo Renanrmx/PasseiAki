@@ -4,6 +4,9 @@ let dbWriteBlocked = false;
 
 const DEFAULT_MATCH_HEX_COLOR = "#0eb378";
 const DEFAULT_PARTIAL_HEX_COLOR = "#81c700";
+const DEFAULT_DOWNLOAD_BADGE_COLOR = "#0e9a69ff";
+const DEFAULT_DOWNLOAD_BADGE_DURATION_MS = 60000;
+const DEFAULT_DOWNLOAD_BADGE_ENABLED = true;
 
 // Fallback for environments where IndexedDB writes are blocked
 const memoryVisits = new Map();
@@ -458,6 +461,24 @@ function normalizeHexColor(value, fallback) {
   return cleaned.startsWith("#") ? cleaned : `#${cleaned}`;
 }
 
+function normalizeBadgeColor(value, fallback) {
+  if (typeof value !== "string") return fallback;
+  const cleaned = value.trim().toLowerCase();
+  const match = cleaned.match(/^#?[0-9a-f]{6}([0-9a-f]{2})?$/);
+  if (!match) return fallback;
+  let hex = cleaned.startsWith("#") ? cleaned : `#${cleaned}`;
+  if (hex.length === 7) {
+    hex += "ff";
+  }
+  return hex;
+}
+
+function normalizeBadgeDurationMs(value, fallback) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed <= 0) return fallback;
+  return Math.round(parsed);
+}
+
 async function getLinkColors() {
   const matchColorEntry = await readMetaEntry("matchHexColor");
   const partialColorEntry = await readMetaEntry("partialHexColor");
@@ -532,6 +553,61 @@ async function setLinkColors(colors = {}) {
     { key: "partialTextEnabled", value: next.partialTextEnabled },
     { key: "matchBorderEnabled", value: next.matchBorderEnabled },
     { key: "partialBorderEnabled", value: next.partialBorderEnabled }
+  ]);
+
+  return next;
+}
+
+async function getDownloadBadgeSettings() {
+  const colorEntry = await readMetaEntry("downloadBadgeColor");
+  const durationEntry = await readMetaEntry("downloadBadgeDurationMs");
+  const enabledEntry = await readMetaEntry("downloadBadgeEnabled");
+
+  const downloadBadgeColor = normalizeBadgeColor(
+    colorEntry && colorEntry.value,
+    DEFAULT_DOWNLOAD_BADGE_COLOR
+  );
+  const downloadBadgeDurationMs = normalizeBadgeDurationMs(
+    durationEntry && durationEntry.value,
+    DEFAULT_DOWNLOAD_BADGE_DURATION_MS
+  );
+  const downloadBadgeEnabled =
+    enabledEntry && typeof enabledEntry.value === "boolean"
+      ? enabledEntry.value
+      : DEFAULT_DOWNLOAD_BADGE_ENABLED;
+
+  if (!colorEntry || !durationEntry || !enabledEntry) {
+    await writeMetaEntries([
+      { key: "downloadBadgeColor", value: downloadBadgeColor },
+      { key: "downloadBadgeDurationMs", value: downloadBadgeDurationMs },
+      { key: "downloadBadgeEnabled", value: downloadBadgeEnabled }
+    ]);
+  }
+
+  return { downloadBadgeColor, downloadBadgeDurationMs, downloadBadgeEnabled };
+}
+
+async function setDownloadBadgeSettings(settings = {}) {
+  const current = await getDownloadBadgeSettings();
+  const next = {
+    downloadBadgeColor: normalizeBadgeColor(
+      settings.downloadBadgeColor,
+      current.downloadBadgeColor
+    ),
+    downloadBadgeDurationMs: normalizeBadgeDurationMs(
+      settings.downloadBadgeDurationMs,
+      current.downloadBadgeDurationMs
+    ),
+    downloadBadgeEnabled:
+      typeof settings.downloadBadgeEnabled === "boolean"
+        ? settings.downloadBadgeEnabled
+        : current.downloadBadgeEnabled
+  };
+
+  await writeMetaEntries([
+    { key: "downloadBadgeColor", value: next.downloadBadgeColor },
+    { key: "downloadBadgeDurationMs", value: next.downloadBadgeDurationMs },
+    { key: "downloadBadgeEnabled", value: next.downloadBadgeEnabled }
   ]);
 
   return next;
