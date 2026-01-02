@@ -24,7 +24,13 @@ function applyI18n(root = document) {
     const message = t(key);
     if (!message) return;
     if (targetAttr) {
-      el.setAttribute(targetAttr, message);
+      targetAttr
+        .split(",")
+        .map((attr) => attr.trim())
+        .filter(Boolean)
+        .forEach((attr) => {
+          el.setAttribute(attr, message);
+        });
     } else if (el.tagName === "INPUT" && el.type === "password") {
       el.setAttribute("placeholder", message);
     } else {
