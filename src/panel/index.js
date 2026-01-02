@@ -11,6 +11,7 @@ const partialList = document.getElementById("partial-list");
 const downloadBadgeContainer = document.getElementById("download-badge-container");
 const downloadBadgeList = document.getElementById("download-badge-list");
 const downloadBadgeDismiss = document.getElementById("download-badge-dismiss");
+const supportBtn = document.getElementById("support-btn");
 
 
 function normalizeParamsLocal(paramString) {
@@ -321,5 +322,22 @@ if (downloadBadgeDismiss) {
     } catch (error) {
       // ignore dismiss errors
     }
+  });
+}
+
+if (supportBtn) {
+  supportBtn.addEventListener("click", async (event) => {
+    event.preventDefault();
+    const url = supportBtn.getAttribute("href");
+    if (!url) {
+      window.close();
+      return;
+    }
+    try {
+      await api?.tabs?.create?.({ url });
+    } catch (error) {
+      window.open(url, "_blank", "noopener");
+    }
+    window.close();
   });
 }
