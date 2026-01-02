@@ -183,6 +183,49 @@
         border-radius: 999px;
       }
 
+      .support-button {
+        display: flex;
+        justify-content: flex-end;
+        width: 100%;
+        position: relative;
+      }
+
+      .support-button a {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        box-sizing: border-box;
+      }
+
+      .support-button img {
+        height: 32px;
+        width: 116px;
+        display: block;
+      }
+
+      .support-tooltip {
+        position: absolute;
+        bottom: calc(100% + 6px);
+        right: 0;
+        background: rgba(15, 24, 38, 0.98);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        color: #e8f1f2;
+        font-size: 11px;
+        padding: 4px 8px;
+        border-radius: 6px;
+        white-space: nowrap;
+        opacity: 0;
+        transform: translateY(4px);
+        transition: opacity 0.15s ease, transform 0.15s ease;
+        pointer-events: none;
+        z-index: 2;
+      }
+
+      .support-button:hover .support-tooltip {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
       footer {
         margin-top: 12px;
         font-size: 11px;
@@ -213,10 +256,19 @@
         margin-top: 8px;
       }
 
-      .footer-actions {
+      .menu-actions {
         display: flex;
-        justify-content: center;
+        justify-content: flex-start;
         gap: 8px;
+        width: 100%;
+      }
+
+      .menu-row {
+        margin-top: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
         width: 100%;
       }
 
@@ -240,9 +292,45 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        gap: 6px;
-        min-width: 120px;
+        gap: 3px;
+        min-width: 116px;
+        min-height: 32px;
         padding-bottom: 8px;
+      }
+
+      .icon-btn {
+        min-width: 0;
+        padding: 6px;
+        border-radius: 6px;
+        line-height: 1;
+        font-size: 16px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+      }
+
+      .icon-tooltip {
+        position: absolute;
+        top: calc(100% + 6px);
+        right: 0;
+        background: rgba(15, 24, 38, 0.98);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        color: #e8f1f2;
+        font-size: 11px;
+        padding: 4px 8px;
+        border-radius: 6px;
+        white-space: nowrap;
+        opacity: 0;
+        transform: translateY(-4px);
+        transition: opacity 0.15s ease, transform 0.15s ease;
+        pointer-events: none;
+        z-index: 2;
+      }
+
+      .icon-btn:hover .icon-tooltip {
+        opacity: 1;
+        transform: translateY(0);
       }
 
       .overlay {
@@ -308,7 +396,19 @@
   <body>
     <header class="header">
       <h1 data-i18n="extensionName">Passei Aki</h1>
-      <span class="match-inline" id="match-status-inline"></span>
+      
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span class="match-inline" id="match-status-inline"></span>
+        <button
+          class="btn icon-btn"
+          id="settings-btn"
+          data-i18n="settingsPageTitle"
+          data-i18n-attr="title,aria-label"
+        >
+          <span aria-hidden="true">⚙️</span>
+          <span class="icon-tooltip" data-i18n="settingsPageTitle">Configurações</span>
+        </button>
+      </div>
     </header>
 
     <div class="summary">
@@ -328,18 +428,20 @@
       <ul id="partial-list"></ul>
     </div>
 
-    <footer>
-      <div class="footer-actions">
+    <div class="menu-row">
+      <div class="menu-actions">
         <button class="btn default-btn" id="history-btn">
           <span aria-hidden="true">🕒</span>
           <span data-i18n="historyPageTitle">Últimos acessos</span>
         </button>
-        <button class="btn default-btn" id="settings-btn">
-          <span aria-hidden="true">⚙️</span>
-          <span data-i18n="settingsPageTitle">Configurações</span>
-        </button>
       </div>
-    </footer>
+      <div class="support-button">
+        <span class="support-tooltip" data-i18n="supportProjectTooltip">Apoiar este projeto</span>
+        <a href="https://www.buymeacoffee.com/renanrmx" target="_blank" rel="noreferrer">
+          <img src="assets/buymeacoffee.png" alt="Buy Me A Coffee" />
+        </a>
+      </div>
+    </div>
 
     <div class="download-badge-container" id="download-badge-container" style="display:none;">
       <div class="download-badge-header">
@@ -348,6 +450,8 @@
       </div>
       <ul id="download-badge-list"></ul>
     </div>
+
+
     <script src="i18n.js"></script>
     <script src="../worker/background.utils.js"></script>
     <script src="index.js"></script>

@@ -84,6 +84,7 @@
   "statusFirst": { "message": "首次造訪" },
   "statusPartial": { "message": "以不同參數造訪過" },
   "statusVisited": { "message": "已造訪" },
+  "supportProjectTooltip": { "message": "支持此專案" },
   "unencryptedStatus": { "message": "連結未加密" },
   "unexpectedError": { "message": "發生未預期的錯誤：$1" },
   "visitedColorTitle": { "message": "已造訪連結的顏色" },

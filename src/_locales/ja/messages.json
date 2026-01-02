@@ -84,6 +84,7 @@
   "statusFirst": { "message": "初回訪問" },
   "statusPartial": { "message": "異なるパラメーターで訪問済み" },
   "statusVisited": { "message": "既に訪問済み" },
+  "supportProjectTooltip": { "message": "このプロジェクトを支援する" },
   "unencryptedStatus": { "message": "リンクは暗号化されていません" },
   "unexpectedError": { "message": "予期しないエラー: $1" },
   "visitedColorTitle": { "message": "訪問済みリンクの色" },

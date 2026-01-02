@@ -84,6 +84,7 @@
   "statusFirst": { "message": "Первое посещение" },
   "statusPartial": { "message": "Посещено с другим параметром" },
   "statusVisited": { "message": "Уже посещено" },
+  "supportProjectTooltip": { "message": "Поддержать этот проект" },
   "unencryptedStatus": { "message": "Ссылки не зашифрованы" },
   "unexpectedError": { "message": "Неожиданная ошибка: $1" },
   "visitedColorTitle": { "message": "Цвет посещенных ссылок" },

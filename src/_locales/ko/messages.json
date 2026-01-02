@@ -84,6 +84,7 @@
   "statusFirst": { "message": "첫 방문" },
   "statusPartial": { "message": "다른 매개변수로 방문함" },
   "statusVisited": { "message": "이미 방문함" },
+  "supportProjectTooltip": { "message": "이 프로젝트를 지원하기" },
   "unencryptedStatus": { "message": "링크가 암호화되지 않았습니다" },
   "unexpectedError": { "message": "예기치 않은 오류: $1" },
   "visitedColorTitle": { "message": "방문한 링크 색상" },

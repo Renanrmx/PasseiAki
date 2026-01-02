@@ -84,6 +84,7 @@
   "statusFirst": { "message": "पहली विजिट" },
   "statusPartial": { "message": "अलग पैरामीटर के साथ देखा गया" },
   "statusVisited": { "message": "पहले ही देखा गया" },
+  "supportProjectTooltip": { "message": "इस परियोजना का समर्थन करें" },
   "unencryptedStatus": { "message": "लिंक एन्क्रिप्टेड नहीं हैं" },
   "unexpectedError": { "message": "अनपेक्षित त्रुटि: $1" },
   "visitedColorTitle": { "message": "देखे गए लिंक का रंग" },

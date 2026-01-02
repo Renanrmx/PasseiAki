@@ -84,6 +84,7 @@
   "statusFirst": { "message": "首次访问" },
   "statusPartial": { "message": "使用不同参数访问过" },
   "statusVisited": { "message": "已访问" },
+  "supportProjectTooltip": { "message": "支持此项目" },
   "unencryptedStatus": { "message": "链接未加密" },
   "unexpectedError": { "message": "意外错误：$1" },
   "visitedColorTitle": { "message": "已访问链接的颜色" },

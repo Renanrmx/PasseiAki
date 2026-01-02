@@ -84,6 +84,7 @@
   "statusFirst": { "message": "أول زيارة" },
   "statusPartial": { "message": "تمت زيارته بمعلمة مختلفة" },
   "statusVisited": { "message": "تمت زيارته من قبل" },
+  "supportProjectTooltip": { "message": "ادعم هذا المشروع" },
   "unencryptedStatus": { "message": "روابط غير مشفرة" },
   "unexpectedError": { "message": "خطأ غير متوقع: $1" },
   "visitedColorTitle": { "message": "لون الروابط التي تم الوصول إليها" },

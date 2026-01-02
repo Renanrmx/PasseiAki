@@ -84,6 +84,7 @@
   "statusFirst": { "message": "Première visite" },
   "statusPartial": { "message": "Visité avec un paramètre différent" },
   "statusVisited": { "message": "Déjà visité" },
+  "supportProjectTooltip": { "message": "Soutenir ce projet" },
   "unencryptedStatus": { "message": "Liens non chiffrés" },
   "unexpectedError": { "message": "Erreur inattendue : $1" },
   "visitedColorTitle": { "message": "Couleur des liens visités" },
