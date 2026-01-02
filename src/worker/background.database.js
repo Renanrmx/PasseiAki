@@ -295,7 +295,7 @@ function normalizeExceptionsList(domains) {
   const result = [];
   const seen = new Set();
   domains.forEach((domain) => {
-    const cleaned = String(domain || "").replace(/;+$/g, "").trim();
+    const cleaned = String(domain || "").trim();
     const host = getHostFromInput(cleaned);
     if (!host || seen.has(host)) {
       return;
@@ -373,6 +373,13 @@ async function getExceptionsSet(storeName) {
     return state.cache;
   }
   let all = await getAllExceptions(storeName);
+  const normalized = normalizeExceptionsList(all);
+  const normalizedKey = normalized.join("\n");
+  const storedKey = Array.isArray(all) ? all.join("\n") : "";
+  if (normalized.length && normalizedKey !== storedKey) {
+    await setExceptions(storeName, normalized);
+    return getExceptionStoreState(storeName).cache || buildExceptionsKeySet(normalized);
+  }
   if (!all.length && storeName === PARTIAL_EXCEPTIONS_STORE) {
     const defaults = await getDefaultPartialExceptions();
     if (defaults.length) {
@@ -380,7 +387,7 @@ async function getExceptionsSet(storeName) {
       return getExceptionStoreState(storeName).cache || buildExceptionsKeySet(defaults);
     }
   }
-  state.cache = buildExceptionsKeySet(all);
+  state.cache = buildExceptionsKeySet(normalized);
   return state.cache;
 }
 

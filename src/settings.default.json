@@ -1,19 +1,19 @@
 {
   "encryptionEnabled": false,
-  "matchHexColor": "#0eb378",
-  "partialHexColor": "#81c700",
   "matchTextEnabled": true,
-  "partialTextEnabled": false,
   "matchBorderEnabled": false,
+  "matchHexColor": "#0eb378",
+  "partialTextEnabled": false,
   "partialBorderEnabled": false,
+  "partialHexColor": "#81c700",
+  "downloadBadgeEnabled": true,
+  "downloadBadgeDurationMs": 60000,
+  "downloadBadgeColor": "#0e9a69ff",
   "partialExceptions": [
     "google.com",
     "bing.com",
     "baidu.com",
     "yandex.com",
     "duckduckgo.com"
-  ],
-  "downloadBadgeColor": "#0e9a69ff",
-  "downloadBadgeDurationMs": 60000,
-  "downloadBadgeEnabled": true
+  ]
 }

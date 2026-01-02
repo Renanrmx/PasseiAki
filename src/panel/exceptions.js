@@ -7,7 +7,7 @@
     const lines = text.split(/\r?\n/);
     const domains = [];
     lines.forEach((line) => {
-      const cleaned = line.replace(/;+$/g, "").trim();
+      const cleaned = line.trim();
       if (!cleaned) {
         return;
       }
@@ -20,7 +20,7 @@
     if (!Array.isArray(domains) || domains.length === 0) {
       return "";
     }
-    return domains.map((domain) => `${domain};`).join("\n");
+    return domains.map((domain) => String(domain)).join("\n");
   }
 
   function setupExceptionsTextarea(config) {
