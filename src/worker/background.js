@@ -469,7 +469,10 @@ async function upsertVisit(urlString, options = {}) {
   await putVisit(record);
   try {
     if (api.runtime && api.runtime.sendMessage) {
-      api.runtime.sendMessage({ type: "HISTORY_UPDATED" });
+      const result = api.runtime.sendMessage({ type: "HISTORY_UPDATED" });
+      if (result && typeof result.catch === "function") {
+        result.catch(() => {});
+      }
     }
   } catch (error) {
     // ignore broadcast errors
