@@ -2,9 +2,10 @@ const api = typeof browser !== "undefined" ? browser : chrome;
 const actionApi = api.action || api.browserAction;
 
 const DB_NAME = "passeiAki";
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const VISITS_STORE = "visits";
 const META_STORE = "meta";
+const PARTIAL_EXCEPTIONS_STORE = "exceptions";
 const META_PEPPER_KEY = "pepper";
 
 const SUPPORTED_PROTOCOLS = new Set(["http:", "https:"]);
@@ -254,6 +255,43 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
       }));
     }
 
+    if (message.type === "GET_PARTIAL_EXCEPTIONS") {
+      return (async () => {
+        const items = await getAllPartialExceptions();
+        return { ok: true, items };
+      })().catch((error) => ({
+        ok: false,
+        error: error && error.message ? error.message : String(error)
+      }));
+    }
+
+    if (message.type === "SET_PARTIAL_EXCEPTIONS") {
+      return (async () => {
+        const items = await setPartialExceptions(message.items || []);
+        try {
+          if (api.tabs && api.tabs.query) {
+            api.tabs.query({}, (tabs) => {
+              tabs.forEach((tab) => {
+                if (!tab || typeof tab.id === "undefined") return;
+                try {
+                  api.tabs.sendMessage(tab.id, { type: "REFRESH_HIGHLIGHT" });
+                } catch (error) {
+                  // ignore per-tab errors
+                }
+              });
+            });
+          }
+        } catch (error) {
+          // ignore broadcast error
+        }
+        refreshAllTabsMatchState();
+        return { ok: true, items };
+      })().catch((error) => ({
+        ok: false,
+        error: error && error.message ? error.message : String(error)
+      }));
+    }
+
     if (message.type === "GET_DOWNLOAD_BADGE_STATE") {
       return (async () => {
         const settings = downloadBadgeSettingsCache || (await getDownloadBadgeSettings());
@@ -423,6 +461,36 @@ async function setActionState(tabId, state) {
     });
   } catch (error) {
     console.warn("The icon could not be updated:", error);
+  }
+}
+
+async function refreshAllTabsMatchState() {
+  if (!api.tabs || !api.tabs.query) {
+    return;
+  }
+  try {
+    const tabs = await api.tabs.query({});
+    for (const tab of tabs) {
+      if (!tab || typeof tab.id === "undefined" || !tab.url) {
+        continue;
+      }
+      const fingerprint = await computeFingerprint(tab.url);
+      if (!fingerprint) {
+        await setActionState(tab.id, MATCH_STATE.none);
+        continue;
+      }
+      const match = await findVisitMatch(fingerprint);
+      const state = match.state || MATCH_STATE.none;
+      lastMatchStateByTab.set(tab.id, state);
+      if (state === MATCH_STATE.partial) {
+        forcedPartialByTab.add(tab.id);
+      } else {
+        forcedPartialByTab.delete(tab.id);
+      }
+      await setActionState(tab.id, state);
+    }
+  } catch (error) {
+    // ignore refresh errors
   }
 }
 

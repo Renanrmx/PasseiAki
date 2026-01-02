@@ -108,6 +108,18 @@
         opacity: 0;
         pointer-events: none;
       }
+      .exception-textarea {
+        width: 100%;
+        min-height: 90px;
+        resize: vertical;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: #e8f1f2;
+        padding: 8px 10px;
+        border-radius: 8px;
+        font-size: 12px;
+        box-sizing: border-box;
+      }
       .badge-settings {
         display: flex;
         align-items: center;
@@ -236,7 +248,7 @@
           <div aria-hidden="true" style="position:absolute; inset:2px; border-radius:4px; background:#81c700;"></div>
         </div>
       </div>
-    </div>
+    </div>    
 
     <div class="card">
       <div class="indicator-row">
@@ -279,6 +291,18 @@
           Links criptografados e mantidos localmente
         </div>
       </div>
+    </div>
+
+    <div class="card">
+      <h3 style="margin:6px 0 4px; font-size:13px; color:#c5d6e2;" data-i18n="partialExceptionsTitle">Exceções de parciais</h3>
+      <p data-i18n="partialExceptionsInfo">Cada linha terminada em ";" representa um domínio a ignorar nos parciais</p>
+      <textarea
+        id="partial-exceptions"
+        class="exception-textarea"
+        data-i18n="partialExceptionsPlaceholder"
+        data-i18n-attr="placeholder"
+        placeholder="google.com.br;"
+      ></textarea>
     </div>
 
     <div class="card">
@@ -327,5 +351,6 @@
     <script src="export.js"></script>
     <script src="import.js"></script>
     <script src="colors.js"></script>
+    <script src="exceptions.js"></script>
   </body>
 </html>

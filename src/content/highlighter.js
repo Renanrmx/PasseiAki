@@ -235,6 +235,22 @@ function scheduleScan() {
 
 function scanAndMark() {
   const urlToAnchors = collectLinks();
+  urlToAnchors.forEach((anchors) => {
+    anchors.forEach((anchor) => {
+      anchor.classList.remove(
+        VISITED_TEXT_CLASS,
+        PARTIAL_TEXT_CLASS,
+        VISITED_BORDER_CLASS,
+        PARTIAL_BORDER_CLASS
+      );
+      anchor.style.removeProperty("color");
+      anchor.style.removeProperty("text-decoration-color");
+      anchor.style.outline = "";
+      anchor.style.outlineOffset = "";
+      anchor.style.borderRadius = "";
+      delete anchor.dataset.passeiAkiVisited;
+    });
+  });
   requestVisited(urlToAnchors);
 }
 

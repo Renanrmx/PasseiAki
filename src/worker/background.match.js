@@ -118,6 +118,10 @@ async function findVisitMatch(fingerprint) {
     }
   }
 
+  if (await isPartialException(fingerprint.parts.host)) {
+    return { state: MATCH_STATE.none };
+  }
+
   // partial search: same host/path, params/fragment with intersection
   const hostCandidates = Array.from(
     new Set([fingerprint.keys.hash.host, fingerprint.keys.plain.host].filter(Boolean))
@@ -136,6 +140,9 @@ async function findVisitMatch(fingerprint) {
 }
 
 async function findPartialMatches(fingerprint, limit = 5) {
+  if (await isPartialException(fingerprint.parts.host)) {
+    return [];
+  }
   const hostCandidates = Array.from(
     new Set([fingerprint.keys.hash.host, fingerprint.keys.plain.host].filter(Boolean))
   );

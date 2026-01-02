@@ -78,6 +78,44 @@ function normalizeUrlParts(urlString) {
   }
 }
 
+const CC_TLD_SECOND_LEVELS = new Set(["com", "net", "org", "gov", "edu", "co", "ac", "ad", "nom"]);
+
+function getHostFromInput(value) {
+  if (!value) return "";
+  const trimmed = String(value).trim();
+  if (!trimmed) return "";
+  if (/^[a-z][a-z0-9+.-]*:\/\//i.test(trimmed)) {
+    try {
+      return new URL(trimmed).hostname.toLowerCase();
+    } catch (error) {
+      // fall through
+    }
+  }
+  const host = trimmed.split(/[\/?#]/)[0].toLowerCase();
+  return host.includes(":") ? host.split(":")[0] : host;
+}
+
+function getDomainKeyFromHost(host) {
+  if (!host) return "";
+  const labels = host.split(".").filter(Boolean);
+  if (labels.length === 0) return "";
+  if (labels.length === 1) return labels[0];
+  const last = labels[labels.length - 1];
+  const secondLast = labels[labels.length - 2];
+  let suffixLength = 1;
+  if (last.length === 2 && CC_TLD_SECOND_LEVELS.has(secondLast) && labels.length >= 3) {
+    suffixLength = 2;
+  }
+  const index = labels.length - suffixLength - 1;
+  return labels[index] || labels[0];
+}
+
+function getDomainKeyFromValue(value) {
+  const host = getHostFromInput(value);
+  if (!host) return "";
+  return getDomainKeyFromHost(host);
+}
+
 function buildAddressFromRecord(item) {
   const host = item.host || "";
   const path = item.path || "";

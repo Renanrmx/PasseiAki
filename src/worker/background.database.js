@@ -1,6 +1,7 @@
 let pepperKeyPromise = null;
 let dbPromise = null;
 let dbWriteBlocked = false;
+let partialExceptionsCache = null;
 
 const DEFAULT_MATCH_HEX_COLOR = "#0eb378";
 const DEFAULT_PARTIAL_HEX_COLOR = "#81c700";
@@ -11,6 +12,7 @@ const DEFAULT_DOWNLOAD_BADGE_ENABLED = true;
 // Fallback for environments where IndexedDB writes are blocked
 const memoryVisits = new Map();
 const memoryMeta = new Map();
+const memoryPartialExceptions = new Map();
 
 function isReadOnlyDbError(error) {
   if (!error) return false;
@@ -74,6 +76,9 @@ function openDatabase() {
         }
         if (!db.objectStoreNames.contains(META_STORE)) {
           db.createObjectStore(META_STORE, { keyPath: "key" });
+        }
+        if (!db.objectStoreNames.contains(PARTIAL_EXCEPTIONS_STORE)) {
+          db.createObjectStore(PARTIAL_EXCEPTIONS_STORE, { keyPath: "domain" });
         }
       } catch (error) {
         if (markDbWriteBlocked(error)) {
@@ -217,6 +222,134 @@ async function getAllMetaEntries() {
     }
     throw error;
   }
+}
+
+async function getAllPartialExceptions() {
+  if (isDbWriteBlocked()) {
+    return Array.from(memoryPartialExceptions.values()).map((entry) => entry.domain);
+  }
+  try {
+    const db = await openDatabase();
+    if (!db) {
+      return Array.from(memoryPartialExceptions.values()).map((entry) => entry.domain);
+    }
+    if (!db.objectStoreNames.contains(PARTIAL_EXCEPTIONS_STORE)) {
+      return [];
+    }
+    const tx = db.transaction(PARTIAL_EXCEPTIONS_STORE, "readonly");
+    const store = tx.objectStore(PARTIAL_EXCEPTIONS_STORE);
+    const all = [];
+
+    const cursorRequest = store.openCursor();
+    await new Promise((resolve, reject) => {
+      cursorRequest.onsuccess = (event) => {
+        const cursor = event.target.result;
+        if (cursor) {
+          if (cursor.value && cursor.value.domain) {
+            all.push(cursor.value.domain);
+          }
+          cursor.continue();
+        } else {
+          resolve();
+        }
+      };
+      cursorRequest.onerror = () => reject(cursorRequest.error);
+    });
+    await waitForTransaction(tx);
+    return all;
+  } catch (error) {
+    if (markDbWriteBlocked(error)) {
+      return Array.from(memoryPartialExceptions.values()).map((entry) => entry.domain);
+    }
+    throw error;
+  }
+}
+
+function normalizePartialExceptionsList(domains) {
+  if (!Array.isArray(domains)) return [];
+  const result = [];
+  const seen = new Set();
+  domains.forEach((domain) => {
+    const host = getHostFromInput(domain);
+    if (!host || seen.has(host)) {
+      return;
+    }
+    seen.add(host);
+    result.push(host);
+  });
+  return result;
+}
+
+function buildPartialExceptionsKeySet(domains) {
+  const set = new Set();
+  domains.forEach((domain) => {
+    const key = getDomainKeyFromValue(domain);
+    if (key) {
+      set.add(key);
+    }
+  });
+  return set;
+}
+
+async function getPartialExceptionsSet() {
+  if (partialExceptionsCache) {
+    return partialExceptionsCache;
+  }
+  const all = await getAllPartialExceptions();
+  partialExceptionsCache = buildPartialExceptionsKeySet(all);
+  return partialExceptionsCache;
+}
+
+async function setPartialExceptions(domains) {
+  const normalized = normalizePartialExceptionsList(domains);
+  if (isDbWriteBlocked()) {
+    memoryPartialExceptions.clear();
+    normalized.forEach((domain) => {
+      memoryPartialExceptions.set(domain, { domain });
+    });
+    partialExceptionsCache = buildPartialExceptionsKeySet(normalized);
+    return normalized;
+  }
+  try {
+    const db = await openDatabase();
+    if (!db) {
+      memoryPartialExceptions.clear();
+      normalized.forEach((domain) => {
+        memoryPartialExceptions.set(domain, { domain });
+      });
+      partialExceptionsCache = buildPartialExceptionsKeySet(normalized);
+      return normalized;
+    }
+    if (!db.objectStoreNames.contains(PARTIAL_EXCEPTIONS_STORE)) {
+      return normalized;
+    }
+    const tx = db.transaction(PARTIAL_EXCEPTIONS_STORE, "readwrite");
+    const store = tx.objectStore(PARTIAL_EXCEPTIONS_STORE);
+    store.clear();
+    normalized.forEach((domain) => {
+      store.put({ domain });
+    });
+    await waitForTransaction(tx);
+    partialExceptionsCache = buildPartialExceptionsKeySet(normalized);
+    return normalized;
+  } catch (error) {
+    if (markDbWriteBlocked(error)) {
+      memoryPartialExceptions.clear();
+      normalized.forEach((domain) => {
+        memoryPartialExceptions.set(domain, { domain });
+      });
+      partialExceptionsCache = buildPartialExceptionsKeySet(normalized);
+      return normalized;
+    }
+    throw error;
+  }
+}
+
+async function isPartialException(value) {
+  const key = getDomainKeyFromValue(value);
+  if (!key) return false;
+  const set = await getPartialExceptionsSet();
+  return set.has(key);
 }
 
 async function getVisitById(id) {
@@ -409,6 +542,8 @@ async function clearAllData() {
   if (isDbWriteBlocked()) {
     memoryVisits.clear();
     memoryMeta.clear();
+    memoryPartialExceptions.clear();
+    partialExceptionsCache = null;
     return;
   }
 
@@ -417,16 +552,27 @@ async function clearAllData() {
     if (!db) {
       memoryVisits.clear();
       memoryMeta.clear();
+      memoryPartialExceptions.clear();
+      partialExceptionsCache = null;
       return;
     }
-    const tx = db.transaction([VISITS_STORE, META_STORE], "readwrite");
+    const stores = [VISITS_STORE, META_STORE];
+    if (db.objectStoreNames.contains(PARTIAL_EXCEPTIONS_STORE)) {
+      stores.push(PARTIAL_EXCEPTIONS_STORE);
+    }
+    const tx = db.transaction(stores, "readwrite");
     tx.objectStore(VISITS_STORE).clear();
     tx.objectStore(META_STORE).clear();
+    if (db.objectStoreNames.contains(PARTIAL_EXCEPTIONS_STORE)) {
+      tx.objectStore(PARTIAL_EXCEPTIONS_STORE).clear();
+    }
     await waitForTransaction(tx);
   } catch (error) {
     if (markDbWriteBlocked(error)) {
       memoryVisits.clear();
       memoryMeta.clear();
+      memoryPartialExceptions.clear();
+      partialExceptionsCache = null;
       return;
     }
     throw error;
