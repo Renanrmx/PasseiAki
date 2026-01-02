@@ -1,0 +1,19 @@
+{
+  "encryptionEnabled": false,
+  "matchHexColor": "#0eb378",
+  "partialHexColor": "#81c700",
+  "matchTextEnabled": true,
+  "partialTextEnabled": false,
+  "matchBorderEnabled": false,
+  "partialBorderEnabled": false,
+  "partialExceptions": [
+    "google.com",
+    "bing.com",
+    "baidu.com",
+    "yandex.com",
+    "duckduckgo.com"
+  ],
+  "downloadBadgeColor": "#0e9a69ff",
+  "downloadBadgeDurationMs": 60000,
+  "downloadBadgeEnabled": true
+}

@@ -1,12 +1,7 @@
 let pepperKeyPromise = null;
 let dbPromise = null;
 let dbWriteBlocked = false;
-
-const DEFAULT_MATCH_HEX_COLOR = "#0eb378";
-const DEFAULT_PARTIAL_HEX_COLOR = "#81c700";
-const DEFAULT_DOWNLOAD_BADGE_COLOR = "#0e9a69ff";
-const DEFAULT_DOWNLOAD_BADGE_DURATION_MS = 60000;
-const DEFAULT_DOWNLOAD_BADGE_ENABLED = true;
+let defaultSettingsPromise = null;
 
 // Fallback for environments where IndexedDB writes are blocked
 const memoryVisits = new Map();
@@ -24,6 +19,45 @@ function resetExceptionStoreState(storeName) {
   const state = getExceptionStoreState(storeName);
   state.memory.clear();
   state.cache = null;
+}
+
+function getRuntimeApi() {
+  if (typeof api !== "undefined" && api?.runtime?.getURL) {
+    return api;
+  }
+  if (typeof browser !== "undefined" && browser?.runtime?.getURL) {
+    return browser;
+  }
+  if (typeof chrome !== "undefined" && chrome?.runtime?.getURL) {
+    return chrome;
+  }
+  return null;
+}
+
+async function getDefaultSettings() {
+  if (defaultSettingsPromise) {
+    return defaultSettingsPromise;
+  }
+
+  defaultSettingsPromise = (async () => {
+    try {
+      const runtimeApi = getRuntimeApi();
+      if (!runtimeApi?.runtime?.getURL || typeof fetch !== "function") {
+        return {};
+      }
+      const url = runtimeApi.runtime.getURL("settings.default.json");
+      const response = await fetch(url);
+      if (!response.ok) {
+        return {};
+      }
+      const payload = await response.json();
+      return payload && typeof payload === "object" ? payload : {};
+    } catch (error) {
+      return {};
+    }
+  })();
+
+  return defaultSettingsPromise;
 }
 
 function isReadOnlyDbError(error) {
@@ -240,7 +274,16 @@ async function getAllMetaEntries() {
 }
 
 async function getAllPartialExceptions() {
-  return getAllExceptions(PARTIAL_EXCEPTIONS_STORE);
+  const stored = await getAllExceptions(PARTIAL_EXCEPTIONS_STORE);
+  if (stored.length) {
+    return stored;
+  }
+  const defaults = await getDefaultPartialExceptions();
+  if (!defaults.length) {
+    return stored;
+  }
+  await setExceptions(PARTIAL_EXCEPTIONS_STORE, defaults);
+  return defaults;
 }
 
 async function getAllMatchExceptions() {
@@ -252,7 +295,8 @@ function normalizeExceptionsList(domains) {
   const result = [];
   const seen = new Set();
   domains.forEach((domain) => {
-    const host = getHostFromInput(domain);
+    const cleaned = String(domain || "").replace(/;+$/g, "").trim();
+    const host = getHostFromInput(cleaned);
     if (!host || seen.has(host)) {
       return;
     }
@@ -260,6 +304,14 @@ function normalizeExceptionsList(domains) {
     result.push(host);
   });
   return result;
+}
+
+async function getDefaultPartialExceptions() {
+  const defaults = await getDefaultSettings();
+  if (!defaults || !Array.isArray(defaults.partialExceptions)) {
+    return [];
+  }
+  return normalizeExceptionsList(defaults.partialExceptions);
 }
 
 function buildExceptionsKeySet(domains) {
@@ -320,7 +372,14 @@ async function getExceptionsSet(storeName) {
   if (state.cache) {
     return state.cache;
   }
-  const all = await getAllExceptions(storeName);
+  let all = await getAllExceptions(storeName);
+  if (!all.length && storeName === PARTIAL_EXCEPTIONS_STORE) {
+    const defaults = await getDefaultPartialExceptions();
+    if (defaults.length) {
+      await setExceptions(storeName, defaults);
+      return getExceptionStoreState(storeName).cache || buildExceptionsKeySet(defaults);
+    }
+  }
   state.cache = buildExceptionsKeySet(all);
   return state.cache;
 }
@@ -638,11 +697,12 @@ async function getEncryptionEnabled() {
   }
 
   const stored = await readMetaEntry("encryptionEnabled");
+  const defaults = await getDefaultSettings();
 
   if (stored && typeof stored.value === "boolean") {
     encryptionEnabledCache = stored.value;
   } else {
-    encryptionEnabledCache = false;
+    encryptionEnabledCache = defaults.encryptionEnabled === true;
   }
   return encryptionEnabledCache;
 }
@@ -685,24 +745,32 @@ async function getLinkColors() {
   const partialTextEnabledEntry = await readMetaEntry("partialTextEnabled");
   const matchBorderEnabledEntry = await readMetaEntry("matchBorderEnabled");
   const partialBorderEnabledEntry = await readMetaEntry("partialBorderEnabled");
+  const defaults = await getDefaultSettings();
 
   const matchHexColor = normalizeHexColor(
     matchColorEntry && matchColorEntry.value,
-    DEFAULT_MATCH_HEX_COLOR
+    defaults.matchHexColor
   );
   const partialHexColor = normalizeHexColor(
     partialColorEntry && partialColorEntry.value,
-    DEFAULT_PARTIAL_HEX_COLOR
+    defaults.partialHexColor
   );
-  const matchTextEnabled = matchTextEnabledEntry && typeof matchTextEnabledEntry.value === "boolean" ? matchTextEnabledEntry.value : true;
+  const matchTextEnabled =
+    matchTextEnabledEntry && typeof matchTextEnabledEntry.value === "boolean"
+      ? matchTextEnabledEntry.value
+      : defaults.matchTextEnabled;
   const partialTextEnabled =
     partialTextEnabledEntry && typeof partialTextEnabledEntry.value === "boolean"
       ? partialTextEnabledEntry.value
-      : false;
+      : defaults.partialTextEnabled;
   const matchBorderEnabled =
-    matchBorderEnabledEntry && typeof matchBorderEnabledEntry.value === "boolean" ? matchBorderEnabledEntry.value : false;
+    matchBorderEnabledEntry && typeof matchBorderEnabledEntry.value === "boolean"
+      ? matchBorderEnabledEntry.value
+      : defaults.matchBorderEnabled;
   const partialBorderEnabled =
-    partialBorderEnabledEntry && typeof partialBorderEnabledEntry.value === "boolean" ? partialBorderEnabledEntry.value : false;
+    partialBorderEnabledEntry && typeof partialBorderEnabledEntry.value === "boolean"
+      ? partialBorderEnabledEntry.value
+      : defaults.partialBorderEnabled;
 
   // persist defaults on first fetch to avoid undefined in future runs
   if (!matchColorEntry || !partialColorEntry || !matchTextEnabledEntry || !partialTextEnabledEntry) {
@@ -761,19 +829,20 @@ async function getDownloadBadgeSettings() {
   const colorEntry = await readMetaEntry("downloadBadgeColor");
   const durationEntry = await readMetaEntry("downloadBadgeDurationMs");
   const enabledEntry = await readMetaEntry("downloadBadgeEnabled");
+  const defaults = await getDefaultSettings();
 
   const downloadBadgeColor = normalizeBadgeColor(
     colorEntry && colorEntry.value,
-    DEFAULT_DOWNLOAD_BADGE_COLOR
+    defaults.downloadBadgeColor
   );
   const downloadBadgeDurationMs = normalizeBadgeDurationMs(
     durationEntry && durationEntry.value,
-    DEFAULT_DOWNLOAD_BADGE_DURATION_MS
+    defaults.downloadBadgeDurationMs
   );
   const downloadBadgeEnabled =
     enabledEntry && typeof enabledEntry.value === "boolean"
       ? enabledEntry.value
-      : DEFAULT_DOWNLOAD_BADGE_ENABLED;
+      : defaults.downloadBadgeEnabled;
 
   if (!colorEntry || !durationEntry || !enabledEntry) {
     await writeMetaEntries([
