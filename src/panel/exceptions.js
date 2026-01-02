@@ -1,12 +1,6 @@
 (() => {
   const apiExceptions =
     window.apiExport || (window.apiExport = typeof browser !== "undefined" ? browser : chrome);
-  const textarea = document.getElementById("partial-exceptions");
-  if (!textarea) {
-    return;
-  }
-
-  let saveTimer = null;
 
   function parseDomains(text) {
     if (!text) return [];
@@ -29,41 +23,57 @@
     return domains.map((domain) => `${domain};`).join("\n");
   }
 
-  async function loadExceptions() {
-    try {
-      const res = await apiExceptions.runtime.sendMessage({ type: "GET_PARTIAL_EXCEPTIONS" });
-      if (res && res.ok) {
-        textarea.value = formatDomains(res.items || []);
+  function setupExceptionsTextarea(config) {
+    const textarea = document.getElementById(config.id);
+    if (!textarea) {
+      return;
+    }
+
+    let saveTimer = null;
+
+    async function loadExceptions() {
+      try {
+        const res = await apiExceptions.runtime.sendMessage({ type: config.getType });
+        if (res && res.ok) {
+          textarea.value = formatDomains(res.items || []);
+        }
+      } catch (error) {
+        // ignore load errors
       }
-    } catch (error) {
-      // ignore load errors
     }
+
+    async function saveExceptions() {
+      try {
+        const domains = parseDomains(textarea.value);
+        await apiExceptions.runtime.sendMessage({
+          type: config.setType,
+          items: domains
+        });
+      } catch (error) {
+        // ignore save errors
+      }
+    }
+
+    function scheduleSave() {
+      if (saveTimer) {
+        clearTimeout(saveTimer);
+      }
+      saveTimer = setTimeout(() => {
+        saveTimer = null;
+        saveExceptions();
+      }, 400);
+    }
+
+    textarea.addEventListener("input", scheduleSave);
+    textarea.addEventListener("blur", saveExceptions);
+
+    loadExceptions();
   }
 
-  async function saveExceptions() {
-    try {
-      const domains = parseDomains(textarea.value);
-      await apiExceptions.runtime.sendMessage({
-        type: "SET_PARTIAL_EXCEPTIONS",
-        items: domains
-      });
-    } catch (error) {
-      // ignore save errors
-    }
-  }
+  const configs = [
+    { id: "match-exceptions", getType: "GET_MATCH_EXCEPTIONS", setType: "SET_MATCH_EXCEPTIONS" },
+    { id: "partial-exceptions", getType: "GET_PARTIAL_EXCEPTIONS", setType: "SET_PARTIAL_EXCEPTIONS" }
+  ];
 
-  function scheduleSave() {
-    if (saveTimer) {
-      clearTimeout(saveTimer);
-    }
-    saveTimer = setTimeout(() => {
-      saveTimer = null;
-      saveExceptions();
-    }, 400);
-  }
-
-  textarea.addEventListener("input", scheduleSave);
-  textarea.addEventListener("blur", saveExceptions);
-
-  loadExceptions();
+  configs.forEach(setupExceptionsTextarea);
 })();

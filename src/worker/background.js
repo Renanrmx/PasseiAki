@@ -5,7 +5,8 @@ const DB_NAME = "passeiAki";
 const DB_VERSION = 2;
 const VISITS_STORE = "visits";
 const META_STORE = "meta";
-const PARTIAL_EXCEPTIONS_STORE = "exceptions";
+const PARTIAL_EXCEPTIONS_STORE = "partial_exceptions";
+const MATCH_EXCEPTIONS_STORE = "match_exceptions";
 const META_PEPPER_KEY = "pepper";
 
 const SUPPORTED_PROTOCOLS = new Set(["http:", "https:"]);
@@ -268,6 +269,43 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.type === "SET_PARTIAL_EXCEPTIONS") {
       return (async () => {
         const items = await setPartialExceptions(message.items || []);
+        try {
+          if (api.tabs && api.tabs.query) {
+            api.tabs.query({}, (tabs) => {
+              tabs.forEach((tab) => {
+                if (!tab || typeof tab.id === "undefined") return;
+                try {
+                  api.tabs.sendMessage(tab.id, { type: "REFRESH_HIGHLIGHT" });
+                } catch (error) {
+                  // ignore per-tab errors
+                }
+              });
+            });
+          }
+        } catch (error) {
+          // ignore broadcast error
+        }
+        refreshAllTabsMatchState();
+        return { ok: true, items };
+      })().catch((error) => ({
+        ok: false,
+        error: error && error.message ? error.message : String(error)
+      }));
+    }
+
+    if (message.type === "GET_MATCH_EXCEPTIONS") {
+      return (async () => {
+        const items = await getAllMatchExceptions();
+        return { ok: true, items };
+      })().catch((error) => ({
+        ok: false,
+        error: error && error.message ? error.message : String(error)
+      }));
+    }
+
+    if (message.type === "SET_MATCH_EXCEPTIONS") {
+      return (async () => {
+        const items = await setMatchExceptions(message.items || []);
         try {
           if (api.tabs && api.tabs.query) {
             api.tabs.query({}, (tabs) => {

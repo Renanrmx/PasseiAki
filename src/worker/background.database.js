@@ -1,7 +1,6 @@
 let pepperKeyPromise = null;
 let dbPromise = null;
 let dbWriteBlocked = false;
-let partialExceptionsCache = null;
 
 const DEFAULT_MATCH_HEX_COLOR = "#0eb378";
 const DEFAULT_PARTIAL_HEX_COLOR = "#81c700";
@@ -12,7 +11,20 @@ const DEFAULT_DOWNLOAD_BADGE_ENABLED = true;
 // Fallback for environments where IndexedDB writes are blocked
 const memoryVisits = new Map();
 const memoryMeta = new Map();
-const memoryPartialExceptions = new Map();
+const exceptionStores = {};
+
+function getExceptionStoreState(storeName) {
+  if (!exceptionStores[storeName]) {
+    exceptionStores[storeName] = { memory: new Map(), cache: null };
+  }
+  return exceptionStores[storeName];
+}
+
+function resetExceptionStoreState(storeName) {
+  const state = getExceptionStoreState(storeName);
+  state.memory.clear();
+  state.cache = null;
+}
 
 function isReadOnlyDbError(error) {
   if (!error) return false;
@@ -79,6 +91,9 @@ function openDatabase() {
         }
         if (!db.objectStoreNames.contains(PARTIAL_EXCEPTIONS_STORE)) {
           db.createObjectStore(PARTIAL_EXCEPTIONS_STORE, { keyPath: "domain" });
+        }
+        if (!db.objectStoreNames.contains(MATCH_EXCEPTIONS_STORE)) {
+          db.createObjectStore(MATCH_EXCEPTIONS_STORE, { keyPath: "domain" });
         }
       } catch (error) {
         if (markDbWriteBlocked(error)) {
@@ -225,19 +240,54 @@ async function getAllMetaEntries() {
 }
 
 async function getAllPartialExceptions() {
+  return getAllExceptions(PARTIAL_EXCEPTIONS_STORE);
+}
+
+async function getAllMatchExceptions() {
+  return getAllExceptions(MATCH_EXCEPTIONS_STORE);
+}
+
+function normalizeExceptionsList(domains) {
+  if (!Array.isArray(domains)) return [];
+  const result = [];
+  const seen = new Set();
+  domains.forEach((domain) => {
+    const host = getHostFromInput(domain);
+    if (!host || seen.has(host)) {
+      return;
+    }
+    seen.add(host);
+    result.push(host);
+  });
+  return result;
+}
+
+function buildExceptionsKeySet(domains) {
+  const set = new Set();
+  domains.forEach((domain) => {
+    const key = getDomainKeyFromValue(domain);
+    if (key) {
+      set.add(key);
+    }
+  });
+  return set;
+}
+
+async function getAllExceptions(storeName) {
+  const state = getExceptionStoreState(storeName);
   if (isDbWriteBlocked()) {
-    return Array.from(memoryPartialExceptions.values()).map((entry) => entry.domain);
+    return Array.from(state.memory.values()).map((entry) => entry.domain);
   }
   try {
     const db = await openDatabase();
     if (!db) {
-      return Array.from(memoryPartialExceptions.values()).map((entry) => entry.domain);
+      return Array.from(state.memory.values()).map((entry) => entry.domain);
     }
-    if (!db.objectStoreNames.contains(PARTIAL_EXCEPTIONS_STORE)) {
-      return [];
+    if (!db.objectStoreNames.contains(storeName)) {
+      return Array.from(state.memory.values()).map((entry) => entry.domain);
     }
-    const tx = db.transaction(PARTIAL_EXCEPTIONS_STORE, "readonly");
-    const store = tx.objectStore(PARTIAL_EXCEPTIONS_STORE);
+    const tx = db.transaction(storeName, "readonly");
+    const store = tx.objectStore(storeName);
     const all = [];
 
     const cursorRequest = store.openCursor();
@@ -259,97 +309,94 @@ async function getAllPartialExceptions() {
     return all;
   } catch (error) {
     if (markDbWriteBlocked(error)) {
-      return Array.from(memoryPartialExceptions.values()).map((entry) => entry.domain);
+      return Array.from(state.memory.values()).map((entry) => entry.domain);
     }
     throw error;
   }
 }
 
-function normalizePartialExceptionsList(domains) {
-  if (!Array.isArray(domains)) return [];
-  const result = [];
-  const seen = new Set();
-  domains.forEach((domain) => {
-    const host = getHostFromInput(domain);
-    if (!host || seen.has(host)) {
-      return;
-    }
-    seen.add(host);
-    result.push(host);
-  });
-  return result;
-}
-
-function buildPartialExceptionsKeySet(domains) {
-  const set = new Set();
-  domains.forEach((domain) => {
-    const key = getDomainKeyFromValue(domain);
-    if (key) {
-      set.add(key);
-    }
-  });
-  return set;
-}
-
-async function getPartialExceptionsSet() {
-  if (partialExceptionsCache) {
-    return partialExceptionsCache;
+async function getExceptionsSet(storeName) {
+  const state = getExceptionStoreState(storeName);
+  if (state.cache) {
+    return state.cache;
   }
-  const all = await getAllPartialExceptions();
-  partialExceptionsCache = buildPartialExceptionsKeySet(all);
-  return partialExceptionsCache;
+  const all = await getAllExceptions(storeName);
+  state.cache = buildExceptionsKeySet(all);
+  return state.cache;
 }
 
-async function setPartialExceptions(domains) {
-  const normalized = normalizePartialExceptionsList(domains);
+async function setExceptions(storeName, domains) {
+  const state = getExceptionStoreState(storeName);
+  const normalized = normalizeExceptionsList(domains);
   if (isDbWriteBlocked()) {
-    memoryPartialExceptions.clear();
+    state.memory.clear();
     normalized.forEach((domain) => {
-      memoryPartialExceptions.set(domain, { domain });
+      state.memory.set(domain, { domain });
     });
-    partialExceptionsCache = buildPartialExceptionsKeySet(normalized);
+    state.cache = buildExceptionsKeySet(normalized);
     return normalized;
   }
   try {
     const db = await openDatabase();
     if (!db) {
-      memoryPartialExceptions.clear();
+      state.memory.clear();
       normalized.forEach((domain) => {
-        memoryPartialExceptions.set(domain, { domain });
+        state.memory.set(domain, { domain });
       });
-      partialExceptionsCache = buildPartialExceptionsKeySet(normalized);
+      state.cache = buildExceptionsKeySet(normalized);
       return normalized;
     }
-    if (!db.objectStoreNames.contains(PARTIAL_EXCEPTIONS_STORE)) {
+    if (!db.objectStoreNames.contains(storeName)) {
+      state.memory.clear();
+      normalized.forEach((domain) => {
+        state.memory.set(domain, { domain });
+      });
+      state.cache = buildExceptionsKeySet(normalized);
       return normalized;
     }
-    const tx = db.transaction(PARTIAL_EXCEPTIONS_STORE, "readwrite");
-    const store = tx.objectStore(PARTIAL_EXCEPTIONS_STORE);
+    const tx = db.transaction(storeName, "readwrite");
+    const store = tx.objectStore(storeName);
     store.clear();
     normalized.forEach((domain) => {
       store.put({ domain });
     });
     await waitForTransaction(tx);
-    partialExceptionsCache = buildPartialExceptionsKeySet(normalized);
+    state.cache = buildExceptionsKeySet(normalized);
     return normalized;
   } catch (error) {
     if (markDbWriteBlocked(error)) {
-      memoryPartialExceptions.clear();
+      state.memory.clear();
       normalized.forEach((domain) => {
-        memoryPartialExceptions.set(domain, { domain });
+        state.memory.set(domain, { domain });
       });
-      partialExceptionsCache = buildPartialExceptionsKeySet(normalized);
+      state.cache = buildExceptionsKeySet(normalized);
       return normalized;
     }
     throw error;
   }
 }
 
-async function isPartialException(value) {
+async function isException(storeName, value) {
   const key = getDomainKeyFromValue(value);
   if (!key) return false;
-  const set = await getPartialExceptionsSet();
+  const set = await getExceptionsSet(storeName);
   return set.has(key);
+}
+
+async function setPartialExceptions(domains) {
+  return setExceptions(PARTIAL_EXCEPTIONS_STORE, domains);
+}
+
+async function setMatchExceptions(domains) {
+  return setExceptions(MATCH_EXCEPTIONS_STORE, domains);
+}
+
+async function isPartialException(value) {
+  return isException(PARTIAL_EXCEPTIONS_STORE, value);
+}
+
+async function isMatchException(value) {
+  return isException(MATCH_EXCEPTIONS_STORE, value);
 }
 
 async function getVisitById(id) {
@@ -542,8 +589,8 @@ async function clearAllData() {
   if (isDbWriteBlocked()) {
     memoryVisits.clear();
     memoryMeta.clear();
-    memoryPartialExceptions.clear();
-    partialExceptionsCache = null;
+    resetExceptionStoreState(PARTIAL_EXCEPTIONS_STORE);
+    resetExceptionStoreState(MATCH_EXCEPTIONS_STORE);
     return;
   }
 
@@ -552,13 +599,16 @@ async function clearAllData() {
     if (!db) {
       memoryVisits.clear();
       memoryMeta.clear();
-      memoryPartialExceptions.clear();
-      partialExceptionsCache = null;
+      resetExceptionStoreState(PARTIAL_EXCEPTIONS_STORE);
+      resetExceptionStoreState(MATCH_EXCEPTIONS_STORE);
       return;
     }
     const stores = [VISITS_STORE, META_STORE];
     if (db.objectStoreNames.contains(PARTIAL_EXCEPTIONS_STORE)) {
       stores.push(PARTIAL_EXCEPTIONS_STORE);
+    }
+    if (db.objectStoreNames.contains(MATCH_EXCEPTIONS_STORE)) {
+      stores.push(MATCH_EXCEPTIONS_STORE);
     }
     const tx = db.transaction(stores, "readwrite");
     tx.objectStore(VISITS_STORE).clear();
@@ -566,13 +616,16 @@ async function clearAllData() {
     if (db.objectStoreNames.contains(PARTIAL_EXCEPTIONS_STORE)) {
       tx.objectStore(PARTIAL_EXCEPTIONS_STORE).clear();
     }
+    if (db.objectStoreNames.contains(MATCH_EXCEPTIONS_STORE)) {
+      tx.objectStore(MATCH_EXCEPTIONS_STORE).clear();
+    }
     await waitForTransaction(tx);
   } catch (error) {
     if (markDbWriteBlocked(error)) {
       memoryVisits.clear();
       memoryMeta.clear();
-      memoryPartialExceptions.clear();
-      partialExceptionsCache = null;
+      resetExceptionStoreState(PARTIAL_EXCEPTIONS_STORE);
+      resetExceptionStoreState(MATCH_EXCEPTIONS_STORE);
       return;
     }
     throw error;

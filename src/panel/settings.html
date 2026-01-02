@@ -294,8 +294,20 @@
     </div>
 
     <div class="card">
-      <h3 style="margin:6px 0 4px; font-size:13px; color:#c5d6e2;" data-i18n="partialExceptionsTitle">Exceções de parciais</h3>
-      <p data-i18n="partialExceptionsInfo">Cada linha terminada em ";" representa um domínio a ignorar nos parciais</p>
+      <h3 style="margin:6px 0 4px; font-size:13px; color:#c5d6e2;" data-i18n="matchExceptionsTitle">Exceções de match completo</h3>
+      <p data-i18n="matchExceptionsInfo">Cada linha terminada em ";" representa um domínio a ignorar nos matches completos</p>
+      <textarea
+        id="match-exceptions"
+        class="exception-textarea"
+        data-i18n="matchExceptionsPlaceholder"
+        data-i18n-attr="placeholder"
+        placeholder="google.com.br;"
+      ></textarea>
+    </div>
+
+    <div class="card">
+      <h3 style="margin:6px 0 4px; font-size:13px; color:#c5d6e2;" data-i18n="partialExceptionsTitle">Exceções de match parciais</h3>
+      <p data-i18n="partialExceptionsInfo">Cada linha terminada em ";" representa um domínio a ignorar nos matches parciais</p>
       <textarea
         id="partial-exceptions"
         class="exception-textarea"

@@ -106,15 +106,18 @@ async function computeFingerprint(urlString) {
 }
 
 async function findVisitMatch(fingerprint) {
-  // exact search in hash/plain ids
-  const idsToTry = Array.from(
-    new Set([fingerprint.id, fingerprint.ids?.hash, fingerprint.ids?.plain].filter(Boolean))
-  );
+  const skipFullMatch = await isMatchException(fingerprint.parts.host);
+  if (!skipFullMatch) {
+    // exact search in hash/plain ids
+    const idsToTry = Array.from(
+      new Set([fingerprint.id, fingerprint.ids?.hash, fingerprint.ids?.plain].filter(Boolean))
+    );
 
-  for (const id of idsToTry) {
-    const exact = await getVisitById(id);
-    if (exact) {
-      return { state: MATCH_STATE.full, record: exact };
+    for (const id of idsToTry) {
+      const exact = await getVisitById(id);
+      if (exact) {
+        return { state: MATCH_STATE.full, record: exact };
+      }
     }
   }
 
