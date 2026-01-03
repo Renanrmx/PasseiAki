@@ -10,7 +10,9 @@ async function createBackup(password) {
   const payload = {
     version: 2,
     visits: await dumpAllVisits(),
-    meta: await dumpAllMeta()
+    meta: await dumpAllMeta(),
+    partialExceptions: await getAllPartialExceptions(),
+    matchExceptions: await getAllMatchExceptions()
   };
 
   const plaintext = textEncoder.encode(JSON.stringify(payload));
@@ -29,6 +31,12 @@ async function restoreBackup(password, envelope) {
     await clearAllData();
     await writeMetaEntries(decoded.meta);
     await putVisits(decoded.visits);
+    if (Array.isArray(decoded.partialExceptions)) {
+      await setPartialExceptions(decoded.partialExceptions);
+    }
+    if (Array.isArray(decoded.matchExceptions)) {
+      await setMatchExceptions(decoded.matchExceptions);
+    }
 
     // reset caches
     pepperKeyPromise = null;

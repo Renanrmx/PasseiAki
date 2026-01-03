@@ -278,11 +278,16 @@ async function getAllPartialExceptions() {
   if (stored.length) {
     return stored;
   }
+  const initializedEntry = await readMetaEntry("initialState");
+  if (initializedEntry && initializedEntry.value === true) {
+    return stored;
+  }
   const defaults = await getDefaultPartialExceptions();
   if (!defaults.length) {
     return stored;
   }
   await setExceptions(PARTIAL_EXCEPTIONS_STORE, defaults);
+  await writeMetaEntry("initialState", true);
   return defaults;
 }
 
@@ -372,7 +377,10 @@ async function getExceptionsSet(storeName) {
   if (state.cache) {
     return state.cache;
   }
-  let all = await getAllExceptions(storeName);
+  let all =
+    storeName === PARTIAL_EXCEPTIONS_STORE
+      ? await getAllPartialExceptions()
+      : await getAllExceptions(storeName);
   const normalized = normalizeExceptionsList(all);
   const normalizedKey = normalized.join("\n");
   const storedKey = Array.isArray(all) ? all.join("\n") : "";
@@ -450,7 +458,9 @@ async function isException(storeName, value) {
 }
 
 async function setPartialExceptions(domains) {
-  return setExceptions(PARTIAL_EXCEPTIONS_STORE, domains);
+  const normalized = await setExceptions(PARTIAL_EXCEPTIONS_STORE, domains);
+  await writeMetaEntry("initialState", true);
+  return normalized;
 }
 
 async function setMatchExceptions(domains) {
