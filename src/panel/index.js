@@ -45,10 +45,12 @@ function applyPanelTexts() {
 }
 
 async function loadStats() {
+  let url = "";
+  let tabId;
   try {
     const [tab] = await api.tabs.query({ active: true, currentWindow: true });
-    const url = tab ? tab.url : "";
-    const tabId = tab ? tab.id : undefined;
+    url = tab ? tab.url : "";
+    tabId = tab ? tab.id : undefined;
 
     const visitSummary = await api.runtime.sendMessage({
       type: "GET_VISIT_FOR_URL",

@@ -42,7 +42,9 @@ async function restoreBackup(password, envelope) {
     pepperKeyPromise = null;
     const encryptionEntry = decoded.meta.find((m) => m && m.key === "encryptionEnabled");
     encryptionEnabledCache = encryptionEntry && typeof encryptionEntry.value === "boolean" ? encryptionEntry.value : null;
-    downloadBadgeSettingsCache = null;
+    if (typeof resetDownloadBadgeSettingsCache === "function") {
+      resetDownloadBadgeSettingsCache();
+    }
     if (typeof clearDownloadBadge === "function") {
       clearDownloadBadge();
     }
@@ -53,13 +55,27 @@ async function restoreBackup(password, envelope) {
     // notify tabs to update visuals and reprocess highlights
     try {
       const colors = await getLinkColors();
-      api.runtime.sendMessage({ type: "LINK_COLORS_UPDATED", colors });
+      if (api.runtime && api.runtime.sendMessage) {
+        const result = api.runtime.sendMessage({ type: "LINK_COLORS_UPDATED", colors });
+        if (result && typeof result.catch === "function") {
+          result.catch(() => {});
+        }
+      }
       if (api.tabs && api.tabs.query) {
         api.tabs.query({}, (tabs) => {
           tabs.forEach((tab) => {
             try {
-              api.tabs.sendMessage(tab.id, { type: "LINK_COLORS_UPDATED", colors });
-              api.tabs.sendMessage(tab.id, { type: "REFRESH_HIGHLIGHT" });
+              const colorResult = api.tabs.sendMessage(tab.id, {
+                type: "LINK_COLORS_UPDATED",
+                colors
+              });
+              if (colorResult && typeof colorResult.catch === "function") {
+                colorResult.catch(() => {});
+              }
+              const refreshResult = api.tabs.sendMessage(tab.id, { type: "REFRESH_HIGHLIGHT" });
+              if (refreshResult && typeof refreshResult.catch === "function") {
+                refreshResult.catch(() => {});
+              }
             } catch (error) {
               // ignore per-tab errors
             }

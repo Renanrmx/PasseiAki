@@ -80,7 +80,10 @@ async function importAddressesFromText(content, options = {}) {
     await putVisits(records);
     try {
       if (api.runtime && api.runtime.sendMessage) {
-        api.runtime.sendMessage({ type: "HISTORY_UPDATED" });
+        const result = api.runtime.sendMessage({ type: "HISTORY_UPDATED" });
+        if (result && typeof result.catch === "function") {
+          result.catch(() => {});
+        }
       }
     } catch (error) {
       // ignore broadcast errors

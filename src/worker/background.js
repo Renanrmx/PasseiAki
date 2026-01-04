@@ -37,11 +37,6 @@ const ACTION_ICONS = {
   }
 };
 
-const SUPPORT_HOST_SUFFIX = "buymeacoffee.com";
-const SUPPORT_REQUIRED_MS = 40000;
-const SUPPORT_HIDE_DAYS = 50;
-const SUPPORT_HIDE_MS = SUPPORT_HIDE_DAYS * 24 * 60 * 60 * 1000;
-
 function resolveActionIcons(iconMap) {
   if (!api?.runtime?.getURL) return iconMap;
   const resolved = {};
@@ -59,13 +54,6 @@ const lastPrevVisitByTab = new Map();
 const forcedPartialByTab = new Set();
 const firstNavigationUrlByTab = new Map();
 let encryptionEnabledCache = null;
-let downloadBadgeTimer = null;
-let downloadBadgeVisible = false;
-let downloadBadgeSettingsCache = null;
-let downloadBadgeCount = 0;
-let downloadBadgeItems = [];
-let supportTracking = null;
-let focusedWindowId = null;
 
 if (typeof importScripts === "function") {
   importScripts(
@@ -78,6 +66,8 @@ if (typeof importScripts === "function") {
     "background.match.js",
     "background.history.js",
     "background.highlight.js",
+    "background.downloads.js",
+    "background.support.js",
     "background.backup.js",
     "background.import.js",
     "background.export.js"
@@ -94,18 +84,14 @@ api.tabs.onRemoved.addListener((tabId) => {
   lastPrevVisitByTab.delete(tabId);
   forcedPartialByTab.delete(tabId);
   firstNavigationUrlByTab.delete(tabId);
-  if (supportTracking && supportTracking.tabId === tabId) {
-    stopSupportTracking();
+  if (typeof handleSupportTabRemoved === "function") {
+    handleSupportTabRemoved(tabId);
   }
 });
 
 if (api.webNavigation && api.webNavigation.onBeforeNavigate && api.webNavigation.onCommitted) {
   api.webNavigation.onBeforeNavigate.addListener(handleBeforeNavigate);
   api.webNavigation.onCommitted.addListener(handleNavigationCommitted);
-}
-
-if (api.downloads && api.downloads.onCreated) {
-  api.downloads.onCreated.addListener(handleDownloadCreated);
 }
 
 api.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -116,34 +102,37 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     if (message.type === "CHECK_VISITED_LINKS") {
       return handleCheckVisitedLinks(message.links || []);
-  }
+    }
 
-  if (message.type === "GET_STATS") {
-    return handleGetStats();
-  }
+    if (message.type === "GET_STATS") {
+      return handleGetStats();
+    }
 
-  if (message.type === "GET_PARTIAL_MATCHES") {
-    return (async () => {
-      const fingerprint = await computeFingerprint(message.url || "");
-      if (!fingerprint) return { items: [] };
-      const items = await findPartialMatches(fingerprint, 5);
-      return { items };
-    })();
-  }
+    if (message.type === "GET_PARTIAL_MATCHES") {
+      return (async () => {
+        const fingerprint = await computeFingerprint(message.url || "");
+        if (!fingerprint) return { items: [] };
+        const items = await findPartialMatches(fingerprint, 5);
+        return { items };
+      })();
+    }
 
-  if (message.type === "DELETE_VISIT") {
-    return (async () => {
-      await deleteVisitById(message.id);
-      try {
+    if (message.type === "DELETE_VISIT") {
+      return (async () => {
+        await deleteVisitById(message.id);
+        try {
         if (api.runtime && api.runtime.sendMessage) {
-          api.runtime.sendMessage({ type: "HISTORY_UPDATED" });
+          const result = api.runtime.sendMessage({ type: "HISTORY_UPDATED" });
+          if (result && typeof result.catch === "function") {
+            result.catch(() => {});
+          }
         }
-      } catch (error) {
-        // ignore broadcast errors
-      }
-      return { ok: true };
-    })().catch((error) => ({ ok: false, error: error?.message || String(error) }));
-  }
+        } catch (error) {
+          // ignore broadcast errors
+        }
+        return { ok: true };
+      })().catch((error) => ({ ok: false, error: error?.message || String(error) }));
+    }
 
     if (message.type === "GET_VISIT_FOR_URL") {
       if (message.tabId && lastMatchStateByTab.has(message.tabId)) {
@@ -234,12 +223,21 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
           partialBorderEnabled: message.partialBorderEnabled
         });
         try {
-          api.runtime.sendMessage({ type: "LINK_COLORS_UPDATED", colors });
+          const broadcast = api.runtime.sendMessage({ type: "LINK_COLORS_UPDATED", colors });
+          if (broadcast && typeof broadcast.catch === "function") {
+            broadcast.catch(() => {});
+          }
           if (api.tabs && api.tabs.query) {
             api.tabs.query({}, (tabs) => {
               tabs.forEach((tab) => {
                 try {
-                  api.tabs.sendMessage(tab.id, { type: "LINK_COLORS_UPDATED", colors });
+                  const result = api.tabs.sendMessage(tab.id, {
+                    type: "LINK_COLORS_UPDATED",
+                    colors
+                  });
+                  if (result && typeof result.catch === "function") {
+                    result.catch(() => {});
+                  }
                 } catch (error) {
                   // ignore per-tab errors
                 }
@@ -285,7 +283,10 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
               tabs.forEach((tab) => {
                 if (!tab || typeof tab.id === "undefined") return;
                 try {
-                  api.tabs.sendMessage(tab.id, { type: "REFRESH_HIGHLIGHT" });
+                  const result = api.tabs.sendMessage(tab.id, { type: "REFRESH_HIGHLIGHT" });
+                  if (result && typeof result.catch === "function") {
+                    result.catch(() => {});
+                  }
                 } catch (error) {
                   // ignore per-tab errors
                 }
@@ -322,7 +323,10 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
               tabs.forEach((tab) => {
                 if (!tab || typeof tab.id === "undefined") return;
                 try {
-                  api.tabs.sendMessage(tab.id, { type: "REFRESH_HIGHLIGHT" });
+                  const result = api.tabs.sendMessage(tab.id, { type: "REFRESH_HIGHLIGHT" });
+                  if (result && typeof result.catch === "function") {
+                    result.catch(() => {});
+                  }
                 } catch (error) {
                   // ignore per-tab errors
                 }
@@ -342,20 +346,21 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     if (message.type === "GET_DOWNLOAD_BADGE_STATE") {
       return (async () => {
-        const settings = downloadBadgeSettingsCache || (await getDownloadBadgeSettings());
-        downloadBadgeSettingsCache = settings;
+        const settings = getDownloadBadgeSettingsCache() || (await getDownloadBadgeSettings());
+        setDownloadBadgeSettingsCache(settings);
         if (settings.downloadBadgeEnabled === false) {
           clearDownloadBadge();
           return { ok: true, visible: false, count: 0, items: [] };
         }
-        if (!downloadBadgeVisible || downloadBadgeCount <= 0) {
+        const state = getDownloadBadgeState();
+        if (!state.visible || state.count <= 0) {
           return { ok: true, visible: false, count: 0, items: [] };
         }
         return {
           ok: true,
           visible: true,
-          count: downloadBadgeCount,
-          items: downloadBadgeItems.slice(0, downloadBadgeCount)
+          count: state.count,
+          items: state.items.slice(0, state.count)
         };
       })().catch((error) => ({
         ok: false,
@@ -395,7 +400,7 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
           downloadBadgeDurationMs: message.downloadBadgeDurationMs,
           downloadBadgeEnabled: message.downloadBadgeEnabled
         });
-        downloadBadgeSettingsCache = settings;
+        setDownloadBadgeSettingsCache(settings);
         await updateDownloadBadgeAppearance(settings);
         return { ok: true, settings };
       })().catch((error) => ({
@@ -565,274 +570,9 @@ async function refreshAllTabsMatchState() {
   }
 }
 
-function parseBadgeColorToRgba(color) {
-  if (typeof color !== "string") {
-    return [14, 154, 105, 255];
-  }
-  const cleaned = color.replace("#", "").trim();
-  if (!/^[0-9a-f]{6}([0-9a-f]{2})?$/i.test(cleaned)) {
-    return [14, 154, 105, 255];
-  }
-  const hex = cleaned.toLowerCase();
-  const r = parseInt(hex.slice(0, 2), 16);
-  const g = parseInt(hex.slice(2, 4), 16);
-  const b = parseInt(hex.slice(4, 6), 16);
-  const a = hex.length === 8 ? parseInt(hex.slice(6, 8), 16) : 255;
-  return [r, g, b, a];
-}
-
-async function updateDownloadBadgeAppearance(settings) {
-  if (settings.downloadBadgeEnabled === false) {
-    clearDownloadBadge();
-    return;
-  }
-  if (!downloadBadgeVisible) {
-    return;
-  }
-  if (actionApi && actionApi.setBadgeBackgroundColor) {
-    const color = parseBadgeColorToRgba(settings.downloadBadgeColor);
-    actionApi.setBadgeBackgroundColor({ color });
-  }
-  scheduleDownloadBadgeClear(settings.downloadBadgeDurationMs);
-  sendDownloadBadgeUpdate(true);
-}
-
-function scheduleDownloadBadgeClear(durationMs) {
-  if (downloadBadgeTimer) {
-    clearTimeout(downloadBadgeTimer);
-    downloadBadgeTimer = null;
-  }
-  if (!durationMs || durationMs <= 0) {
-    return;
-  }
-  downloadBadgeTimer = setTimeout(() => {
-    clearDownloadBadge();
-  }, durationMs);
-}
-
-function clearDownloadBadge() {
-  if (downloadBadgeTimer) {
-    clearTimeout(downloadBadgeTimer);
-    downloadBadgeTimer = null;
-  }
-  downloadBadgeVisible = false;
-  downloadBadgeCount = 0;
-  downloadBadgeItems = [];
-  if (actionApi && actionApi.setBadgeText) {
-    actionApi.setBadgeText({ text: "" });
-  }
-  sendDownloadBadgeUpdate(false);
-}
-
-async function showDownloadBadge() {
-  const settings = downloadBadgeSettingsCache || (await getDownloadBadgeSettings());
-  downloadBadgeSettingsCache = settings;
-  if (settings.downloadBadgeEnabled === false) {
-    clearDownloadBadge();
-    return;
-  }
-  if (downloadBadgeCount <= 0) {
-    clearDownloadBadge();
-    return;
-  }
-  if (actionApi && actionApi.setBadgeBackgroundColor) {
-    const color = parseBadgeColorToRgba(settings.downloadBadgeColor);
-    actionApi.setBadgeBackgroundColor({ color });
-  }
-  if (actionApi && actionApi.setBadgeText) {
-    actionApi.setBadgeText({ text: String(downloadBadgeCount) });
-  }
-  downloadBadgeVisible = true;
-  scheduleDownloadBadgeClear(settings.downloadBadgeDurationMs);
-  sendDownloadBadgeUpdate(true);
-}
-
-function sendDownloadBadgeUpdate(visible) {
-  try {
-    if (!api?.runtime?.sendMessage) {
-      return;
-    }
-    if (!visible) {
-      api.runtime.sendMessage({ type: "DOWNLOAD_BADGE_UPDATED", visible: false, count: 0, items: [] });
-      return;
-    }
-    const items = downloadBadgeItems.slice(0, downloadBadgeCount);
-    api.runtime.sendMessage({
-      type: "DOWNLOAD_BADGE_UPDATED",
-      visible: true,
-      count: downloadBadgeCount,
-      items
-    });
-  } catch (error) {
-    // ignore broadcast errors
-  }
-}
-
-function registerDuplicateDownload(item) {
-  if (!item) return;
-  if (!downloadBadgeVisible) {
-    downloadBadgeCount = 0;
-    downloadBadgeItems = [];
-  }
-  downloadBadgeCount += 1;
-  downloadBadgeItems.unshift(item);
-  showDownloadBadge().catch(() => {
-    // ignore badge update errors
-  });
-}
-
-function isSupportUrl(urlString) {
-  if (!urlString) return false;
-  try {
-    const url = new URL(urlString);
-    const host = url.hostname.toLowerCase();
-    return host === SUPPORT_HOST_SUFFIX || host.endsWith(`.${SUPPORT_HOST_SUFFIX}`);
-  } catch (error) {
-    return false;
-  }
-}
-
-async function updateFocusedWindowId() {
-  if (!api?.windows?.getLastFocused) return;
-  try {
-    const win = await api.windows.getLastFocused({ windowTypes: ["normal"] });
-    focusedWindowId = win && typeof win.id === "number" ? win.id : null;
-  } catch (error) {
-    // ignore focus resolution errors
-  }
-}
-
-async function getSupportStatus() {
-  const supportAt = await getSupportAt();
-  if (!supportAt || typeof supportAt !== "number") {
-    return { visible: true, supportAt: null };
-  }
-  const elapsed = Date.now() - supportAt;
-  return { visible: elapsed >= SUPPORT_HIDE_MS, supportAt };
-}
-
-function sendSupportStatusUpdate(visible) {
-  try {
-    if (!api?.runtime?.sendMessage) {
-      return;
-    }
-    api.runtime.sendMessage({ type: "SUPPORT_STATUS_UPDATED", visible: Boolean(visible) });
-  } catch (error) {
-    // ignore broadcast errors
-  }
-}
-
-function clearSupportTrackingTimer() {
-  if (supportTracking && supportTracking.timerId) {
-    clearTimeout(supportTracking.timerId);
-    supportTracking.timerId = null;
-  }
-}
-
-function pauseSupportTracking() {
-  if (!supportTracking || !supportTracking.active) {
-    return;
-  }
-  supportTracking.elapsedMs += Date.now() - supportTracking.startedAt;
-  supportTracking.active = false;
-  supportTracking.startedAt = 0;
-  clearSupportTrackingTimer();
-}
-
-function resumeSupportTracking() {
-  if (!supportTracking || supportTracking.active) {
-    return;
-  }
-  const remaining = SUPPORT_REQUIRED_MS - supportTracking.elapsedMs;
-  if (remaining <= 0) {
-    void completeSupportTracking();
-    return;
-  }
-  supportTracking.active = true;
-  supportTracking.startedAt = Date.now();
-  clearSupportTrackingTimer();
-  supportTracking.timerId = setTimeout(() => {
-    void completeSupportTracking();
-  }, remaining);
-}
-
-async function completeSupportTracking() {
-  if (!supportTracking) {
-    return;
-  }
-  if (supportTracking.active) {
-    supportTracking.elapsedMs += Date.now() - supportTracking.startedAt;
-  }
-  clearSupportTrackingTimer();
-  supportTracking.active = false;
-  supportTracking.startedAt = 0;
-
-  if (supportTracking.elapsedMs < SUPPORT_REQUIRED_MS) {
-    return;
-  }
-
-  supportTracking = null;
-  await setSupportAt(Date.now());
-  const status = await getSupportStatus();
-  sendSupportStatusUpdate(status.visible);
-}
-
-function stopSupportTracking() {
-  if (!supportTracking) {
-    return;
-  }
-  clearSupportTrackingTimer();
-  supportTracking = null;
-}
-
-function refreshSupportTrackingFromTab(tab) {
-  if (!supportTracking || !tab || tab.id !== supportTracking.tabId) {
-    return;
-  }
-  supportTracking.windowId = tab.windowId;
-  supportTracking.urlValid = isSupportUrl(tab.url);
-  const isFocused = focusedWindowId !== null && focusedWindowId === tab.windowId;
-  const shouldTrack = supportTracking.urlValid && tab.active === true && isFocused;
-  if (shouldTrack) {
-    resumeSupportTracking();
-  } else {
-    pauseSupportTracking();
-  }
-}
-
-async function refreshSupportTracking() {
-  if (!supportTracking || !api?.tabs?.get) {
-    return;
-  }
-  try {
-    const tab = await api.tabs.get(supportTracking.tabId);
-    refreshSupportTrackingFromTab(tab);
-  } catch (error) {
-    stopSupportTracking();
-  }
-}
-
-async function beginSupportTracking(tabId) {
-  if (typeof tabId !== "number" || !api?.tabs?.get) {
-    return;
-  }
-  stopSupportTracking();
-  supportTracking = {
-    tabId,
-    windowId: null,
-    urlValid: false,
-    elapsedMs: 0,
-    active: false,
-    startedAt: 0,
-    timerId: null
-  };
-  await updateFocusedWindowId();
-  await refreshSupportTracking();
-}
-
 async function handleTabComplete(tabId, changeInfo, tab) {
-  if (supportTracking && tab && tab.id === supportTracking.tabId) {
-    refreshSupportTrackingFromTab(tab);
+  if (typeof handleSupportTabComplete === "function") {
+    handleSupportTabComplete(tabId, changeInfo, tab);
   }
   if (!tab || !tab.url || changeInfo.status !== "complete") {
     return;
@@ -887,8 +627,9 @@ async function handleTabComplete(tabId, changeInfo, tab) {
 }
 
 async function handleTabActivated(activeInfo) {
+  let tab = null;
   try {
-    const tab = await api.tabs.get(activeInfo.tabId);
+    tab = await api.tabs.get(activeInfo.tabId);
     if (pendingFirstVisit.has(activeInfo.tabId)) {
       await setActionState(tab.id, MATCH_STATE.none);
       return;
@@ -908,21 +649,18 @@ async function handleTabActivated(activeInfo) {
   } catch (error) {
     console.warn("Could not update tab state:", error);
   } finally {
-    if (supportTracking) {
-      await refreshSupportTracking();
+    if (typeof handleSupportTabActivated === "function") {
+      await handleSupportTabActivated(activeInfo, tab);
     }
   }
 }
 
 async function handleWindowFocusChanged(windowId) {
-  if (windowId === api.windows.WINDOW_ID_NONE) {
-    focusedWindowId = null;
-    pauseSupportTracking();
-    return;
+  if (typeof handleSupportWindowFocusChanged === "function") {
+    await handleSupportWindowFocusChanged(windowId);
   }
-  focusedWindowId = windowId;
-  if (supportTracking) {
-    await refreshSupportTracking();
+  if (windowId === api.windows.WINDOW_ID_NONE) {
+    return;
   }
   try {
     const [tab] = await api.tabs.query({ active: true, windowId });
@@ -973,58 +711,6 @@ async function handleNavigationCommitted(details) {
   }
 
   firstNavigationUrlByTab.delete(details.tabId);
-}
-
-async function handleDownloadCreated(item) {
-  try {
-    if (!item) return;
-    if (item.byExtensionId && api?.runtime?.id && item.byExtensionId === api.runtime.id) {
-      return;
-    }
-    const candidates = [];
-    if (typeof item.finalUrl === "string") {
-      candidates.push(item.finalUrl);
-    }
-    if (typeof item.url === "string") {
-      candidates.push(item.url);
-    }
-    const urls = Array.from(new Set(candidates)).filter(
-      (url) => !url.startsWith("blob:") && !url.startsWith("data:")
-    );
-    if (!urls.length) {
-      return;
-    }
-    const tasks = urls.map((url) =>
-      upsertVisit(url, { download: true })
-        .then((result) => ({ url, result }))
-        .catch(() => null)
-    );
-    if (!tasks.length) {
-      return;
-    }
-    const results = await Promise.all(tasks);
-    const repeated = results.find((entry) => entry && entry.result && entry.result.existedBefore);
-    if (!repeated) {
-      return;
-    }
-    const record = repeated.result.record;
-    const previousLastVisited =
-      repeated.result.previousLastVisited || (record ? record.lastVisited : null);
-    if (!record) {
-      return;
-    }
-    registerDuplicateDownload({
-      id: record.id,
-      host: record.host,
-      path: record.path,
-      query: record.query,
-      fragment: record.fragment,
-      lastVisited: previousLastVisited,
-      hashed: record.hashed !== false
-    });
-  } catch (error) {
-    // ignore badge tracking errors
-  }
 }
 
 async function handleGetVisitForUrl(urlString, tabId) {
