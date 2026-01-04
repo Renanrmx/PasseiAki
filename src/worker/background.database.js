@@ -926,3 +926,14 @@ async function setDownloadBadgeSettings(settings = {}) {
 
   return next;
 }
+
+async function getSupportAt() {
+  const entry = await readMetaEntry("supportAt");
+  return entry && typeof entry.value === "number" ? entry.value : null;
+}
+
+async function setSupportAt(timestamp) {
+  const value = typeof timestamp === "number" ? timestamp : Date.now();
+  await writeMetaEntry("supportAt", value);
+  return value;
+}

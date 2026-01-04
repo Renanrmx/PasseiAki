@@ -12,6 +12,7 @@ const downloadBadgeContainer = document.getElementById("download-badge-container
 const downloadBadgeList = document.getElementById("download-badge-list");
 const downloadBadgeDismiss = document.getElementById("download-badge-dismiss");
 const supportBtn = document.getElementById("support-btn");
+const supportContainer = document.getElementById("support-container");
 
 
 function normalizeParamsLocal(paramString) {
@@ -79,6 +80,7 @@ document.addEventListener("DOMContentLoaded", () => {
   applyPanelTexts();
   loadStats();
   loadDownloadBadgeState();
+  loadSupportVisibility();
 });
 
 function updateMatchStatus(url, state) {  
@@ -164,6 +166,25 @@ async function loadDownloadBadgeState() {
   } catch (error) {
     renderDownloadBadgeList([], false);
   }
+}
+
+function setSupportVisibility(visible) {
+  if (!supportContainer) return;
+  supportContainer.style.display = visible ? "" : "none";
+}
+
+async function loadSupportVisibility() {
+  if (!supportContainer) return;
+  try {
+    const res = await api.runtime.sendMessage({ type: "GET_SUPPORT_STATUS" });
+    if (res && res.ok) {
+      setSupportVisibility(res.visible !== false);
+      return;
+    }
+  } catch (error) {
+    // ignore status errors
+  }
+  setSupportVisibility(true);
 }
 
 async function loadPartialMatches(url) {
@@ -312,6 +333,9 @@ if (api.runtime && api.runtime.onMessage) {
     if (message && message.type === "DOWNLOAD_BADGE_UPDATED") {
       renderDownloadBadgeList(message.items || [], message.visible);
     }
+    if (message && message.type === "SUPPORT_STATUS_UPDATED") {
+      setSupportVisibility(message.visible !== false);
+    }
   });
 }
 
@@ -334,7 +358,14 @@ if (supportBtn) {
       return;
     }
     try {
-      await api?.tabs?.create?.({ url });
+      const created = await api?.tabs?.create?.({ url });
+      if (created && typeof created.id === "number") {
+        try {
+          await api.runtime.sendMessage({ type: "SUPPORT_TAB_OPENED", tabId: created.id });
+        } catch (error) {
+          // ignore tracking errors
+        }
+      }
     } catch (error) {
       window.open(url, "_blank", "noopener");
     }

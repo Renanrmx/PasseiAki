@@ -37,6 +37,11 @@ const ACTION_ICONS = {
   }
 };
 
+const SUPPORT_HOST_SUFFIX = "buymeacoffee.com";
+const SUPPORT_REQUIRED_MS = 40000;
+const SUPPORT_HIDE_DAYS = 50;
+const SUPPORT_HIDE_MS = SUPPORT_HIDE_DAYS * 24 * 60 * 60 * 1000;
+
 function resolveActionIcons(iconMap) {
   if (!api?.runtime?.getURL) return iconMap;
   const resolved = {};
@@ -59,6 +64,8 @@ let downloadBadgeVisible = false;
 let downloadBadgeSettingsCache = null;
 let downloadBadgeCount = 0;
 let downloadBadgeItems = [];
+let supportTracking = null;
+let focusedWindowId = null;
 
 if (typeof importScripts === "function") {
   importScripts(
@@ -87,6 +94,9 @@ api.tabs.onRemoved.addListener((tabId) => {
   lastPrevVisitByTab.delete(tabId);
   forcedPartialByTab.delete(tabId);
   firstNavigationUrlByTab.delete(tabId);
+  if (supportTracking && supportTracking.tabId === tabId) {
+    stopSupportTracking();
+  }
 });
 
 if (api.webNavigation && api.webNavigation.onBeforeNavigate && api.webNavigation.onCommitted) {
@@ -347,6 +357,26 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
           count: downloadBadgeCount,
           items: downloadBadgeItems.slice(0, downloadBadgeCount)
         };
+      })().catch((error) => ({
+        ok: false,
+        error: error && error.message ? error.message : String(error)
+      }));
+    }
+
+    if (message.type === "GET_SUPPORT_STATUS") {
+      return (async () => {
+        const status = await getSupportStatus();
+        return { ok: true, visible: status.visible, supportAt: status.supportAt };
+      })().catch((error) => ({
+        ok: false,
+        error: error && error.message ? error.message : String(error)
+      }));
+    }
+
+    if (message.type === "SUPPORT_TAB_OPENED") {
+      return (async () => {
+        await beginSupportTracking(message.tabId);
+        return { ok: true };
       })().catch((error) => ({
         ok: false,
         error: error && error.message ? error.message : String(error)
@@ -651,7 +681,159 @@ function registerDuplicateDownload(item) {
   });
 }
 
+function isSupportUrl(urlString) {
+  if (!urlString) return false;
+  try {
+    const url = new URL(urlString);
+    const host = url.hostname.toLowerCase();
+    return host === SUPPORT_HOST_SUFFIX || host.endsWith(`.${SUPPORT_HOST_SUFFIX}`);
+  } catch (error) {
+    return false;
+  }
+}
+
+async function updateFocusedWindowId() {
+  if (!api?.windows?.getLastFocused) return;
+  try {
+    const win = await api.windows.getLastFocused({ windowTypes: ["normal"] });
+    focusedWindowId = win && typeof win.id === "number" ? win.id : null;
+  } catch (error) {
+    // ignore focus resolution errors
+  }
+}
+
+async function getSupportStatus() {
+  const supportAt = await getSupportAt();
+  if (!supportAt || typeof supportAt !== "number") {
+    return { visible: true, supportAt: null };
+  }
+  const elapsed = Date.now() - supportAt;
+  return { visible: elapsed >= SUPPORT_HIDE_MS, supportAt };
+}
+
+function sendSupportStatusUpdate(visible) {
+  try {
+    if (!api?.runtime?.sendMessage) {
+      return;
+    }
+    api.runtime.sendMessage({ type: "SUPPORT_STATUS_UPDATED", visible: Boolean(visible) });
+  } catch (error) {
+    // ignore broadcast errors
+  }
+}
+
+function clearSupportTrackingTimer() {
+  if (supportTracking && supportTracking.timerId) {
+    clearTimeout(supportTracking.timerId);
+    supportTracking.timerId = null;
+  }
+}
+
+function pauseSupportTracking() {
+  if (!supportTracking || !supportTracking.active) {
+    return;
+  }
+  supportTracking.elapsedMs += Date.now() - supportTracking.startedAt;
+  supportTracking.active = false;
+  supportTracking.startedAt = 0;
+  clearSupportTrackingTimer();
+}
+
+function resumeSupportTracking() {
+  if (!supportTracking || supportTracking.active) {
+    return;
+  }
+  const remaining = SUPPORT_REQUIRED_MS - supportTracking.elapsedMs;
+  if (remaining <= 0) {
+    void completeSupportTracking();
+    return;
+  }
+  supportTracking.active = true;
+  supportTracking.startedAt = Date.now();
+  clearSupportTrackingTimer();
+  supportTracking.timerId = setTimeout(() => {
+    void completeSupportTracking();
+  }, remaining);
+}
+
+async function completeSupportTracking() {
+  if (!supportTracking) {
+    return;
+  }
+  if (supportTracking.active) {
+    supportTracking.elapsedMs += Date.now() - supportTracking.startedAt;
+  }
+  clearSupportTrackingTimer();
+  supportTracking.active = false;
+  supportTracking.startedAt = 0;
+
+  if (supportTracking.elapsedMs < SUPPORT_REQUIRED_MS) {
+    return;
+  }
+
+  supportTracking = null;
+  await setSupportAt(Date.now());
+  const status = await getSupportStatus();
+  sendSupportStatusUpdate(status.visible);
+}
+
+function stopSupportTracking() {
+  if (!supportTracking) {
+    return;
+  }
+  clearSupportTrackingTimer();
+  supportTracking = null;
+}
+
+function refreshSupportTrackingFromTab(tab) {
+  if (!supportTracking || !tab || tab.id !== supportTracking.tabId) {
+    return;
+  }
+  supportTracking.windowId = tab.windowId;
+  supportTracking.urlValid = isSupportUrl(tab.url);
+  const isFocused = focusedWindowId !== null && focusedWindowId === tab.windowId;
+  const shouldTrack = supportTracking.urlValid && tab.active === true && isFocused;
+  if (shouldTrack) {
+    resumeSupportTracking();
+  } else {
+    pauseSupportTracking();
+  }
+}
+
+async function refreshSupportTracking() {
+  if (!supportTracking || !api?.tabs?.get) {
+    return;
+  }
+  try {
+    const tab = await api.tabs.get(supportTracking.tabId);
+    refreshSupportTrackingFromTab(tab);
+  } catch (error) {
+    stopSupportTracking();
+  }
+}
+
+async function beginSupportTracking(tabId) {
+  if (typeof tabId !== "number" || !api?.tabs?.get) {
+    return;
+  }
+  stopSupportTracking();
+  supportTracking = {
+    tabId,
+    windowId: null,
+    urlValid: false,
+    elapsedMs: 0,
+    active: false,
+    startedAt: 0,
+    timerId: null
+  };
+  await updateFocusedWindowId();
+  await refreshSupportTracking();
+}
+
 async function handleTabComplete(tabId, changeInfo, tab) {
+  if (supportTracking && tab && tab.id === supportTracking.tabId) {
+    refreshSupportTrackingFromTab(tab);
+  }
   if (!tab || !tab.url || changeInfo.status !== "complete") {
     return;
   }
@@ -725,12 +907,22 @@ async function handleTabActivated(activeInfo) {
     await setActionState(tab.id, state);
   } catch (error) {
     console.warn("Could not update tab state:", error);
+  } finally {
+    if (supportTracking) {
+      await refreshSupportTracking();
+    }
   }
 }
 
 async function handleWindowFocusChanged(windowId) {
   if (windowId === api.windows.WINDOW_ID_NONE) {
+    focusedWindowId = null;
+    pauseSupportTracking();
     return;
+  }
+  focusedWindowId = windowId;
+  if (supportTracking) {
+    await refreshSupportTracking();
   }
   try {
     const [tab] = await api.tabs.query({ active: true, windowId });
