@@ -8,6 +8,49 @@ const memoryVisits = new Map();
 const memoryMeta = new Map();
 const exceptionStores = {};
 
+function getDbSchema() {
+  return {
+    stores: {
+      [VISITS_STORE]: {
+        keyPath: "id",
+        indexes: [
+          { name: "hostHash", keyPath: "hostHash", options: { unique: false } },
+          { name: "lastVisited", keyPath: "lastVisited", options: { unique: false } }
+        ]
+      },
+      [META_STORE]: {
+        keyPath: "key"
+      },
+      [PARTIAL_EXCEPTIONS_STORE]: {
+        keyPath: "domain"
+      },
+      [MATCH_EXCEPTIONS_STORE]: {
+        keyPath: "domain"
+      }
+    }
+  };
+}
+
+function ensureSchema(db, tx) {
+  const schema = getDbSchema();
+  Object.entries(schema.stores).forEach(([name, def]) => {
+    let store;
+    if (!db.objectStoreNames.contains(name)) {
+      store = db.createObjectStore(name, { keyPath: def.keyPath });
+    } else {
+      store = tx.objectStore(name);
+    }
+
+    if (def.indexes && def.indexes.length) {
+      def.indexes.forEach((indexDef) => {
+        if (!store.indexNames.contains(indexDef.name)) {
+          store.createIndex(indexDef.name, indexDef.keyPath, indexDef.options || {});
+        }
+      });
+    }
+  });
+}
+
 function getExceptionStoreState(storeName) {
   if (!exceptionStores[storeName]) {
     exceptionStores[storeName] = { memory: new Map(), cache: null };
@@ -87,7 +130,6 @@ function isDbWriteBlocked() {
   return dbWriteBlocked;
 }
 
-
 function openDatabase() {
   if (dbPromise) {
     return dbPromise;
@@ -115,20 +157,7 @@ function openDatabase() {
     request.onupgradeneeded = (event) => {
       const db = event.target.result;
       try {
-        if (!db.objectStoreNames.contains(VISITS_STORE)) {
-          const store = db.createObjectStore(VISITS_STORE, { keyPath: "id" });
-          store.createIndex("hostHash", "hostHash", { unique: false });
-          store.createIndex("lastVisited", "lastVisited", { unique: false });
-        }
-        if (!db.objectStoreNames.contains(META_STORE)) {
-          db.createObjectStore(META_STORE, { keyPath: "key" });
-        }
-        if (!db.objectStoreNames.contains(PARTIAL_EXCEPTIONS_STORE)) {
-          db.createObjectStore(PARTIAL_EXCEPTIONS_STORE, { keyPath: "domain" });
-        }
-        if (!db.objectStoreNames.contains(MATCH_EXCEPTIONS_STORE)) {
-          db.createObjectStore(MATCH_EXCEPTIONS_STORE, { keyPath: "domain" });
-        }
+        ensureSchema(db, event.target.transaction);
       } catch (error) {
         if (markDbWriteBlocked(error)) {
           try {
