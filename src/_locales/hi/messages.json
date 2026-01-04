@@ -31,6 +31,7 @@
   "encryptedStatus": { "message": "लिंक एन्क्रिप्टेड हैं और लोकली रखे गए हैं" },
   "exportAddresses": { "message": "पते निर्यात करें" },
   "exportAllNote": { "message": "डेटा निर्यात करते समय सभी रिकॉर्ड उपलब्ध होते हैं" },
+  "exportBackupHint": { "message": "प्रवेश की तारीखें, डाउनलोड तुलना और एन्क्रिप्टेड पतों को बनाए रखने के लिए सेटिंग्स मेनू से बैकअप बनाएं।" },
   "exportChoiceText": { "message": "पते निर्यात करने का तरीका चुनें:" },
   "exportCsv": { "message": "तालिका (CSV) के रूप में निर्यात करें" },
   "exportDownloads": { "message": "डाउनलोड" },

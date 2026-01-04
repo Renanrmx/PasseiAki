@@ -31,6 +31,7 @@
   "encryptedStatus": { "message": "Enlaces cifrados y mantenidos localmente" },
   "exportAddresses": { "message": "Exportar direcciones" },
   "exportAllNote": { "message": "Todos los registros están disponibles al exportar los datos" },
+  "exportBackupHint": { "message": "Para mantener las fechas de acceso, el comparador de descargas y las direcciones cifradas, realiza una copia de seguridad desde el menú de configuración" },
   "exportChoiceText": { "message": "Elija cómo desea exportar las direcciones:" },
   "exportCsv": { "message": "Exportar como tabla (CSV)" },
   "exportDownloads": { "message": "Descargas" },

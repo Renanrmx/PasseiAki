@@ -31,6 +31,7 @@
   "encryptedStatus": { "message": "Liens chiffrés et conservés localement" },
   "exportAddresses": { "message": "Exporter des adresses" },
   "exportAllNote": { "message": "Tous les enregistrements sont disponibles lors de l'exportation des données" },
+  "exportBackupHint": { "message": "Pour conserver les dates d'accès, le comparateur de téléchargements et les adresses chiffrées, effectuez une sauvegarde via le menu des paramètres" },
   "exportChoiceText": { "message": "Choisissez comment exporter les adresses :" },
   "exportCsv": { "message": "Exporter en tableau (CSV)" },
   "exportDownloads": { "message": "Téléchargements" },

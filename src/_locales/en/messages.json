@@ -31,6 +31,7 @@
   "encryptedStatus": { "message": "Links encrypted and stored locally" },
   "exportAddresses": { "message": "Export addresses" },
   "exportAllNote": { "message": "All records will be available when exporting data" },
+  "exportBackupHint": { "message": "To keep access dates, the download comparator, and encrypted addresses, create a backup from the settings menu" },
   "exportChoiceText": { "message": "Choose how you want to export the addresses:" },
   "exportCsv": { "message": "Export as table (CSV)" },
   "exportDownloads": { "message": "Downloads" },

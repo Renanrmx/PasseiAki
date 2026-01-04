@@ -31,6 +31,7 @@
   "encryptedStatus": { "message": "Ссылки зашифрованы и хранятся локально" },
   "exportAddresses": { "message": "Экспортировать адреса" },
   "exportAllNote": { "message": "При экспорте данных доступны все записи" },
+  "exportBackupHint": { "message": "Чтобы сохранить даты доступа, сравнение загрузок и зашифрованные адреса, создайте резервную копию в меню настроек" },
   "exportChoiceText": { "message": "Выберите способ экспорта адресов:" },
   "exportCsv": { "message": "Экспортировать как таблицу (CSV)" },
   "exportDownloads": { "message": "Загрузки" },

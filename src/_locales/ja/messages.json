@@ -31,6 +31,7 @@
   "encryptedStatus": { "message": "リンクは暗号化されローカルに保存されます" },
   "exportAddresses": { "message": "アドレスをエクスポート" },
   "exportAllNote": { "message": "データをエクスポートするとすべての記録が利用できます" },
+  "exportBackupHint": { "message": "アクセス日時、ダウンロード比較機能、暗号化されたアドレスを保持するには、設定メニューからバックアップを作成してください。" },
   "exportChoiceText": { "message": "アドレスのエクスポート方法を選択してください：" },
   "exportCsv": { "message": "表形式 (CSV) でエクスポート" },
   "exportDownloads": { "message": "ダウンロード" },

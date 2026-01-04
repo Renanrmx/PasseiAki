@@ -31,6 +31,7 @@
   "encryptedStatus": { "message": "الروابط مشفرة ومحفوظة محليًا" },
   "exportAddresses": { "message": "تصدير العناوين" },
   "exportAllNote": { "message": "جميع السجلات متاحة عند تصدير البيانات" },
+  "exportBackupHint": { "message": "للحفاظ على تواريخ الوصول ومقارنة التنزيلات والعناوين المشفرة، أنشئ نسخة احتياطية من قائمة الإعدادات" },
   "exportChoiceText": { "message": "اختر كيفية تصدير العناوين:" },
   "exportCsv": { "message": "تصدير كجدول (CSV)" },
   "exportDownloads": { "message": "التنزيلات" },

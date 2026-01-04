@@ -31,6 +31,7 @@
   "encryptedStatus": { "message": "連結已加密並保存在本機" },
   "exportAddresses": { "message": "匯出地址" },
   "exportAllNote": { "message": "匯出資料時可取得所有記錄" },
+  "exportBackupHint": { "message": "如需保留存取日期、下載比對器和加密地址，請在設定選單中建立備份。" },
   "exportChoiceText": { "message": "選擇要如何匯出地址：" },
   "exportCsv": { "message": "以表格 (CSV) 匯出" },
   "exportDownloads": { "message": "下載" },

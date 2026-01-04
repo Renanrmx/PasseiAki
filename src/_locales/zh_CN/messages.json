@@ -31,6 +31,7 @@
   "encryptedStatus": { "message": "链接已加密并本地保存" },
   "exportAddresses": { "message": "导出地址" },
   "exportAllNote": { "message": "导出数据时可获取全部记录" },
+  "exportBackupHint": { "message": "要保留访问日期、下载比较器和加密地址，请在设置菜单中创建备份。" },
   "exportChoiceText": { "message": "选择地址的导出方式：" },
   "exportCsv": { "message": "以表格 (CSV) 导出" },
   "exportDownloads": { "message": "下载" },
