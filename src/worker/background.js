@@ -101,7 +101,10 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }
 
     if (message.type === "CHECK_VISITED_LINKS") {
-      return handleCheckVisitedLinks(message.links || []);
+      return handleCheckVisitedLinks(message.links || [], {
+        skipFull: message.skipFull === true,
+        skipPartial: message.skipPartial === true
+      });
     }
 
     if (message.type === "GET_STATS") {
@@ -314,10 +317,12 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
       }));
     }
 
-    if (message.type === "CHECK_MATCH_EXCEPTION") {
+    if (message.type === "GET_PAGE_EXCEPTION_FLAGS") {
       return (async () => {
-        const isException = await isMatchException(message.url || "");
-        return { ok: true, isException };
+        const url = message.url || "";
+        const matchException = await isMatchException(url);
+        const partialException = await isPartialException(url);
+        return { ok: true, matchException, partialException };
       })().catch((error) => ({
         ok: false,
         error: error && error.message ? error.message : String(error)

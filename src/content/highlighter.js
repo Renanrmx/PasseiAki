@@ -17,6 +17,12 @@ let currentColors = {
   matchBorderEnabled: true,
   partialBorderEnabled: true
 };
+let pageExceptionFlags = {
+  match: false,
+  partial: false,
+  ready: false
+};
+let pageExceptionPromise = null;
 
 
 function buildStyleText() {
@@ -213,7 +219,9 @@ async function requestVisited(urlToAnchors) {
   try {
     const response = await api.runtime.sendMessage({
       type: "CHECK_VISITED_LINKS",
-      links: linksPayload
+      links: linksPayload,
+      skipFull: pageExceptionFlags.match === true,
+      skipPartial: pageExceptionFlags.partial === true
     });
     if (response && Array.isArray(response.visitedLinks)) {
       markVisited(urlToAnchors, response.visitedLinks);
@@ -229,11 +237,47 @@ function scheduleScan() {
   }
   scanTimer = setTimeout(() => {
     scanTimer = null;
-    scanAndMark();
+    scanAndMark().catch(() => {});
   }, SCAN_DEBOUNCE_MS);
 }
 
-function scanAndMark() {
+async function refreshPageExceptionFlags(force = false) {
+  if (!api?.runtime?.sendMessage) {
+    pageExceptionFlags = { match: false, partial: false, ready: true };
+    return pageExceptionFlags;
+  }
+  if (pageExceptionFlags.ready && !force) {
+    return pageExceptionFlags;
+  }
+  if (pageExceptionPromise) {
+    return pageExceptionPromise;
+  }
+  pageExceptionPromise = (async () => {
+    try {
+      const response = await api.runtime.sendMessage({
+        type: "GET_PAGE_EXCEPTION_FLAGS",
+        url: window.location.href
+      });
+      pageExceptionFlags = {
+        match: response && response.matchException === true,
+        partial: response && response.partialException === true,
+        ready: true
+      };
+    } catch (error) {
+      pageExceptionFlags = { match: false, partial: false, ready: true };
+    }
+    return pageExceptionFlags;
+  })();
+
+  try {
+    return await pageExceptionPromise;
+  } finally {
+    pageExceptionPromise = null;
+  }
+}
+
+async function scanAndMark() {
+  await refreshPageExceptionFlags();
   const urlToAnchors = collectLinks();
   urlToAnchors.forEach((anchors) => {
     anchors.forEach((anchor) => {
@@ -251,6 +295,9 @@ function scanAndMark() {
       delete anchor.dataset.passeiAkiVisited;
     });
   });
+  if (pageExceptionFlags.match && pageExceptionFlags.partial) {
+    return;
+  }
   requestVisited(urlToAnchors);
 }
 
@@ -266,19 +313,6 @@ function startObservers() {
   observer.observe(document.body, { childList: true, subtree: true });
 }
 
-async function isMatchExceptionUrl(urlString) {
-  if (!urlString) return false;
-  try {
-    const response = await api.runtime.sendMessage({
-      type: "CHECK_MATCH_EXCEPTION",
-      url: urlString
-    });
-    return response && response.isException === true;
-  } catch (error) {
-    return false;
-  }
-}
-
 async function handleAnchorActivate(event) {
   if (event.type === "auxclick") {
     // allow only middle-click to trigger marking
@@ -292,14 +326,17 @@ async function handleAnchorActivate(event) {
   try {
     const url = new URL(anchor.href, window.location.href);
     if (!SUPPORTED_PROTOCOLS.has(url.protocol)) return;
-    if (await isMatchExceptionUrl(url.toString())) return;
+    if (!pageExceptionFlags.ready) {
+      await refreshPageExceptionFlags();
+    }
+    if (pageExceptionFlags.match) return;
     paintAnchor(anchor, false);
   } catch (error) {
     // ignore malformed href
   }
 }
 
-function init() {
+async function init() {
   if (!SUPPORTED_PROTOCOLS.has(window.location.protocol)) {
     return;
   }
@@ -315,7 +352,8 @@ function init() {
     applyColors({});
   }
   injectStyle();
-  scanAndMark();
+  await refreshPageExceptionFlags(true);
+  scanAndMark().catch(() => {});
   startObservers();
   document.addEventListener("click", handleAnchorActivate, true);
   document.addEventListener("auxclick", handleAnchorActivate, true);
@@ -333,7 +371,9 @@ if (api.runtime && api.runtime.onMessage) {
       applyColors(message.colors, { refreshMarked: true });
     }
     if (message && message.type === "REFRESH_HIGHLIGHT") {
-      scanAndMark();
+      refreshPageExceptionFlags(true).then(() => {
+        scanAndMark().catch(() => {});
+      });
     }
   });
 }
