@@ -266,7 +266,20 @@ function startObservers() {
   observer.observe(document.body, { childList: true, subtree: true });
 }
 
-function handleAnchorActivate(event) {
+async function isMatchExceptionUrl(urlString) {
+  if (!urlString) return false;
+  try {
+    const response = await api.runtime.sendMessage({
+      type: "CHECK_MATCH_EXCEPTION",
+      url: urlString
+    });
+    return response && response.isException === true;
+  } catch (error) {
+    return false;
+  }
+}
+
+async function handleAnchorActivate(event) {
   if (event.type === "auxclick") {
     // allow only middle-click to trigger marking
     if (event.button !== 1) return;
@@ -279,6 +292,7 @@ function handleAnchorActivate(event) {
   try {
     const url = new URL(anchor.href, window.location.href);
     if (!SUPPORTED_PROTOCOLS.has(url.protocol)) return;
+    if (await isMatchExceptionUrl(url.toString())) return;
     paintAnchor(anchor, false);
   } catch (error) {
     // ignore malformed href

@@ -314,6 +314,16 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
       }));
     }
 
+    if (message.type === "CHECK_MATCH_EXCEPTION") {
+      return (async () => {
+        const isException = await isMatchException(message.url || "");
+        return { ok: true, isException };
+      })().catch((error) => ({
+        ok: false,
+        error: error && error.message ? error.message : String(error)
+      }));
+    }
+
     if (message.type === "SET_MATCH_EXCEPTIONS") {
       return (async () => {
         const items = await setMatchExceptions(message.items || []);
