@@ -98,7 +98,7 @@ async function downloadBackup(envelope, filename) {
     if (api && api.downloads && api.downloads.download) {
       await api.downloads.download({
         url: objectUrl,
-        filename: filename || `passei-aki-backup-${Date.now()}.bak`,
+        filename: filename || `passei-aki_backup-${formatDate(new Date(), "YYYY-MM-DD_HH-mm-ss")}.bak`,
         saveAs: true
       });
     }

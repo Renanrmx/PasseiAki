@@ -14,6 +14,19 @@ function i18n(key, substitutions) {
   return key;
 }
 
+function formatDate(date, pattern) {
+  const pad = (value) => String(value).padStart(2, "0");
+  const tokens = {
+    YYYY: date.getFullYear(),
+    MM: pad(date.getMonth() + 1),
+    DD: pad(date.getDate()),
+    HH: pad(date.getHours()),
+    mm: pad(date.getMinutes()),
+    ss: pad(date.getSeconds())
+  };
+  return pattern.replace(/YYYY|MM|DD|HH|mm|ss/g, (token) => tokens[token]);
+}
+
 function decodeComponentSafe(value) {
   try {
     return decodeURIComponent(value);
