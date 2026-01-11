@@ -14,10 +14,17 @@ const passwordConfirm = document.getElementById("password-confirm");
 const passwordConfirmInput = document.getElementById("password-confirm-input");
 const overlay = document.getElementById("password-overlay");
 const passwordForm = document.getElementById("password-form");
+const restoreOptions = document.getElementById("restore-options");
+const restoreMerge = document.getElementById("restore-merge");
+const restoreOnly = document.getElementById("restore-only");
+const restoreMergeWarning = document.getElementById("restore-merge-warning");
+const restoreOnlyWarning = document.getElementById("restore-only-warning");
 
 let passwordResolve = null;
 let passwordReject = null;
 let passwordRequireConfirm = true;
+let restoreOptionsVisible = false;
+let encryptionEnabledState = null;
 
 const MIN_PASSWORD_LENGTH = 3;
 
@@ -27,13 +34,50 @@ if (typeof applyI18n === "function") {
 }
 
 
-function showPasswordDialog({ title, description, requireConfirm = true }) {
+function setPasswordDescription(description) {
+  if (!passwordDesc) return;
+  passwordDesc.textContent = "";
+  if (typeof description === "string") {
+    passwordDesc.textContent = description;
+    return;
+  }
+  if (!description || typeof description !== "object") {
+    return;
+  }
+  if (description.text) {
+    passwordDesc.appendChild(document.createTextNode(description.text));
+  }
+  if (description.icon) {
+    const icon = document.createElement("span");
+    icon.className = "warning-icon";
+    icon.setAttribute("aria-hidden", "true");
+    icon.textContent = "!";
+    passwordDesc.appendChild(icon);
+  }
+  if (description.extra) {
+    if (description.text || description.icon) {
+      passwordDesc.appendChild(document.createTextNode(" "));
+    }
+    passwordDesc.appendChild(document.createTextNode(description.extra));
+  }
+}
+
+function updateRestoreWarnings() {
+  if (restoreMergeWarning && restoreMerge) {
+    restoreMergeWarning.style.display = restoreMerge.checked ? "inline" : "none";
+  }
+  if (restoreOnlyWarning && restoreOnly) {
+    restoreOnlyWarning.style.display = restoreOnly.checked ? "inline" : "none";
+  }
+}
+
+function showPasswordDialog({ title, description, requireConfirm = true, showRestoreOptions = false }) {
   return new Promise((resolve, reject) => {
     passwordRequireConfirm = Boolean(requireConfirm);
     passwordResolve = resolve;
     passwordReject = reject;
     passwordTitle.textContent = title || t("passwordLabel");
-    passwordDesc.textContent = description || "";
+    setPasswordDescription(description || "");
     passwordError.textContent = "";
     passwordInput.value = "";
     passwordConfirmInput.value = "";
@@ -42,6 +86,17 @@ function showPasswordDialog({ title, description, requireConfirm = true }) {
     } else {
       passwordConfirmInput.style.display = "none";
     }
+    restoreOptionsVisible = Boolean(showRestoreOptions && restoreOptions);
+    if (restoreOptions) {
+      restoreOptions.style.display = restoreOptionsVisible ? "flex" : "none";
+    }
+    if (restoreMerge) {
+      restoreMerge.checked = true;
+    }
+    if (restoreOnly && !restoreOptionsVisible) {
+      restoreOnly.checked = false;
+    }
+    updateRestoreWarnings();
     overlay.classList.add("active");
     passwordInput.focus();
     setTimeout(() => {
@@ -54,6 +109,7 @@ function closePasswordDialog() {
   overlay.classList.remove("active");
   passwordResolve = null;
   passwordReject = null;
+  restoreOptionsVisible = false;
 }
 
 passwordCancel.addEventListener("click", () => {
@@ -81,7 +137,11 @@ passwordConfirm.addEventListener("click", () => {
       return;
     }
   }
-  passwordResolve(passwordInput.value);
+  const result = { password: passwordInput.value };
+  if (restoreOptionsVisible) {
+    result.mergeVisits = restoreMerge ? restoreMerge.checked : true;
+  }
+  passwordResolve(result);
   closePasswordDialog();
 });
 
@@ -103,16 +163,16 @@ if (passwordForm) {
 }
 
 async function doExport() {
-    const password = await showPasswordDialog({
-      title: t("createBackup"),
-      description: t("createBackupDesc"),
-      requireConfirm: true
-    });
-  if (!password) return;
+  const result = await showPasswordDialog({
+    title: t("createBackup"),
+    description: t("createBackupDesc"),
+    requireConfirm: true
+  });
+  if (!result || !result.password) return;
   try {
     await apiExport.runtime.sendMessage({
       type: "CREATE_BACKUP_DOWNLOAD",
-      password
+      password: result.password
     });
   } catch (error) {
     alert(t("backupExportError", error.message));
@@ -124,12 +184,18 @@ async function doImport(file) {
     if (!file) {
       return;
     }
-    const password = await showPasswordDialog({
+    const encryptionEnabled = await getEncryptionEnabledState();
+    const description = encryptionEnabled === false
+      ? { text: t("restoreBackupInst") }
+      : { text: t("restoreBackupDesc"), icon: true, extra: t("restoreBackupInst") };
+    const result = await showPasswordDialog({
       title: t("restoreBackup"),
-      description: t("restoreBackupDesc"),
-      requireConfirm: false
+      description,
+      requireConfirm: false,
+      showRestoreOptions: encryptionEnabled === false
     });
-    if (!password) return;
+    if (!result || !result.password) return;
+    const mergeVisits = result.mergeVisits === true;
 
     const reader = new FileReader();
     reader.onload = async () => {
@@ -137,8 +203,9 @@ async function doImport(file) {
         const envelope = JSON.parse(reader.result);
         const response = await apiExport.runtime.sendMessage({
           type: "RESTORE_BACKUP",
-          password,
-          envelope
+          password: result.password,
+          envelope,
+          mergeVisits
         });
         if (!response || response.ok === false) {
           throw new Error(response && response.error ? response.error : "Backup restore failed");
@@ -196,14 +263,24 @@ if (restoreBackupFile) {
   restoreBackupFile.addEventListener("input", onFileSelected);
 }
 
+if (restoreMerge) {
+  restoreMerge.addEventListener("change", updateRestoreWarnings);
+}
+
+if (restoreOnly) {
+  restoreOnly.addEventListener("change", updateRestoreWarnings);
+}
+
 async function syncEncryptionUI() {
   if (!encryptionToggle || !encryptionStatus) return;
   try {
     const result = await apiExport.runtime.sendMessage({ type: "GET_ENCRYPTION_ENABLED" });
     const enabled = Boolean(result && result.encryptionEnabled);
+    encryptionEnabledState = enabled;
     encryptionToggle.checked = enabled;
     updateEncryptionStatus(enabled);
   } catch (error) {
+    encryptionEnabledState = true;
     encryptionToggle.checked = true;
     updateEncryptionStatus(true);
   }
@@ -211,6 +288,7 @@ async function syncEncryptionUI() {
 
 function updateEncryptionStatus(enabled) {
   if (!encryptionStatus) return;
+  encryptionEnabledState = enabled;
   if (enabled) {
     encryptionStatus.textContent =
       t("encryptedStatus");
@@ -218,6 +296,20 @@ function updateEncryptionStatus(enabled) {
   } else {
     encryptionStatus.textContent = t("unencryptedStatus");
     encryptionStatus.classList.add("bad");
+  }
+}
+
+async function getEncryptionEnabledState() {
+  if (typeof encryptionEnabledState === "boolean") {
+    return encryptionEnabledState;
+  }
+  try {
+    const result = await apiExport.runtime.sendMessage({ type: "GET_ENCRYPTION_ENABLED" });
+    encryptionEnabledState = Boolean(result && result.encryptionEnabled);
+    return encryptionEnabledState;
+  } catch (error) {
+    encryptionEnabledState = true;
+    return encryptionEnabledState;
   }
 }
 

@@ -20,7 +20,43 @@ async function createBackup(password) {
   return envelope;
 }
 
-async function restoreBackup(password, envelope) {
+function mergePlainVisits(existing = [], incoming = []) {
+  const merged = new Map();
+  incoming.forEach((record) => {
+    if (record && record.id) {
+      merged.set(record.id, record);
+    }
+  });
+
+  existing.forEach((record) => {
+    if (!record || !record.id) return;
+    const isPlain = record.hashed === false;
+    if (!isPlain) return;
+
+    const current = merged.get(record.id);
+    if (current && current.hashed === false) {
+      const mergedCount = (current.visitCount || 0) + (record.visitCount || 0);
+      const mergedLast = Math.max(current.lastVisited || 0, record.lastVisited || 0);
+      merged.set(record.id, {
+        ...current,
+        ...record,
+        visitCount: mergedCount,
+        lastVisited: mergedLast,
+        download: current.download === true || record.download === true,
+        hashed: false
+      });
+      return;
+    }
+
+    if (!current) {
+      merged.set(record.id, record);
+    }
+  });
+
+  return Array.from(merged.values());
+}
+
+async function restoreBackup(password, envelope, options = {}) {
   try {
     const plaintext = await decryptWithPassword(password, envelope);
     const decoded = JSON.parse(new TextDecoder().decode(plaintext));
@@ -28,9 +64,15 @@ async function restoreBackup(password, envelope) {
       throw new Error("Invalid backup payload");
     }
 
+    const shouldMergeVisits = options && options.mergeVisits === true;
+    const existingVisits = shouldMergeVisits ? await dumpAllVisits() : [];
+    const visitsToRestore = shouldMergeVisits
+      ? mergePlainVisits(existingVisits, decoded.visits)
+      : decoded.visits;
+
     await clearAllData();
     await writeMetaEntries(decoded.meta);
-    await putVisits(decoded.visits);
+    await putVisits(visitsToRestore);
     if (Array.isArray(decoded.partialExceptions)) {
       await setPartialExceptions(decoded.partialExceptions);
     }

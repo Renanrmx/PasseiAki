@@ -172,8 +172,9 @@
         border: 1px solid rgba(255, 255, 255, 0.08);
         border-radius: 12px;
         padding: 14px 16px;
-        width: 100%;
-        max-width: 360px;
+        width: fit-content;
+        min-width: min(380px, 96vw);
+        max-width: 96vw;
         box-shadow: 0 14px 40px rgba(0, 0, 0, 0.5);
         box-sizing: border-box;
       }
@@ -186,6 +187,21 @@
         font-size: 12px;
         color: #c5d6e2;
       }
+      .modal .warning-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 14px;
+        height: 14px;
+        margin-left: 6px;
+        border-radius: 50%;
+        background: rgba(255, 193, 77, 0.15);
+        border: 1px solid rgba(255, 193, 77, 0.6);
+        color: #ffcd66;
+        font-size: 10px;
+        font-weight: 700;
+        line-height: 1;
+      }
       .modal input[type="password"] {
         width: 100%;
         padding: 8px 10px;
@@ -195,6 +211,44 @@
         color: #e8f1f2;
         margin-top: 6px;
         box-sizing: border-box;
+      }
+      .modal .restore-options {
+        display: none;
+        flex-direction: column;
+        gap: 6px;
+        margin-top: 10px;
+        font-size: 12px;
+        color: #c5d6e2;
+      }
+      .modal .restore-options label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .modal .restore-options .restore-option {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 18px minmax(0, 1fr);
+        column-gap: 8px;
+        align-items: start;
+      }
+      .modal .restore-option-text {
+        display: inline;
+      }
+      .modal .restore-warning {
+        display: inline;
+        margin-left: 6px;
+        color: #ff6b6b;
+        font-size: clamp(10px, 1.6vw, 11px);
+        line-height: 1.2;
+        white-space: normal;
+        text-align: left;
+      }
+      .modal .restore-options input[type="radio"] {
+        accent-color: #0eb378;
+        width: 16px;
+        height: 16px;
       }
       .modal .modal-actions {
         display: flex;
@@ -347,6 +401,22 @@
           <p id="password-desc"></p>
           <input type="password" id="password-input" autocomplete="off" placeholder="Senha" data-i18n="passwordPlaceholder" />
           <input type="password" id="password-confirm-input" autocomplete="off" placeholder="Confirmar senha" data-i18n="confirmPasswordPlaceholder" />
+          <div class="restore-options" id="restore-options">
+            <label class="restore-option">
+              <input type="radio" name="restore-mode" id="restore-merge" value="merge" checked />
+              <span class="restore-option-text">
+                <span data-i18n="restoreMergeVisits">Mesclar acessos</span>
+                <span class="restore-warning" id="restore-merge-warning">(<span data-i18n="restoreMergeWarning">Dados atuais criptografados serão ignorados</span>)</span>
+              </span>
+            </label>
+            <label class="restore-option">
+              <input type="radio" name="restore-mode" id="restore-only" value="backup" />
+              <span class="restore-option-text">
+                <span data-i18n="restoreOnlyBackup">Apenas backup</span>
+                <span class="restore-warning" id="restore-only-warning">(<span data-i18n="restoreOnlyWarning">Os dados de acesso atuais serão perdidos</span>)</span>
+              </span>
+            </label>
+          </div>
           <div class="error" id="password-error"></div>
           <div class="modal-actions">
             <button class="btn" id="password-cancel" type="button" data-i18n="cancel">Cancelar</button>

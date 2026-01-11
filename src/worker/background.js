@@ -171,7 +171,9 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     if (message.type === "RESTORE_BACKUP") {
       try {
-        await restoreBackup(message.password || "", message.envelope);
+        await restoreBackup(message.password || "", message.envelope, {
+          mergeVisits: message.mergeVisits === true
+        });
         return { ok: true };
       } catch (error) {
         console.error("Backup restore fail:", error);
