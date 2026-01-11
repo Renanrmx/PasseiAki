@@ -2,9 +2,108 @@ const SUPPORT_HOST_SUFFIX = "buymeacoffee.com";
 const SUPPORT_REQUIRED_MS = 40000;
 const SUPPORT_COOLDOWN_DAYS = 50;
 const SUPPORT_HIDE_MS = SUPPORT_COOLDOWN_DAYS * 24 * 60 * 60 * 1000;
+const SUPPORT_TRACKING_STORAGE_KEY = "supportTrackingState";
 
 let supportTracking = null;
 let focusedWindowId = null;
+let supportTrackingLoadPromise = null;
+
+function getSupportTrackingStorage() {
+  if (api?.storage?.session) {
+    return api.storage.session;
+  }
+  return null;
+}
+
+function normalizeSupportTrackingState(raw) {
+  if (!raw || typeof raw !== "object") {
+    return null;
+  }
+  const tabId = typeof raw.tabId === "number" ? raw.tabId : null;
+  if (tabId === null) {
+    return null;
+  }
+  const elapsedMs =
+    Number.isFinite(raw.elapsedMs) && raw.elapsedMs >= 0 ? raw.elapsedMs : 0;
+  const startedAt =
+    Number.isFinite(raw.startedAt) && raw.startedAt > 0 ? raw.startedAt : 0;
+  return {
+    tabId,
+    windowId: typeof raw.windowId === "number" ? raw.windowId : null,
+    urlValid: raw.urlValid === true,
+    elapsedMs,
+    active: raw.active === true,
+    startedAt,
+    timerId: null
+  };
+}
+
+async function readSupportTrackingState() {
+  const storage = getSupportTrackingStorage();
+  if (!storage || !storage.get) {
+    return null;
+  }
+  try {
+    const result = await storage.get(SUPPORT_TRACKING_STORAGE_KEY);
+    return normalizeSupportTrackingState(
+      result ? result[SUPPORT_TRACKING_STORAGE_KEY] : null
+    );
+  } catch (error) {
+    return null;
+  }
+}
+
+async function persistSupportTrackingState() {
+  const storage = getSupportTrackingStorage();
+  if (!storage || !storage.set) {
+    return;
+  }
+  if (!supportTracking) {
+    if (storage.remove) {
+      try {
+        await storage.remove(SUPPORT_TRACKING_STORAGE_KEY);
+      } catch (error) {
+        // ignore storage cleanup errors
+      }
+    }
+    return;
+  }
+  const payload = {
+    tabId: supportTracking.tabId,
+    windowId: supportTracking.windowId,
+    urlValid: supportTracking.urlValid === true,
+    elapsedMs: supportTracking.elapsedMs,
+    active: supportTracking.active === true,
+    startedAt: supportTracking.startedAt
+  };
+  try {
+    await storage.set({ [SUPPORT_TRACKING_STORAGE_KEY]: payload });
+  } catch (error) {
+    // ignore storage update errors
+  }
+}
+
+async function ensureSupportTrackingLoaded() {
+  if (supportTracking) {
+    return true;
+  }
+  if (supportTrackingLoadPromise) {
+    await supportTrackingLoadPromise;
+    return Boolean(supportTracking);
+  }
+  supportTrackingLoadPromise = (async () => {
+    const stored = await readSupportTrackingState();
+    if (stored) {
+      supportTracking = stored;
+    }
+  })()
+    .catch(() => {})
+    .finally(() => {
+      supportTrackingLoadPromise = null;
+    });
+  await supportTrackingLoadPromise;
+  return Boolean(supportTracking);
+}
 
 function isSupportUrl(urlString) {
   if (!urlString) return false;
@@ -25,6 +124,38 @@ async function updateFocusedWindowId() {
   } catch (error) {
     // ignore focus resolution errors
   }
+}
+
+async function getWindowFocusState(windowId) {
+  if (!api?.windows?.get || typeof windowId !== "number") {
+    return null;
+  }
+  try {
+    const win = await api.windows.get(windowId);
+    if (win && typeof win.focused === "boolean") {
+      return win.focused;
+    }
+  } catch (error) {
+    // ignore window focus errors
+  }
+  return null;
+}
+
+async function shouldTrackSupportTab(tab) {
+  if (!supportTracking || !tab) {
+    return false;
+  }
+  supportTracking.windowId = tab.windowId;
+  supportTracking.urlValid = isSupportUrl(tab.url);
+  if (focusedWindowId === null) {
+    await updateFocusedWindowId();
+  }
+  const windowFocused = await getWindowFocusState(tab.windowId);
+  const isFocused =
+    windowFocused === null
+      ? focusedWindowId === null || focusedWindowId === tab.windowId
+      : windowFocused;
+  return supportTracking.urlValid && tab.active === true && isFocused;
 }
 
 async function getSupportStatus() {
@@ -60,6 +191,17 @@ function clearSupportTrackingTimer() {
   }
 }
 
+function scheduleSupportTracking(remainingMs) {
+  if (remainingMs <= 0) {
+    return;
+  }
+  if (supportTracking) {
+    supportTracking.timerId = setTimeout(() => {
+      void handleSupportTimer();
+    }, remainingMs);
+  }
+}
+
 function pauseSupportTracking() {
   if (!supportTracking || !supportTracking.active) {
     return;
@@ -68,23 +210,27 @@ function pauseSupportTracking() {
   supportTracking.active = false;
   supportTracking.startedAt = 0;
   clearSupportTrackingTimer();
+  void persistSupportTrackingState();
 }
 
 function resumeSupportTracking() {
-  if (!supportTracking || supportTracking.active) {
+  if (!supportTracking) {
     return;
   }
-  const remaining = SUPPORT_REQUIRED_MS - supportTracking.elapsedMs;
+  const runningElapsed = supportTracking.active
+    ? supportTracking.elapsedMs + (Date.now() - supportTracking.startedAt)
+    : supportTracking.elapsedMs;
+  const remaining = SUPPORT_REQUIRED_MS - runningElapsed;
   if (remaining <= 0) {
     void completeSupportTracking();
     return;
   }
+  supportTracking.elapsedMs = runningElapsed;
   supportTracking.active = true;
   supportTracking.startedAt = Date.now();
   clearSupportTrackingTimer();
-  supportTracking.timerId = setTimeout(() => {
-    void completeSupportTracking();
-  }, remaining);
+  scheduleSupportTracking(remaining);
+  void persistSupportTrackingState();
 }
 
 async function completeSupportTracking() {
@@ -103,9 +249,43 @@ async function completeSupportTracking() {
   }
 
   supportTracking = null;
+  await persistSupportTrackingState();
   await setSupportAt(Date.now());
   const status = await getSupportStatus();
   sendSupportStatusUpdate(status.visible);
+}
+
+async function handleSupportTimer() {
+  if (!supportTracking) {
+    await ensureSupportTrackingLoaded();
+  }
+  if (!supportTracking) {
+    return;
+  }
+  try {
+    const tab = await api.tabs.get(supportTracking.tabId);
+    const shouldTrack = await shouldTrackSupportTab(tab);
+    if (!shouldTrack) {
+      pauseSupportTracking();
+      return;
+    }
+  } catch (error) {
+    stopSupportTracking();
+    return;
+  }
+
+  const elapsed = supportTracking.elapsedMs + (Date.now() - supportTracking.startedAt);
+  if (elapsed >= SUPPORT_REQUIRED_MS) {
+    supportTracking.elapsedMs = elapsed;
+    supportTracking.startedAt = Date.now();
+    await completeSupportTracking();
+    return;
+  }
+  supportTracking.elapsedMs = elapsed;
+  supportTracking.startedAt = Date.now();
+  clearSupportTrackingTimer();
+  scheduleSupportTracking(SUPPORT_REQUIRED_MS - elapsed);
+  void persistSupportTrackingState();
 }
 
 function stopSupportTracking() {
@@ -114,32 +294,34 @@ function stopSupportTracking() {
   }
   clearSupportTrackingTimer();
   supportTracking = null;
+  void persistSupportTrackingState();
 }
 
-function refreshSupportTrackingFromTab(tab) {
-  if (!supportTracking || !tab || tab.id !== supportTracking.tabId) {
+async function refreshSupportTracking(tab) {
+  if (!supportTracking) {
     return;
   }
-  supportTracking.windowId = tab.windowId;
-  supportTracking.urlValid = isSupportUrl(tab.url);
-  const isFocused = focusedWindowId === null || focusedWindowId === tab.windowId;
-  const shouldTrack = supportTracking.urlValid && tab.active === true && isFocused;
+  let currentTab = tab || null;
+  if (currentTab) {
+    if (currentTab.id !== supportTracking.tabId) {
+      return;
+    }
+  } else {
+    if (!api?.tabs?.get) {
+      return;
+    }
+    try {
+      currentTab = await api.tabs.get(supportTracking.tabId);
+    } catch (error) {
+      stopSupportTracking();
+      return;
+    }
+  }
+  const shouldTrack = await shouldTrackSupportTab(currentTab);
   if (shouldTrack) {
     resumeSupportTracking();
   } else {
     pauseSupportTracking();
-  }
-}
-
-async function refreshSupportTracking() {
-  if (!supportTracking || !api?.tabs?.get) {
-    return;
-  }
-  try {
-    const tab = await api.tabs.get(supportTracking.tabId);
-    refreshSupportTrackingFromTab(tab);
-  } catch (error) {
-    stopSupportTracking();
   }
 }
 
@@ -157,34 +339,51 @@ async function beginSupportTracking(tabId) {
     startedAt: 0,
     timerId: null
   };
+  void persistSupportTrackingState();
   await updateFocusedWindowId();
   await refreshSupportTracking();
 }
 
-function handleSupportTabRemoved(tabId) {
-  if (supportTracking && supportTracking.tabId === tabId) {
-    stopSupportTracking();
+async function handleSupportTabRemoved(tabId) {
+  try {
+    if (!supportTracking) {
+      await ensureSupportTrackingLoaded();
+    }
+    if (supportTracking && supportTracking.tabId === tabId) {
+      stopSupportTracking();
+    }
+  } catch (error) {
+    // ignore tab removal errors
   }
 }
 
-function handleSupportTabComplete(tabId, changeInfo, tab) {
-  if (supportTracking && tab && tab.id === supportTracking.tabId) {
-    refreshSupportTrackingFromTab(tab);
+async function handleSupportTabComplete(tab) {
+  try {
+    if (!supportTracking) {
+      await ensureSupportTrackingLoaded();
+    }
+    if (supportTracking && tab && tab.id === supportTracking.tabId) {
+      await refreshSupportTracking(tab);
+    }
+  } catch (error) {
+    // ignore tab update errors
   }
 }
 
-async function handleSupportTabActivated(activeInfo, tab) {
+async function handleSupportTabActivated(tab) {
+  await ensureSupportTrackingLoaded();
   if (!supportTracking) {
     return;
   }
   if (tab && tab.id === supportTracking.tabId) {
-    refreshSupportTrackingFromTab(tab);
+    await refreshSupportTracking(tab);
     return;
   }
   await refreshSupportTracking();
 }
 
 async function handleSupportWindowFocusChanged(windowId) {
+  await ensureSupportTrackingLoaded();
   if (windowId === api.windows.WINDOW_ID_NONE) {
     focusedWindowId = api.windows.WINDOW_ID_NONE;
     pauseSupportTracking();

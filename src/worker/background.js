@@ -589,7 +589,7 @@ async function refreshAllTabsMatchState() {
 
 async function handleTabComplete(tabId, changeInfo, tab) {
   if (typeof handleSupportTabComplete === "function") {
-    handleSupportTabComplete(tabId, changeInfo, tab);
+    handleSupportTabComplete(tab);
   }
   if (!tab || !tab.url || changeInfo.status !== "complete") {
     return;
@@ -667,7 +667,7 @@ async function handleTabActivated(activeInfo) {
     console.warn("Could not update tab state:", error);
   } finally {
     if (typeof handleSupportTabActivated === "function") {
-      await handleSupportTabActivated(activeInfo, tab);
+      await handleSupportTabActivated(tab);
     }
   }
 }
