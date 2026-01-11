@@ -44,8 +44,24 @@ function setPasswordDescription(description) {
   if (!description || typeof description !== "object") {
     return;
   }
+  const hasMainText = Boolean(description.text);
   if (description.text) {
     passwordDesc.appendChild(document.createTextNode(description.text));
+  }
+  if (description.extra) {
+    if (hasMainText) {
+      passwordDesc.appendChild(document.createElement("br"));
+    }
+    passwordDesc.appendChild(document.createTextNode(description.extra));
+    if (description.icon) {
+      passwordDesc.appendChild(document.createTextNode(" "));
+      const icon = document.createElement("span");
+      icon.className = "warning-icon";
+      icon.setAttribute("aria-hidden", "true");
+      icon.textContent = "!";
+      passwordDesc.appendChild(icon);
+    }
+    return;
   }
   if (description.icon) {
     const icon = document.createElement("span");
@@ -53,12 +69,6 @@ function setPasswordDescription(description) {
     icon.setAttribute("aria-hidden", "true");
     icon.textContent = "!";
     passwordDesc.appendChild(icon);
-  }
-  if (description.extra) {
-    if (description.text || description.icon) {
-      passwordDesc.appendChild(document.createTextNode(" "));
-    }
-    passwordDesc.appendChild(document.createTextNode(description.extra));
   }
 }
 
