@@ -150,20 +150,27 @@ function collectLinks() {
   return urlToAnchors;
 }
 
-function markVisited(urlToAnchors, visitedLinks) {
-  for (const item of visitedLinks) {
-    const anchors = urlToAnchors.get(item.token);
-    if (!anchors) continue;
-    anchors.forEach((anchor) => paintAnchor(anchor, item.state === "partial"));
-  }
-}
-
 function refreshMarkedAnchors() {
-  const anchors = document.querySelectorAll("a[data-aki-visited-text]");
+  const anchors = document.querySelectorAll("a[data-aki-visited]");
   anchors.forEach((anchor) => {
-    const isPartial = anchor.dataset.passeiAkiVisited === "partial";
+    const isPartial = anchor.dataset.akiVisited === "partial";
     paintAnchor(anchor, isPartial);
   });
+}
+
+function clearAnchorMark(anchor) {
+  anchor.classList.remove(
+    VISITED_TEXT_CLASS,
+    PARTIAL_TEXT_CLASS,
+    VISITED_BORDER_CLASS,
+    PARTIAL_BORDER_CLASS
+  );
+  anchor.style.removeProperty("color");
+  anchor.style.removeProperty("text-decoration-color");
+  anchor.style.outline = "";
+  anchor.style.outlineOffset = "";
+  anchor.style.borderRadius = "";
+  delete anchor.dataset.akiVisited;
 }
 
 function paintAnchor(anchor, isPartial) {
@@ -190,7 +197,7 @@ function paintAnchor(anchor, isPartial) {
       anchor.style.setProperty("outline-offset", "0px", "important");
       anchor.style.setProperty("border-radius", "3px", "important");
     }
-    anchor.dataset.passeiAkiVisited = "partial";
+    anchor.dataset.akiVisited = "partial";
   } else {
     anchor.classList.add(VISITED_TEXT_CLASS, VISITED_BORDER_CLASS);
     if (currentColors.matchTextEnabled !== false && currentColors.matchHexColor) {
@@ -202,7 +209,7 @@ function paintAnchor(anchor, isPartial) {
       anchor.style.setProperty("outline-offset", "0px", "important");
       anchor.style.setProperty("border-radius", "3px", "important");
     }
-    anchor.dataset.passeiAkiVisited = "true";
+    anchor.dataset.akiVisited = "true";
   }
 }
 
@@ -213,7 +220,7 @@ async function requestVisited(urlToAnchors) {
   }));
 
   if (linksPayload.length === 0) {
-    return;
+    return [];
   }
 
   try {
@@ -223,11 +230,10 @@ async function requestVisited(urlToAnchors) {
       skipFull: pageExceptionFlags.match === true,
       skipPartial: pageExceptionFlags.partial === true
     });
-    if (response && Array.isArray(response.visitedLinks)) {
-      markVisited(urlToAnchors, response.visitedLinks);
-    }
+    return response && Array.isArray(response.visitedLinks) ? response.visitedLinks : [];
   } catch (error) {
     // runtime or permission issue; fail silently
+    return [];
   }
 }
 
@@ -279,26 +285,37 @@ async function refreshPageExceptionFlags(force = false) {
 async function scanAndMark() {
   await refreshPageExceptionFlags();
   const urlToAnchors = collectLinks();
-  urlToAnchors.forEach((anchors) => {
-    anchors.forEach((anchor) => {
-      anchor.classList.remove(
-        VISITED_TEXT_CLASS,
-        PARTIAL_TEXT_CLASS,
-        VISITED_BORDER_CLASS,
-        PARTIAL_BORDER_CLASS
-      );
-      anchor.style.removeProperty("color");
-      anchor.style.removeProperty("text-decoration-color");
-      anchor.style.outline = "";
-      anchor.style.outlineOffset = "";
-      anchor.style.borderRadius = "";
-      delete anchor.dataset.passeiAkiVisited;
-    });
-  });
   if (pageExceptionFlags.match && pageExceptionFlags.partial) {
+    urlToAnchors.forEach((anchors) => {
+      anchors.forEach((anchor) => {
+        if (anchor.dataset.akiVisited) {
+          clearAnchorMark(anchor);
+        }
+      });
+    });
     return;
   }
-  requestVisited(urlToAnchors);
+  const visitedLinks = await requestVisited(urlToAnchors);
+  const visitedByToken = new Map(
+    visitedLinks.map((item) => [item.token, item.state])
+  );
+  urlToAnchors.forEach((anchors, token) => {
+    const state = visitedByToken.get(token);
+    anchors.forEach((anchor) => {
+      if (!state) {
+        if (anchor.dataset.akiVisited) {
+          clearAnchorMark(anchor);
+        }
+        return;
+      }
+      const isPartial = state === "partial";
+      const expectedState = isPartial ? "partial" : "true";
+      if (anchor.dataset.akiVisited === expectedState) {
+        return;
+      }
+      paintAnchor(anchor, isPartial);
+    });
+  });
 }
 
 function startObservers() {
