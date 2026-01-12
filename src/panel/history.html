@@ -22,6 +22,26 @@
         margin: 0 0 10px;
         font-size: 18px;
       }
+      .history-search {
+        position: sticky;
+        top: 0;
+        z-index: 900;
+        padding: 4px 0 10px;
+        background: transparent;
+      }
+      .history-search input {
+        width: 100%;
+        box-sizing: border-box;
+        border-radius: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(255, 255, 255, 0.06);
+        color: #e8f1f2;
+        font-size: 12px;
+        padding: 8px 10px;
+      }
+      .history-search input::placeholder {
+        color: rgba(232, 241, 242, 0.6);
+      }
       ul {
         list-style: none;
         padding: 0;
@@ -189,6 +209,16 @@
   </head>
   <body>
     <h1 data-i18n="historyPageTitle">Últimos acessos</h1>
+    <div class="history-search">
+      <input
+        id="history-search"
+        type="search"
+        autocomplete="off"
+        data-i18n="historySearchPlaceholder"
+        data-i18n-attr="placeholder"
+        placeholder="Buscar endereço"
+      />
+    </div>
     <ul id="history-list" style="flex: 1;"></ul>
     <footer>
       <div class="footer-text">

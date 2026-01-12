@@ -48,6 +48,7 @@
   "finish": { "message": "完了" },
   "genericError": { "message": "エラー: $1" },
   "historyPageTitle": { "message": "最近のアクセス" },
+  "historySearchPlaceholder": { "message": "アドレスを検索" },
   "importAddresses": { "message": "アドレスをインポート" },
   "importComplete": { "message": "インポートが完了しました。" },
   "importCompleteWithCount": { "message": "インポートが完了しました。$1 件のアドレスを追加しました。" },

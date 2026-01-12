@@ -48,6 +48,7 @@
   "finish": { "message": "समाप्त करें" },
   "genericError": { "message": "त्रुटि: $1" },
   "historyPageTitle": { "message": "हाल के एक्सेस" },
+  "historySearchPlaceholder": { "message": "पता खोजें" },
   "importAddresses": { "message": "पते आयात करें" },
   "importComplete": { "message": "आयात पूरा हुआ।" },
   "importCompleteWithCount": { "message": "आयात पूरा हुआ। $1 पते जोड़े गए।" },

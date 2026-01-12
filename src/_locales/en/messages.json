@@ -48,6 +48,7 @@
   "finish": { "message": "Finish" },
   "genericError": { "message": "Error: $1" },
   "historyPageTitle": { "message": "Recent visits" },
+  "historySearchPlaceholder": { "message": "Search address" },
   "importAddresses": { "message": "Import addresses" },
   "importComplete": { "message": "Import completed." },
   "importCompleteWithCount": { "message": "Import completed. $1 addresses added." },

@@ -1,9 +1,14 @@
 const api = typeof browser !== "undefined" ? browser : chrome;
 const historyList = document.getElementById("history-list");
-let refreshTimer = null;
+const historySearch = document.getElementById("history-search");
 const confirmOverlay = document.getElementById("confirm-overlay");
 const confirmOk = document.getElementById("confirm-ok");
 const confirmCancel = document.getElementById("confirm-cancel");
+let refreshTimer = null;
+let searchTimer = null;
+
+const MIN_SEARCH_LENGTH = 3;
+const SEARCH_DEBOUNCE_MS = 250;
 
 
 function formatDate(timestamp, withTime) {
@@ -123,6 +128,15 @@ function renderHistory(items) {
 
 async function loadHistory() {
   try {
+    const query = historySearch ? historySearch.value.trim() : "";
+    if (query.length >= MIN_SEARCH_LENGTH) {
+      const response = await api.runtime.sendMessage({
+        type: "SEARCH_HISTORY",
+        query
+      });
+      renderHistory(response.items || []);
+      return;
+    }
     const stats = await api.runtime.sendMessage({ type: "GET_STATS" });
     renderHistory(stats.items || []);
   } catch (error) {
@@ -134,6 +148,17 @@ document.addEventListener("DOMContentLoaded", () => {
   applyI18n();
   document.title = t("historyPageTitle");
   loadHistory();
+  if (historySearch) {
+    historySearch.addEventListener("input", () => {
+      if (searchTimer) {
+        clearTimeout(searchTimer);
+      }
+      searchTimer = setTimeout(() => {
+        searchTimer = null;
+        loadHistory();
+      }, SEARCH_DEBOUNCE_MS);
+    });
+  }
 });
 
 window.addEventListener("focus", loadHistory);
@@ -150,6 +175,10 @@ window.addEventListener("beforeunload", () => {
   if (refreshTimer) {
     clearInterval(refreshTimer);
     refreshTimer = null;
+  }
+  if (searchTimer) {
+    clearTimeout(searchTimer);
+    searchTimer = null;
   }
 });
 

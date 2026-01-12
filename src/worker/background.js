@@ -111,6 +111,10 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
       return handleGetStats();
     }
 
+    if (message.type === "SEARCH_HISTORY") {
+      return handleSearchHistory(message.query || "");
+    }
+
     if (message.type === "GET_PARTIAL_MATCHES") {
       return (async () => {
         const fingerprint = await computeFingerprint(message.url || "");

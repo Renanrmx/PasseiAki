@@ -48,6 +48,7 @@
   "finish": { "message": "Готово" },
   "genericError": { "message": "Ошибка: $1" },
   "historyPageTitle": { "message": "Последние посещения" },
+  "historySearchPlaceholder": { "message": "Поиск адреса" },
   "importAddresses": { "message": "Импортировать адреса" },
   "importComplete": { "message": "Импорт завершен." },
   "importCompleteWithCount": { "message": "Импорт завершен. Добавлено $1 адресов." },

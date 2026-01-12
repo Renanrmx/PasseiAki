@@ -48,6 +48,7 @@
   "finish": { "message": "완료" },
   "genericError": { "message": "오류: $1" },
   "historyPageTitle": { "message": "최근 방문" },
+  "historySearchPlaceholder": { "message": "주소 검색" },
   "importAddresses": { "message": "주소 가져오기" },
   "importComplete": { "message": "가져오기가 완료되었습니다." },
   "importCompleteWithCount": { "message": "가져오기가 완료되었습니다. $1개의 주소가 추가되었습니다." },

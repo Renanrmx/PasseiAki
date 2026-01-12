@@ -48,6 +48,7 @@
   "finish": { "message": "إنهاء" },
   "genericError": { "message": "خطأ: $1" },
   "historyPageTitle": { "message": "آخر عمليات الوصول" },
+  "historySearchPlaceholder": { "message": "بحث عن عنوان" },
   "importAddresses": { "message": "استيراد العناوين" },
   "importComplete": { "message": "اكتمل الاستيراد." },
   "importCompleteWithCount": { "message": "اكتمل الاستيراد. تم إضافة $1 عنوانًا." },

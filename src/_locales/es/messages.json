@@ -48,6 +48,7 @@
   "finish": { "message": "Finalizar" },
   "genericError": { "message": "Error: $1" },
   "historyPageTitle": { "message": "Últimos accesos" },
+  "historySearchPlaceholder": { "message": "Buscar dirección" },
   "importAddresses": { "message": "Importar direcciones" },
   "importComplete": { "message": "Importación concluida." },
   "importCompleteWithCount": { "message": "Importación concluida. $1 direcciones agregadas." },

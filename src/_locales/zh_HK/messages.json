@@ -48,6 +48,7 @@
   "finish": { "message": "完成" },
   "genericError": { "message": "錯誤：$1" },
   "historyPageTitle": { "message": "最近瀏覽" },
+  "historySearchPlaceholder": { "message": "搜尋地址" },
   "importAddresses": { "message": "匯入地址" },
   "importComplete": { "message": "匯入完成。" },
   "importCompleteWithCount": { "message": "匯入完成。已加入 $1 個地址。" },
