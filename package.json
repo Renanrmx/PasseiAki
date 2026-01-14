@@ -1,6 +1,6 @@
 {
   "name": "passei-aki",
-  "version": "2.3.1",
+  "version": "2.4.0",
   "description": "Registra páginas acessadas e indica quando um link já foi visitado",
   "private": true,
   "scripts": {
