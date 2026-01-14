@@ -1,5 +1,9 @@
 # Passei Aki
 
+[Instale pelo Chrome Store](https://chromewebstore.google.com/detail/passei-aki/cjgkgmcaogogknnaflonleghgegpcjop)
+
+[Instale pelo Mozilla Store](https://addons.mozilla.org/firefox/addon/passei-aki)
+
 Extensão de navegador que sinaliza se um endereço já foi visitado e quando foi, é útil principalmente para quem faz muitas pesquisas e não quer se perder em tantos links.
 
 Nas páginas os links que já foram acessados em algum momento são marcados com a cor verde.
