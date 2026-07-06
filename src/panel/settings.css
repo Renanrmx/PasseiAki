@@ -194,6 +194,37 @@ p {
   font-weight: 700;
   line-height: 1;
 }
+.modal .backup-password-options {
+  display: none;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 8px 0 10px;
+  font-size: 13px;
+  color: #c5d6e2;
+}
+.modal .backup-password-options-text {
+  margin: 0;
+}
+.modal .backup-password-choices {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 18px;
+}
+.modal .backup-password-options label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.modal .backup-password-options input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: #0eb378;
+}
+.modal .password-fields {
+  display: block;
+}
 .modal input[type="password"] {
   width: 100%;
   padding: 8px 10px;

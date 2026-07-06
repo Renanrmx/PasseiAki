@@ -5,6 +5,19 @@
   let exportModal = null;
   let exportModalPromise = null;
 
+  function showExportLoading(message) {
+    if (typeof window.showPanelLoading === "function") {
+      return window.showPanelLoading(message);
+    }
+    return () => {};
+  }
+
+  function getExportLoadingMessage(key, fallback) {
+    if (typeof window.getPanelLoadingMessage === "function") {
+      return window.getPanelLoadingMessage(key, fallback);
+    }
+    return fallback;
+  }
 
   async function ensureExportModal() {
     if (exportModal) return exportModal;
@@ -21,7 +34,7 @@
         }
         const overlay = doc.querySelector("#export-choice-overlay");
         if (!overlay) {
-          throw new Error("Invalid export modal");
+          throw new Error(t("invalidExportModal"));
         }
         applyI18n(overlay);
         document.body.appendChild(overlay);
@@ -101,17 +114,23 @@
       const choice = await showExportModal();
       if (!choice) return;
       const type = choice.format === "txt" ? MSG.EXPORT_VISITS_TXT : MSG.EXPORT_VISITS_CSV;
+      const hideLoading = showExportLoading(getExportLoadingMessage("loadingExportAddresses", "Exporting addresses..."));
 
-      const response = await apiExport.runtime.sendMessage({
-        type,
-        includePages: choice.includePages,
-        includeDownloads: choice.includeDownloads
-      });
-      if (!response || response.ok === false) {
-        throw new Error(response && response.error ? response.error : "Export failed");
-      }
-      if (response.exported === 0) {
-        alert(t("nothingToExport"));
+      try {
+        const response = await apiExport.runtime.sendMessage({
+          type,
+          includePages: choice.includePages,
+          includeDownloads: choice.includeDownloads
+        });
+        if (!response || response.ok === false) {
+          throw new Error(response && response.error ? response.error : t("exportFailed"));
+        }
+        hideLoading();
+        if (response.exported === 0) {
+          alert(t("nothingToExport"));
+        }
+      } finally {
+        hideLoading();
       }
     } catch (error) {
       const msg = error && error.message ? error.message : String(error);

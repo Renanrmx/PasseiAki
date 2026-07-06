@@ -141,9 +141,24 @@
       <div class="modal">
         <form id="password-form">
           <h3 id="password-title" data-i18n="passwordLabel">Senha</h3>
-          <p id="password-desc"></p>
-          <input type="password" id="password-input" autocomplete="off" placeholder="Senha" data-i18n="passwordPlaceholder" />
-          <input type="password" id="password-confirm-input" autocomplete="off" placeholder="Confirmar senha" data-i18n="confirmPasswordPlaceholder" />
+          <div class="backup-password-options" id="backup-password-options">
+            <p class="backup-password-options-text" data-i18n="backupPreferencePrompt">Defina como prefere criar o backup</p>
+            <div class="backup-password-choices">
+              <label>
+                <input type="checkbox" id="backup-with-password" checked />
+                <span data-i18n="backupWithPassword">Com senha</span>
+              </label>
+              <label>
+                <input type="checkbox" id="backup-without-password" />
+                <span data-i18n="backupWithoutPassword">Sem senha</span>
+              </label>
+            </div>
+          </div>
+          <div class="password-fields" id="password-fields">
+            <p id="password-desc"></p>
+            <input type="password" id="password-input" autocomplete="off" placeholder="Senha" data-i18n="passwordPlaceholder" />
+            <input type="password" id="password-confirm-input" autocomplete="off" placeholder="Confirmar senha" data-i18n="confirmPasswordPlaceholder" />
+          </div>
           <div class="restore-options" id="restore-options">
             <label class="restore-option">
               <input type="radio" name="restore-mode" id="restore-merge" value="merge" checked />
@@ -173,6 +188,7 @@
     <script src="init-i18n.js"></script>
     <script src="../shared/messages.js"></script>
     <script src="../vendor/iro.min.js"></script>
+    <script src="loading.js"></script>
     <script src="backup.js"></script>
     <script src="export.js"></script>
     <script src="import.js"></script>

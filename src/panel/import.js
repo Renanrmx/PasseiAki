@@ -6,6 +6,19 @@ let hiddenImportInput = null;
 let confirmModal = null;
 let modalPromise = null;
 
+function showImportLoading(message) {
+  if (typeof window.showPanelLoading === "function") {
+    return window.showPanelLoading(message);
+  }
+  return () => {};
+}
+
+function getImportLoadingMessage(key, fallback) {
+  if (typeof window.getPanelLoadingMessage === "function") {
+    return window.getPanelLoadingMessage(key, fallback);
+  }
+  return fallback;
+}
 
 function ensureImportInput() {
   if (hiddenImportInput) return hiddenImportInput;
@@ -35,7 +48,7 @@ async function ensureConfirmModal() {
       const invalidOverlay = doc.querySelector("#import-invalid-overlay");
       const successOverlay = doc.querySelector("#import-success-overlay");
       if (!invalidOverlay || !successOverlay) {
-        throw new Error("Invalid import modal");
+        throw new Error(t("invalidImportModal"));
       }
       applyI18n(invalidOverlay);
       applyI18n(successOverlay);
@@ -97,6 +110,7 @@ async function onImportFileSelected(event) {
   const input = event.target;
   const file = input.files && input.files[0];
   if (!file) return;
+  let hideLoading = showImportLoading(getImportLoadingMessage("loadingImportAddresses", "Importing addresses..."));
   try {
     const text = await file.text();
 
@@ -106,7 +120,7 @@ async function onImportFileSelected(event) {
       preview: true
     });
     if (!preview || preview.ok === false) {
-      throw new Error(preview && preview.error ? preview.error : "Import validation failed");
+      throw new Error(preview && preview.error ? preview.error : t("importValidationFailed"));
     }
 
     const validCount = preview.valid || 0;
@@ -114,9 +128,14 @@ async function onImportFileSelected(event) {
     const total = preview.total || validCount + invalidCount;
 
     if (total === 0 || validCount === 0) {
+      hideLoading();
+      hideLoading = null;
       alert(t("noValidUrls"));
       return;
     }
+
+    hideLoading();
+    hideLoading = null;
 
     if (invalidCount > 0) {
       const modal = await ensureConfirmModal();
@@ -130,21 +149,31 @@ async function onImportFileSelected(event) {
       if (!proceed) return;
     }
 
+    hideLoading = showImportLoading(getImportLoadingMessage("loadingImportAddresses", "Importing addresses..."));
     const response = await apiImport.runtime.sendMessage({
       type: importMessages.IMPORT_ADDRESSES,
       content: text
     });
     if (!response || response.ok === false) {
-      throw new Error(response && response.error ? response.error : "Import failed");
+      throw new Error(response && response.error ? response.error : t("importFailed"));
     }
+    hideLoading();
+    hideLoading = null;
     const msg = t("importCompleteWithCount", response.imported || 0);
     await showSuccessModal(msg);
     if (window.loadHistory) {
       window.loadHistory();
     }
   } catch (error) {
+    if (hideLoading) {
+      hideLoading();
+      hideLoading = null;
+    }
     alert(t("importError", error && error.message ? error.message : error));
   } finally {
+    if (hideLoading) {
+      hideLoading();
+    }
     input.value = "";
   }
 }

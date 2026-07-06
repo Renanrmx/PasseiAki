@@ -49,7 +49,7 @@ async function exportPlainVisitsCsv(filename, options = {}) {
         saveAs: true
       });
     } else {
-      throw new Error("Download API unavailable");
+      throw new Error(i18n("downloadApiUnavailable"));
     }
   } finally {
     if (revoke) {
@@ -87,7 +87,7 @@ async function exportPlainVisitsTxt(filename, options = {}) {
         saveAs: true
       });
     } else {
-      throw new Error("Download API unavailable");
+      throw new Error(i18n("downloadApiUnavailable"));
     }
   } finally {
     if (revoke) {

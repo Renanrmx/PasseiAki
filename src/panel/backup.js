@@ -15,6 +15,10 @@ const passwordConfirm = document.getElementById("password-confirm");
 const passwordConfirmInput = document.getElementById("password-confirm-input");
 const overlay = document.getElementById("password-overlay");
 const passwordForm = document.getElementById("password-form");
+const backupPasswordOptions = document.getElementById("backup-password-options");
+const backupWithPassword = document.getElementById("backup-with-password");
+const backupWithoutPassword = document.getElementById("backup-without-password");
+const passwordFields = document.getElementById("password-fields");
 const restoreOptions = document.getElementById("restore-options");
 const restoreMerge = document.getElementById("restore-merge");
 const restoreOnly = document.getElementById("restore-only");
@@ -24,10 +28,40 @@ const restoreOnlyWarning = document.getElementById("restore-only-warning");
 let passwordResolve = null;
 let passwordReject = null;
 let passwordRequireConfirm = true;
+let passwordRequired = true;
+let backupPasswordOptionsVisible = false;
+let backupProtectWithPassword = true;
 let restoreOptionsVisible = false;
 let encryptionEnabledState = null;
 
 const MIN_PASSWORD_LENGTH = 3;
+const PLAIN_BACKUP_TYPE = "passei-aki-backup";
+const PLAIN_BACKUP_VERSION = 1;
+
+function showBackupLoading(message) {
+  if (typeof window.showPanelLoading === "function") {
+    return window.showPanelLoading(message);
+  }
+  return () => {};
+}
+
+function getBackupLoadingMessage(key, fallback) {
+  if (typeof window.getPanelLoadingMessage === "function") {
+    return window.getPanelLoadingMessage(key, fallback);
+  }
+  return fallback;
+}
+
+function isPlainBackupEnvelope(envelope) {
+  return Boolean(
+    envelope &&
+      typeof envelope === "object" &&
+      !Array.isArray(envelope) &&
+      envelope.v === PLAIN_BACKUP_VERSION &&
+      envelope.type === PLAIN_BACKUP_TYPE &&
+      envelope.encrypted === false
+  );
+}
 
 // Ensure translation in case applyI18n was not executed by another script
 if (typeof applyI18n === "function") {
@@ -82,9 +116,42 @@ function updateRestoreWarnings() {
   }
 }
 
-function showPasswordDialog({ title, description, requireConfirm = true, showRestoreOptions = false }) {
+function setPasswordFieldsVisible(visible) {
+  if (passwordFields) {
+    passwordFields.style.display = visible ? "block" : "none";
+  }
+}
+
+function setBackupPasswordMode(withPassword, options = {}) {
+  backupProtectWithPassword = withPassword !== false;
+  if (backupWithPassword) {
+    backupWithPassword.checked = backupProtectWithPassword;
+  }
+  if (backupWithoutPassword) {
+    backupWithoutPassword.checked = !backupProtectWithPassword;
+  }
+  passwordRequired = backupProtectWithPassword;
+  setPasswordFieldsVisible(passwordRequired);
+  if (passwordError) {
+    passwordError.textContent = "";
+  }
+  if (passwordRequired && options.focus === true && passwordInput) {
+    passwordInput.focus();
+  }
+}
+
+function showPasswordDialog({
+  title,
+  description,
+  requireConfirm = true,
+  showRestoreOptions = false,
+  showBackupPasswordOptions = false,
+  requirePassword = true
+}) {
   return new Promise((resolve, reject) => {
     passwordRequireConfirm = Boolean(requireConfirm);
+    passwordRequired = requirePassword !== false;
+    backupPasswordOptionsVisible = Boolean(showBackupPasswordOptions && backupPasswordOptions);
     passwordResolve = resolve;
     passwordReject = reject;
     passwordTitle.textContent = title || t("passwordLabel");
@@ -97,6 +164,15 @@ function showPasswordDialog({ title, description, requireConfirm = true, showRes
     } else {
       passwordConfirmInput.style.display = "none";
     }
+    if (backupPasswordOptions) {
+      backupPasswordOptions.style.display = backupPasswordOptionsVisible ? "flex" : "none";
+    }
+    if (backupPasswordOptionsVisible) {
+      setBackupPasswordMode(true);
+    } else {
+      backupProtectWithPassword = true;
+      setPasswordFieldsVisible(passwordRequired);
+    }
     restoreOptionsVisible = Boolean(showRestoreOptions && restoreOptions);
     if (restoreOptions) {
       restoreOptions.style.display = restoreOptionsVisible ? "flex" : "none";
@@ -104,14 +180,19 @@ function showPasswordDialog({ title, description, requireConfirm = true, showRes
     if (restoreMerge) {
       restoreMerge.checked = true;
     }
-    if (restoreOnly && !restoreOptionsVisible) {
+    if (restoreOnly) {
       restoreOnly.checked = false;
     }
     updateRestoreWarnings();
     overlay.classList.add("active");
-    passwordInput.focus();
+    const focusTarget = passwordRequired ? passwordInput : passwordConfirm;
+    if (focusTarget) {
+      focusTarget.focus();
+    }
     setTimeout(() => {
-      passwordInput.focus();
+      if (focusTarget) {
+        focusTarget.focus();
+      }
     }, 20);
   });
 }
@@ -121,6 +202,7 @@ function closePasswordDialog() {
   passwordResolve = null;
   passwordReject = null;
   restoreOptionsVisible = false;
+  backupPasswordOptionsVisible = false;
 }
 
 passwordCancel.addEventListener("click", () => {
@@ -130,25 +212,33 @@ passwordCancel.addEventListener("click", () => {
 
 passwordConfirm.addEventListener("click", () => {
   if (!passwordResolve) return;
-  if (!passwordInput.value) {
-    passwordError.textContent = t("setPassword");
-    return;
-  }
-  if (passwordInput.value.length < MIN_PASSWORD_LENGTH) {
-    passwordError.textContent = t("passwordMinimumLength", [MIN_PASSWORD_LENGTH]);
-    return;
-  }
-  if (passwordRequireConfirm) {
-    if (!passwordConfirmInput.value) {
-      passwordError.textContent = t("passwordConfirmation");
+  if (passwordRequired) {
+    if (!passwordInput.value) {
+      passwordError.textContent = t("setPassword");
       return;
     }
-    if (passwordInput.value !== passwordConfirmInput.value) {
-      passwordError.textContent = t("passwordMismatch");
+    if (passwordInput.value.length < MIN_PASSWORD_LENGTH) {
+      passwordError.textContent = t("passwordMinimumLength", [MIN_PASSWORD_LENGTH]);
       return;
     }
+    if (passwordRequireConfirm) {
+      if (!passwordConfirmInput.value) {
+        passwordError.textContent = t("passwordConfirmation");
+        return;
+      }
+      if (passwordInput.value !== passwordConfirmInput.value) {
+        passwordError.textContent = t("passwordMismatch");
+        return;
+      }
+    }
   }
-  const result = { password: passwordInput.value };
+  const result = {};
+  if (passwordRequired) {
+    result.password = passwordInput.value;
+  }
+  if (backupPasswordOptionsVisible) {
+    result.protectWithPassword = backupProtectWithPassword;
+  }
   if (restoreOptionsVisible) {
     result.mergeVisits = restoreMerge ? restoreMerge.checked : true;
   }
@@ -173,20 +263,45 @@ if (passwordForm) {
   });
 }
 
+if (backupWithPassword) {
+  backupWithPassword.addEventListener("change", () => {
+    setBackupPasswordMode(backupWithPassword.checked, { focus: backupWithPassword.checked });
+  });
+}
+
+if (backupWithoutPassword) {
+  backupWithoutPassword.addEventListener("change", () => {
+    setBackupPasswordMode(!backupWithoutPassword.checked);
+  });
+}
+
 async function doExport() {
   const result = await showPasswordDialog({
     title: t("createBackup"),
     description: t("createBackupDesc"),
-    requireConfirm: true
+    requireConfirm: true,
+    showBackupPasswordOptions: true,
+    requirePassword: true
   });
-  if (!result || !result.password) return;
+  if (!result) return;
+  const protectWithPassword = result.protectWithPassword !== false;
+  if (protectWithPassword && !result.password) return;
+  const hideLoading = showBackupLoading(getBackupLoadingMessage("loadingCreateBackup", "Creating backup..."));
   try {
-    await apiExport.runtime.sendMessage({
+    const message = {
       type: backupMessages.CREATE_BACKUP_DOWNLOAD,
-      password: result.password
-    });
+      protectWithPassword
+    };
+    if (protectWithPassword) {
+      message.password = result.password;
+    }
+    await apiExport.runtime.sendMessage(message);
   } catch (error) {
+    hideLoading();
     alert(t("backupExportError", error.message));
+    return;
+  } finally {
+    hideLoading();
   }
 }
 
@@ -195,6 +310,40 @@ async function doImport(file) {
     if (!file) {
       return;
     }
+    const envelope = JSON.parse(await file.text());
+    const isPlainBackup = isPlainBackupEnvelope(envelope);
+    if (isPlainBackup) {
+      const result = await showPasswordDialog({
+        title: t("restoreBackup"),
+        description: "",
+        requireConfirm: false,
+        requirePassword: false,
+        showRestoreOptions: true
+      });
+      if (!result) return;
+      const mergeVisits = result.mergeVisits === true;
+      const hideLoading = showBackupLoading(getBackupLoadingMessage("loadingRestoreBackup", "Restoring backup..."));
+      try {
+        const response = await apiExport.runtime.sendMessage({
+          type: backupMessages.RESTORE_BACKUP,
+          envelope,
+          mergeVisits
+        });
+        if (!response || response.ok === false) {
+          throw new Error(response && response.error ? response.error : t("backupRestoreFailed"));
+        }
+        hideLoading();
+        alert(t("restoreComplete"));
+        setTimeout(() => window.location.reload(), 200);
+      } catch (error) {
+        hideLoading();
+        alert(t("restoreError", error && error.message ? error.message : error));
+      } finally {
+        hideLoading();
+      }
+      return;
+    }
+
     const encryptionEnabled = await getEncryptionEnabledState();
     const description = encryptionEnabled === false
       ? { text: t("restoreBackupInst") }
@@ -207,30 +356,27 @@ async function doImport(file) {
     });
     if (!result || !result.password) return;
     const mergeVisits = result.mergeVisits === true;
+    const hideLoading = showBackupLoading(getBackupLoadingMessage("loadingRestoreBackup", "Restoring backup..."));
 
-    const reader = new FileReader();
-    reader.onload = async () => {
-      try {
-        const envelope = JSON.parse(reader.result);
-        const response = await apiExport.runtime.sendMessage({
-          type: backupMessages.RESTORE_BACKUP,
-          password: result.password,
-          envelope,
-          mergeVisits
-        });
-        if (!response || response.ok === false) {
-          throw new Error(response && response.error ? response.error : "Backup restore failed");
-        }
-        alert(t("restoreComplete"));
-        setTimeout(() => window.location.reload(), 200);
-      } catch (error) {
-        alert(t("restoreError", error && error.message ? error.message : error));
+    try {
+      const response = await apiExport.runtime.sendMessage({
+        type: backupMessages.RESTORE_BACKUP,
+        password: result.password,
+        envelope,
+        mergeVisits
+      });
+      if (!response || response.ok === false) {
+        throw new Error(response && response.error ? response.error : t("backupRestoreFailed"));
       }
-    };
-    reader.onerror = () => {
-      alert(t("backupReadError"));
-    };
-    reader.readAsText(file);
+      hideLoading();
+      alert(t("restoreComplete"));
+      setTimeout(() => window.location.reload(), 200);
+    } catch (error) {
+      hideLoading();
+      alert(t("restoreError", error && error.message ? error.message : error));
+    } finally {
+      hideLoading();
+    }
   } catch (error) {
     alert(t("restoreError", error && error.message ? error.message : error));
   }

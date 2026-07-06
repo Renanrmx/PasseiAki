@@ -332,12 +332,16 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }
 
     if (message.type === MSG.CREATE_BACKUP) {
-      const envelope = await createBackup(message.password || "");
+      const envelope = await createBackup(message.password || "", {
+        protectWithPassword: message.protectWithPassword !== false
+      });
       return { ok: true, envelope };
     }
 
     if (message.type === MSG.CREATE_BACKUP_DOWNLOAD) {
-      const envelope = await createBackup(message.password || "");
+      const envelope = await createBackup(message.password || "", {
+        protectWithPassword: message.protectWithPassword !== false
+      });
       await downloadBackup(envelope, message.filename);
       return { ok: true };
     }

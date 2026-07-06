@@ -166,7 +166,7 @@ async function decryptWithPassword(password, envelope) {
   const cipher = new ChaCha20Poly1305.ChaCha20Poly1305(key);
   const plaintext = cipher.open(nonce, data);
   if (!plaintext) {
-    throw new Error("Restore failed: incorrect password or invalid file");
+    throw new Error(i18n("restoreIncorrectPasswordOrInvalidFile"));
   }
   return plaintext;
 }

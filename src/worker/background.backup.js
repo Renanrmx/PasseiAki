@@ -6,14 +6,35 @@ async function dumpAllMeta() {
   return getAllMetaEntries();
 }
 
-async function createBackup(password) {
-  const payload = {
+const PLAIN_BACKUP_TYPE = "passei-aki-backup";
+const PLAIN_BACKUP_VERSION = 1;
+
+async function buildBackupPayload() {
+  return {
     version: 2,
     visits: await dumpAllVisits(),
     meta: await dumpAllMeta(),
     partialExceptions: await getAllPartialExceptions(),
     matchExceptions: await getAllMatchExceptions()
   };
+}
+
+function buildPlainBackupEnvelope(payload) {
+  return {
+    v: PLAIN_BACKUP_VERSION,
+    type: PLAIN_BACKUP_TYPE,
+    encrypted: false,
+    createdAt: Date.now(),
+    payload
+  };
+}
+
+async function createBackup(password, options = {}) {
+  const payload = await buildBackupPayload();
+
+  if (options && options.protectWithPassword === false) {
+    return buildPlainBackupEnvelope(payload);
+  }
 
   const plaintext = textEncoder.encode(JSON.stringify(payload));
   const envelope = await encryptWithPassword(password, plaintext);
@@ -163,10 +184,36 @@ function validateBackupPayload(decoded) {
   };
 }
 
+function isPlainBackupEnvelope(envelope) {
+  return Boolean(
+    isPlainObject(envelope) &&
+      envelope.v === PLAIN_BACKUP_VERSION &&
+      envelope.type === PLAIN_BACKUP_TYPE &&
+      envelope.encrypted === false
+  );
+}
+
+function validatePlainBackupEnvelope(envelope) {
+  if (!isPlainBackupEnvelope(envelope)) {
+    throw new Error("Invalid plain backup envelope");
+  }
+  if (!Number.isFinite(envelope.createdAt) || envelope.createdAt < 0) {
+    throw new Error("Invalid plain backup envelope: createdAt");
+  }
+  return validateBackupPayload(envelope.payload);
+}
+
+async function decodeBackupPayload(password, envelope) {
+  if (isPlainBackupEnvelope(envelope)) {
+    return validatePlainBackupEnvelope(envelope);
+  }
+  const plaintext = await decryptWithPassword(password, envelope);
+  return validateBackupPayload(JSON.parse(new TextDecoder().decode(plaintext)));
+}
+
 async function restoreBackup(password, envelope, options = {}) {
   try {
-    const plaintext = await decryptWithPassword(password, envelope);
-    const decoded = validateBackupPayload(JSON.parse(new TextDecoder().decode(plaintext)));
+    const decoded = await decodeBackupPayload(password, envelope);
 
     const shouldMergeVisits = options && options.mergeVisits === true;
     const existingVisits = shouldMergeVisits ? await dumpAllVisits() : [];

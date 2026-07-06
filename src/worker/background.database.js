@@ -180,7 +180,7 @@ function openDatabase() {
         resolve(null);
         return;
       }
-      reject(request.error || new Error("IndexedDB failed to open"));
+      reject(request.error || new Error(i18n("indexedDbOpenFailed")));
     };
   });
 
