@@ -44,6 +44,7 @@ const ACTION_ICONS = {
 };
 
 const EXTENSION_PAGE_MESSAGE_TYPES = new Set([
+  MSG.CLEAR_VISIT_HISTORY,
   MSG.CREATE_BACKUP,
   MSG.CREATE_BACKUP_DOWNLOAD,
   MSG.DELETE_VISIT,
@@ -306,6 +307,23 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
       return (async () => {
         await deleteVisitById(message.id);
         sendRuntimeMessageSafe({ type: MSG.HISTORY_UPDATED });
+        return { ok: true };
+      })().catch((error) => ({ ok: false, error: error?.message || String(error) }));
+    }
+
+    if (message.type === MSG.CLEAR_VISIT_HISTORY) {
+      return (async () => {
+        await clearVisitHistory();
+        if (typeof clearDownloadBadge === "function") {
+          clearDownloadBadge();
+        }
+        lastSavedByTab.clear();
+        lastMatchStateByTab.clear();
+        lastPrevVisitByTab.clear();
+        pendingFirstVisit.clear();
+        forcedPartialByTab.clear();
+        sendRuntimeMessageSafe({ type: MSG.HISTORY_UPDATED });
+        await broadcastToContentTabs({ type: MSG.REFRESH_HIGHLIGHT });
         return { ok: true };
       })().catch((error) => ({ ok: false, error: error?.message || String(error) }));
     }

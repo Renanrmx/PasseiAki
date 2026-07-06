@@ -137,6 +137,14 @@
       </div>
     </div>
 
+    <div class="card danger-zone">
+      <h3 data-i18n="dangerZoneTitle">Área perigosa, exclusão de dados</h3>
+      <p data-i18n="dangerZoneInfo">Apague todo o histórico de sites acessados.</p>
+      <div class="actions">
+        <button class="btn danger-btn" id="clear-visits-btn" data-i18n="clearAllVisits">Apagar todos os acessos</button>
+      </div>
+    </div>
+
     <div class="overlay" id="password-overlay">
       <div class="modal">
         <form id="password-form">
@@ -184,6 +192,23 @@
       </div>
     </div>
 
+    <div class="overlay" id="clear-visits-overlay">
+      <div class="modal danger-modal">
+        <form id="clear-visits-form">
+          <h3 data-i18n="clearAllVisits">Apagar todos os acessos</h3>
+          <p data-i18n="clearVisitsConfirmText">
+            Esta ação é irreversível e excluirá todo o histórico de sites acessados.
+          </p>
+          <p data-i18n="clearVisitsPreferencesKept">Suas preferências e configurações serão mantidas.</p>
+          <div class="modal-actions">
+            <button class="btn" id="clear-visits-cancel" type="submit" data-i18n="cancel">Cancelar</button>
+            <button class="btn danger-btn" id="clear-visits-confirm" type="button" data-i18n="clearAllVisits">Apagar todos os acessos</button>
+          </div>
+          <div class="error" id="clear-visits-error"></div>
+        </form>
+      </div>
+    </div>
+
     <script src="i18n.js"></script>
     <script src="init-i18n.js"></script>
     <script src="../shared/messages.js"></script>
@@ -192,6 +217,7 @@
     <script src="backup.js"></script>
     <script src="export.js"></script>
     <script src="import.js"></script>
+    <script src="danger-zone.js"></script>
     <script src="colors.js"></script>
     <script src="exceptions.js"></script>
   </body>

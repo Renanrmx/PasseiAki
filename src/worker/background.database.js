@@ -943,6 +943,40 @@ async function deleteVisitById(id) {
   }
 }
 
+async function clearVisitHistory() {
+  if (isDbWriteBlocked()) {
+    memoryVisits.clear();
+    await writeStatsTotals(0, 0);
+    notifyVisitDataChanged();
+    return;
+  }
+
+  try {
+    const db = await openDatabase();
+    if (!db) {
+      memoryVisits.clear();
+      await writeStatsTotals(0, 0);
+      notifyVisitDataChanged();
+      return;
+    }
+    const tx = db.transaction([VISITS_STORE, META_STORE], "readwrite");
+    tx.objectStore(VISITS_STORE).clear();
+    const metaStore = tx.objectStore(META_STORE);
+    metaStore.put({ key: META_STATS_TOTAL_ENTRIES, value: 0 });
+    metaStore.put({ key: META_STATS_TOTAL_VISITS, value: 0 });
+    await waitForTransaction(tx);
+    notifyVisitDataChanged();
+  } catch (error) {
+    if (markDbWriteBlocked(error)) {
+      memoryVisits.clear();
+      await writeStatsTotals(0, 0);
+      notifyVisitDataChanged();
+      return;
+    }
+    throw error;
+  }
+}
+
 async function clearAllData() {
   if (isDbWriteBlocked()) {
     memoryVisits.clear();

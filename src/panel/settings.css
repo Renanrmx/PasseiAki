@@ -29,6 +29,18 @@ p {
   border: 1px solid rgba(255, 255, 255, 0.05);
   margin-bottom: 12px;
 }
+.danger-zone {
+  border-color: rgba(255, 80, 80, 0.45);
+  background: rgba(120, 12, 24, 0.22);
+}
+.danger-zone h3 {
+  margin: 2px 0 8px;
+  color: #ff8a8a;
+  font-size: 14px;
+}
+.danger-zone p {
+  color: #ffd1d1;
+}
 .actions {
   display: flex;
   gap: 10px;
@@ -47,6 +59,15 @@ p {
 .btn:hover {
   background: rgba(255, 255, 255, 0.1);
   border-color: rgba(255, 255, 255, 0.3);
+}
+.danger-btn {
+  border-color: rgba(255, 80, 80, 0.65);
+  background: rgba(210, 38, 55, 0.24);
+  color: #ffe6e6;
+}
+.danger-btn:hover {
+  border-color: rgba(255, 112, 112, 0.85);
+  background: rgba(210, 38, 55, 0.34);
 }
 .indicator-row {
   display: flex;
@@ -169,6 +190,12 @@ p {
   max-width: 96vw;
   box-shadow: 0 14px 40px rgba(0, 0, 0, 0.5);
   box-sizing: border-box;
+}
+.danger-modal {
+  border-color: rgba(255, 80, 80, 0.42);
+}
+.danger-modal h3 {
+  color: #ff8a8a;
 }
 .modal h3 {
   margin: 0 0 6px;
