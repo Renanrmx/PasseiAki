@@ -1,5 +1,6 @@
 (() => {
   const apiColors = window.apiExport || (window.apiExport = typeof browser !== "undefined" ? browser : chrome);
+  const MSG = globalThis.AKI_MESSAGE_TYPES;
   const visitedToggle = document.getElementById("visited-color-toggle");
   const partialToggle = document.getElementById("partial-color-toggle");
   const visitedPickerInput = document.getElementById("visited-color-picker");
@@ -14,10 +15,13 @@
   const badgeSwatch = badgePickerInput ? badgePickerInput.parentElement : null;
   const badgeDurationInput = document.getElementById("download-badge-duration");
   const badgeToggle = document.getElementById("download-badge-toggle");
+  const SAVE_DEBOUNCE_MS = 250;
 
   let picker = null;
   let pickerPopover = null;
   let activeTarget = null;
+  let colorsSaveTimer = null;
+  let badgeSaveTimer = null;
   let colorsState = {
     matchHexColor: null,
     partialHexColor: null,
@@ -100,7 +104,7 @@
 
   async function loadColors() {
     try {
-      const res = await apiColors.runtime.sendMessage({ type: "GET_LINK_COLORS" });
+      const res = await apiColors.runtime.sendMessage({ type: MSG.GET_LINK_COLORS });
       if (res && res.colors) {
         colorsState = {
           matchHexColor: normalizeHexColor(res.colors.matchHexColor, null),
@@ -136,7 +140,7 @@
   async function loadBadgeSettings() {
     if (!badgeSwatch || !badgeDurationInput) return;
     try {
-      const res = await apiColors.runtime.sendMessage({ type: "GET_DOWNLOAD_BADGE_SETTINGS" });
+      const res = await apiColors.runtime.sendMessage({ type: MSG.GET_DOWNLOAD_BADGE_SETTINGS });
       if (res && res.settings) {
         badgeState = {
           downloadBadgeColor: normalizeBadgeColor(
@@ -165,40 +169,92 @@
     }
   }
 
-  async function saveColors(partialUpdate = {}) {
-    colorsState = {
-      ...colorsState,
-      ...partialUpdate
-    };
+  function sendMessageSafe(message) {
     try {
-      await apiColors.runtime.sendMessage({
-        type: "SET_LINK_COLORS",
-        matchHexColor: colorsState.matchHexColor,
-        partialHexColor: colorsState.partialHexColor,
-        matchTextEnabled: colorsState.matchTextEnabled,
-        partialTextEnabled: colorsState.partialTextEnabled,
-        matchBorderEnabled: colorsState.matchBorderEnabled,
-        partialBorderEnabled: colorsState.partialBorderEnabled
-      });
+      const result = apiColors.runtime.sendMessage(message);
+      if (result && typeof result.catch === "function") {
+        result.catch(() => {});
+      }
     } catch (error) {
       // ignore save errors
     }
   }
 
-  async function saveBadgeSettings(partialUpdate = {}) {
+  function persistColors() {
+    sendMessageSafe({
+      type: MSG.SET_LINK_COLORS,
+      matchHexColor: colorsState.matchHexColor,
+      partialHexColor: colorsState.partialHexColor,
+      matchTextEnabled: colorsState.matchTextEnabled,
+      partialTextEnabled: colorsState.partialTextEnabled,
+      matchBorderEnabled: colorsState.matchBorderEnabled,
+      partialBorderEnabled: colorsState.partialBorderEnabled
+    });
+  }
+
+  function persistBadgeSettings() {
+    sendMessageSafe({
+      type: MSG.SET_DOWNLOAD_BADGE_SETTINGS,
+      downloadBadgeColor: badgeState.downloadBadgeColor,
+      downloadBadgeDurationMs: badgeState.downloadBadgeDurationMs,
+      downloadBadgeEnabled: badgeState.downloadBadgeEnabled
+    });
+  }
+
+  function scheduleColorsSave() {
+    clearTimeout(colorsSaveTimer);
+    colorsSaveTimer = setTimeout(() => {
+      colorsSaveTimer = null;
+      persistColors();
+    }, SAVE_DEBOUNCE_MS);
+  }
+
+  function scheduleBadgeSave() {
+    clearTimeout(badgeSaveTimer);
+    badgeSaveTimer = setTimeout(() => {
+      badgeSaveTimer = null;
+      persistBadgeSettings();
+    }, SAVE_DEBOUNCE_MS);
+  }
+
+  function saveColors(partialUpdate = {}, options = {}) {
+    colorsState = {
+      ...colorsState,
+      ...partialUpdate
+    };
+    if (options.debounce) {
+      scheduleColorsSave();
+      return;
+    }
+    clearTimeout(colorsSaveTimer);
+    colorsSaveTimer = null;
+    persistColors();
+  }
+
+  function saveBadgeSettings(partialUpdate = {}, options = {}) {
     badgeState = {
       ...badgeState,
       ...partialUpdate
     };
-    try {
-      await apiColors.runtime.sendMessage({
-        type: "SET_DOWNLOAD_BADGE_SETTINGS",
-        downloadBadgeColor: badgeState.downloadBadgeColor,
-        downloadBadgeDurationMs: badgeState.downloadBadgeDurationMs,
-        downloadBadgeEnabled: badgeState.downloadBadgeEnabled
-      });
-    } catch (error) {
-      // ignore save errors
+    if (options.debounce) {
+      scheduleBadgeSave();
+      return;
+    }
+    clearTimeout(badgeSaveTimer);
+    badgeSaveTimer = null;
+    persistBadgeSettings();
+  }
+
+  function flushPendingSaves() {
+    if (colorsSaveTimer) {
+      clearTimeout(colorsSaveTimer);
+      colorsSaveTimer = null;
+      persistColors();
+    }
+    if (badgeSaveTimer) {
+      clearTimeout(badgeSaveTimer);
+      badgeSaveTimer = null;
+      persistBadgeSettings();
     }
   }
 
@@ -230,16 +286,16 @@
         setSwatchColor(visitedSwatch, hex);
         setLabelColor(visitedTextLabel, hex);
         setBorderLabel(visitedBorderLabel, hex);
-        saveColors({ matchHexColor: hex });
+        saveColors({ matchHexColor: hex }, { debounce: true });
       } else if (activeTarget === "partial") {
         setSwatchColor(partialSwatch, hex);
         setLabelColor(partialTextLabel, hex);
         setBorderLabel(partialBorderLabel, hex);
-        saveColors({ partialHexColor: hex });
+        saveColors({ partialHexColor: hex }, { debounce: true });
       } else if (activeTarget === "badge") {
         const withAlpha = ensureAlpha(hex);
         setSwatchColor(badgeSwatch, hex);
-        saveBadgeSettings({ downloadBadgeColor: withAlpha });
+        saveBadgeSettings({ downloadBadgeColor: withAlpha }, { debounce: true });
       }
     });
 
@@ -247,15 +303,16 @@
       "click",
       (event) => {
         if (!pickerPopover || pickerPopover.style.display === "none") return;
-      if (pickerPopover.contains(event.target)) return;
-      if (visitedSwatch && visitedSwatch.contains(event.target)) return;
-      if (partialSwatch && partialSwatch.contains(event.target)) return;
-      if (badgeSwatch && badgeSwatch.contains(event.target)) return;
-      pickerPopover.style.display = "none";
-      activeTarget = null;
-    },
-    true
-  );
+        if (pickerPopover.contains(event.target)) return;
+        if (visitedSwatch && visitedSwatch.contains(event.target)) return;
+        if (partialSwatch && partialSwatch.contains(event.target)) return;
+        if (badgeSwatch && badgeSwatch.contains(event.target)) return;
+        flushPendingSaves();
+        pickerPopover.style.display = "none";
+        activeTarget = null;
+      },
+      true
+    );
 
     return picker;
   }
@@ -330,4 +387,11 @@
       });
     }
   });
+
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") {
+      flushPendingSaves();
+    }
+  });
+  window.addEventListener("beforeunload", flushPendingSaves);
 })();

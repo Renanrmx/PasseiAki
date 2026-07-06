@@ -1,4 +1,5 @@
 const api = typeof browser !== "undefined" ? browser : chrome;
+const MSG = globalThis.AKI_MESSAGE_TYPES;
 const historyList = document.getElementById("history-list");
 const historySearch = document.getElementById("history-search");
 const confirmOverlay = document.getElementById("confirm-overlay");
@@ -84,7 +85,7 @@ function renderHistory(items) {
       const confirmDelete = await confirmDeletion();
       if (!confirmDelete) return;
       try {
-        const res = await api.runtime.sendMessage({ type: "DELETE_VISIT", id: item.id });
+        const res = await api.runtime.sendMessage({ type: MSG.DELETE_VISIT, id: item.id });
         if (!res || res.ok === false) {
           throw new Error(res && res.error ? res.error : "Error deleting record");
         }
@@ -131,13 +132,13 @@ async function loadHistory() {
     const query = historySearch ? historySearch.value.trim() : "";
     if (query.length >= MIN_SEARCH_LENGTH) {
       const response = await api.runtime.sendMessage({
-        type: "SEARCH_HISTORY",
+        type: MSG.SEARCH_HISTORY,
         query
       });
       renderHistory(response.items || []);
       return;
     }
-    const stats = await api.runtime.sendMessage({ type: "GET_STATS" });
+    const stats = await api.runtime.sendMessage({ type: MSG.GET_STATS });
     renderHistory(stats.items || []);
   } catch (error) {
     renderHistory([]);
@@ -165,7 +166,7 @@ window.addEventListener("focus", loadHistory);
 
 if (api.runtime && api.runtime.onMessage) {
   api.runtime.onMessage.addListener((message) => {
-    if (message && message.type === "HISTORY_UPDATED") {
+    if (message && message.type === MSG.HISTORY_UPDATED) {
       loadHistory();
     }
   });

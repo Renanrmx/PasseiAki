@@ -129,14 +129,6 @@ function getDomainKeyFromValue(value) {
   return getDomainKeyFromHost(host);
 }
 
-function buildAddressFromRecord(item) {
-  const host = item.host || "";
-  const path = item.path || "";
-  const query = item.query ? `?${item.query}` : "";
-  const fragment = item.fragment ? `#${item.fragment}` : "";
-  return `${host}${path}${query}${fragment}`;
-}
-
 async function buildDownloadUrl(blob, fallbackMime) {
   const urlFactory =
     (typeof self !== "undefined" &&

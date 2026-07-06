@@ -25,20 +25,13 @@ function buildHistoryItems(visits) {
 }
 
 async function handleGetStats() {
-  const visits = await getAllVisits();
-  let totalEntries = 0;
-  let totalVisits = 0;
-
-  visits.forEach((value) => {
-    totalEntries += 1;
-    totalVisits += value.visitCount || 0;
-  });
-
-  const items = buildHistoryItems(visits);
+  const totals = await getStatsTotals();
+  const recentVisits = await getRecentVisits(MAX_STATS_ITEMS);
+  const items = buildHistoryItems(recentVisits);
 
   return {
-    totalEntries,
-    totalVisits,
+    totalEntries: totals.totalEntries,
+    totalVisits: totals.totalVisits,
     items
   };
 }
@@ -48,13 +41,6 @@ async function handleSearchHistory(query) {
   if (term.length < 3) {
     return { items: [] };
   }
-  const visits = await getAllVisits();
-  const matches = visits.filter((value) => {
-    if (value.hashed !== false) {
-      return false;
-    }
-    const address = buildAddressFromRecord(value);
-    return address.toLowerCase().includes(term);
-  });
+  const matches = await searchPlainVisits(term, MAX_STATS_ITEMS);
   return { items: buildHistoryItems(matches) };
 }

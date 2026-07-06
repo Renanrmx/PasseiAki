@@ -4,6 +4,31 @@ const MATCH_STATE = {
   full: "viewed"
 };
 
+const FINGERPRINT_CACHE_MAX = 1500;
+const fingerprintCache = new Map();
+
+function readFingerprintCache(key) {
+  if (!fingerprintCache.has(key)) {
+    return undefined;
+  }
+  const value = fingerprintCache.get(key);
+  fingerprintCache.delete(key);
+  fingerprintCache.set(key, value);
+  return value;
+}
+
+function writeFingerprintCache(key, value) {
+  fingerprintCache.set(key, value);
+  if (fingerprintCache.size > FINGERPRINT_CACHE_MAX) {
+    const oldestKey = fingerprintCache.keys().next().value;
+    fingerprintCache.delete(oldestKey);
+  }
+}
+
+function clearMatchCaches() {
+  fingerprintCache.clear();
+}
+
 function buildVisitId(hostHash, parts) {
   return `${hostHash}|${parts.path}|${parts.query}|${parts.fragment}`;
 }
@@ -47,8 +72,16 @@ function isPartialMatch(record, fingerprint) {
 }
 
 async function computeFingerprint(urlString) {
+  const encryptionEnabled = await getEncryptionEnabled();
+  const cacheKey = `${encryptionEnabled ? "1" : "0"}|${urlString}`;
+  const cached = readFingerprintCache(cacheKey);
+  if (cached !== undefined) {
+    return cached;
+  }
+
   const parts = normalizeUrlParts(urlString);
   if (!parts) {
+    writeFingerprintCache(cacheKey, null);
     return null;
   }
   const plainKeys = {
@@ -77,7 +110,6 @@ async function computeFingerprint(urlString) {
     fragment: plainKeys.fragment
   });
 
-  const encryptionEnabled = await getEncryptionEnabled();
   const selected = encryptionEnabled
     ? hashKeys
     : {
@@ -89,7 +121,7 @@ async function computeFingerprint(urlString) {
       };
   const selectedId = encryptionEnabled ? hashId : plainId;
 
-  return {
+  const fingerprint = {
     id: selectedId,
     ids: { hash: hashId, plain: plainId },
     hostHash: selected.host,
@@ -103,9 +135,35 @@ async function computeFingerprint(urlString) {
     keys: { hash: hashKeys, plain: plainKeys },
     parts
   };
+  writeFingerprintCache(cacheKey, fingerprint);
+  return fingerprint;
 }
 
-async function findVisitMatch(fingerprint) {
+async function getVisitByIdCached(id, cache) {
+  if (!cache) {
+    return getVisitById(id);
+  }
+  if (cache.has(id)) {
+    return cache.get(id);
+  }
+  const value = await getVisitById(id);
+  cache.set(id, value || null);
+  return value || null;
+}
+
+async function getVisitsByHostCached(hostKey, cache) {
+  if (!cache) {
+    return getVisitsByHost(hostKey);
+  }
+  if (cache.has(hostKey)) {
+    return cache.get(hostKey);
+  }
+  const values = await getVisitsByHost(hostKey);
+  cache.set(hostKey, values);
+  return values;
+}
+
+async function findVisitMatch(fingerprint, options = {}) {
   const skipFullMatch = await isMatchException(fingerprint.parts.host);
   if (!skipFullMatch) {
     // exact search in hash/plain ids
@@ -114,7 +172,7 @@ async function findVisitMatch(fingerprint) {
     );
 
     for (const id of idsToTry) {
-      const exact = await getVisitById(id);
+      const exact = await getVisitByIdCached(id, options.visitCache);
       if (exact) {
         return { state: MATCH_STATE.full, record: exact };
       }
@@ -131,7 +189,7 @@ async function findVisitMatch(fingerprint) {
   );
 
   for (const hostKey of hostCandidates) {
-    const matches = await getVisitsByHost(hostKey);
+    const matches = await getVisitsByHostCached(hostKey, options.hostCache);
     for (const value of matches) {
       if (isPartialMatch(value, fingerprint)) {
         return { state: MATCH_STATE.partial, record: value };
@@ -142,7 +200,7 @@ async function findVisitMatch(fingerprint) {
   return { state: MATCH_STATE.none };
 }
 
-async function findPartialMatches(fingerprint, limit = 5) {
+async function findPartialMatches(fingerprint, limit = 5, options = {}) {
   if (await isPartialException(fingerprint.parts.host)) {
     return [];
   }
@@ -152,7 +210,7 @@ async function findPartialMatches(fingerprint, limit = 5) {
   const results = [];
 
   for (const hostKey of hostCandidates) {
-    const matches = await getVisitsByHost(hostKey);
+    const matches = await getVisitsByHostCached(hostKey, options.hostCache);
     for (const value of matches) {
       if (isPartialMatch(value, fingerprint)) {
         results.push(value);

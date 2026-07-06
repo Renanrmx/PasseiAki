@@ -48,6 +48,7 @@
         "*://*/*"
       ],
       "js": [
+        "shared/messages.js",
         "content/highlighter.js"
       ],
       "run_at": "document_idle"

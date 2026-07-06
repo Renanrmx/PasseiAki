@@ -1,6 +1,7 @@
 (() => {
   const apiExceptions =
     window.apiExport || (window.apiExport = typeof browser !== "undefined" ? browser : chrome);
+  const MSG = globalThis.AKI_MESSAGE_TYPES;
 
   function parseDomains(text) {
     if (!text) return [];
@@ -71,8 +72,8 @@
   }
 
   const configs = [
-    { id: "match-exceptions", getType: "GET_MATCH_EXCEPTIONS", setType: "SET_MATCH_EXCEPTIONS" },
-    { id: "partial-exceptions", getType: "GET_PARTIAL_EXCEPTIONS", setType: "SET_PARTIAL_EXCEPTIONS" }
+    { id: "match-exceptions", getType: MSG.GET_MATCH_EXCEPTIONS, setType: MSG.SET_MATCH_EXCEPTIONS },
+    { id: "partial-exceptions", getType: MSG.GET_PARTIAL_EXCEPTIONS, setType: MSG.SET_PARTIAL_EXCEPTIONS }
   ];
 
   configs.forEach(setupExceptionsTextarea);

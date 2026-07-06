@@ -15,6 +15,74 @@ function bytesFromBase64(str) {
   return out;
 }
 
+function isPlainObject(value) {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function isBase64String(value) {
+  if (typeof value !== "string" || value.length === 0 || value.length % 4 !== 0) {
+    return false;
+  }
+
+  let paddingStarted = false;
+  for (let index = 0; index < value.length; index += 1) {
+    const code = value.charCodeAt(index);
+    const isAlphaNumeric =
+      (code >= 48 && code <= 57) ||
+      (code >= 65 && code <= 90) ||
+      (code >= 97 && code <= 122);
+    const isBase64Symbol = code === 43 || code === 47;
+    const isPadding = code === 61;
+
+    if (isPadding) {
+      paddingStarted = true;
+      continue;
+    }
+    if (paddingStarted || (!isAlphaNumeric && !isBase64Symbol)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+function decodeBase64Field(envelope, field, expectedLength) {
+  const value = envelope[field];
+  if (!isBase64String(value)) {
+    throw new Error(`Invalid backup envelope field: ${field}`);
+  }
+
+  let bytes;
+  try {
+    bytes = bytesFromBase64(value);
+  } catch (error) {
+    throw new Error(`Invalid backup envelope field: ${field}`);
+  }
+
+  if (typeof expectedLength === "number" && bytes.length !== expectedLength) {
+    throw new Error(`Invalid backup envelope field: ${field}`);
+  }
+
+  return bytes;
+}
+
+function validateBackupEnvelope(envelope) {
+  if (!isPlainObject(envelope)) {
+    throw new Error("Invalid backup envelope");
+  }
+  if (envelope.v !== 1) {
+    throw new Error("Unsupported backup envelope version");
+  }
+
+  const salt = decodeBase64Field(envelope, "salt", 16);
+  const nonce = decodeBase64Field(envelope, "nonce", 12);
+  if (!isBase64String(envelope.data)) {
+    throw new Error("Invalid backup envelope field: data");
+  }
+
+  return { salt, nonce };
+}
+
 function randomBytes(length) {
   const arr = new Uint8Array(length);
   crypto.getRandomValues(arr);
@@ -83,15 +151,15 @@ async function encryptWithPassword(password, plaintextBytes) {
 }
 
 async function decryptWithPassword(password, envelope) {
+  const validated = validateBackupEnvelope(envelope);
   ensureCryptoLibs();
   if (typeof ChaCha20Poly1305 === "undefined") {
     throw new Error("ChaCha20Poly1305 not loaded");
   }
 
-  const salt = bytesFromBase64(envelope.salt);
-  const nonce = bytesFromBase64(envelope.nonce);
+  const { salt, nonce } = validated;
   const data = bytesFromBase64(envelope.data);
-  if (!salt || !nonce || !data) {
+  if (!salt || !nonce || !data || data.length < 16) {
     throw new Error("Invalid envelope");
   }
   const key = await deriveKeyFromPassword(password, salt);

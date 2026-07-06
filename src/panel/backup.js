@@ -1,4 +1,5 @@
 const apiExport = typeof browser !== "undefined" ? browser : chrome;
+const backupMessages = globalThis.AKI_MESSAGE_TYPES;
 
 const createBackupBtn = document.getElementById("create-bkp-btn");
 const restoreBackupBtn = document.getElementById("restore-bkp-btn");
@@ -181,7 +182,7 @@ async function doExport() {
   if (!result || !result.password) return;
   try {
     await apiExport.runtime.sendMessage({
-      type: "CREATE_BACKUP_DOWNLOAD",
+      type: backupMessages.CREATE_BACKUP_DOWNLOAD,
       password: result.password
     });
   } catch (error) {
@@ -212,7 +213,7 @@ async function doImport(file) {
       try {
         const envelope = JSON.parse(reader.result);
         const response = await apiExport.runtime.sendMessage({
-          type: "RESTORE_BACKUP",
+          type: backupMessages.RESTORE_BACKUP,
           password: result.password,
           envelope,
           mergeVisits
@@ -284,7 +285,7 @@ if (restoreOnly) {
 async function syncEncryptionUI() {
   if (!encryptionToggle || !encryptionStatus) return;
   try {
-    const result = await apiExport.runtime.sendMessage({ type: "GET_ENCRYPTION_ENABLED" });
+    const result = await apiExport.runtime.sendMessage({ type: backupMessages.GET_ENCRYPTION_ENABLED });
     const enabled = Boolean(result && result.encryptionEnabled);
     encryptionEnabledState = enabled;
     encryptionToggle.checked = enabled;
@@ -314,7 +315,7 @@ async function getEncryptionEnabledState() {
     return encryptionEnabledState;
   }
   try {
-    const result = await apiExport.runtime.sendMessage({ type: "GET_ENCRYPTION_ENABLED" });
+    const result = await apiExport.runtime.sendMessage({ type: backupMessages.GET_ENCRYPTION_ENABLED });
     encryptionEnabledState = Boolean(result && result.encryptionEnabled);
     return encryptionEnabledState;
   } catch (error) {
@@ -329,7 +330,7 @@ if (encryptionToggle) {
     updateEncryptionStatus(enabled);
     try {
       await apiExport.runtime.sendMessage({
-        type: "SET_ENCRYPTION_ENABLED",
+        type: backupMessages.SET_ENCRYPTION_ENABLED,
         enabled
       });
     } catch (error) {

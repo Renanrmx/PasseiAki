@@ -1,6 +1,12 @@
 const api = typeof browser !== "undefined" ? browser : chrome;
 const actionApi = api.action || api.browserAction;
 
+if (typeof importScripts === "function") {
+  importScripts("../shared/messages.js", "../shared/records.js");
+}
+
+const MSG = globalThis.AKI_MESSAGE_TYPES;
+
 const DB_NAME = "passeiAki";
 const DB_VERSION = 2;
 const VISITS_STORE = "visits";
@@ -37,6 +43,173 @@ const ACTION_ICONS = {
   }
 };
 
+const EXTENSION_PAGE_MESSAGE_TYPES = new Set([
+  MSG.CREATE_BACKUP,
+  MSG.CREATE_BACKUP_DOWNLOAD,
+  MSG.DELETE_VISIT,
+  MSG.DISMISS_DOWNLOAD_BADGE,
+  MSG.EXPORT_VISITS_CSV,
+  MSG.EXPORT_VISITS_TXT,
+  MSG.GET_DOWNLOAD_BADGE_SETTINGS,
+  MSG.GET_DOWNLOAD_BADGE_STATE,
+  MSG.GET_ENCRYPTION_ENABLED,
+  MSG.GET_MATCH_EXCEPTIONS,
+  MSG.GET_PARTIAL_EXCEPTIONS,
+  MSG.GET_PARTIAL_MATCHES,
+  MSG.GET_STATS,
+  MSG.GET_SUPPORT_STATUS,
+  MSG.GET_VISIT_FOR_URL,
+  MSG.IMPORT_ADDRESSES,
+  MSG.RESTORE_BACKUP,
+  MSG.SEARCH_HISTORY,
+  MSG.SET_DOWNLOAD_BADGE_SETTINGS,
+  MSG.SET_ENCRYPTION_ENABLED,
+  MSG.SET_LINK_COLORS,
+  MSG.SET_MATCH_EXCEPTIONS,
+  MSG.SET_PARTIAL_EXCEPTIONS,
+  MSG.SUPPORT_TAB_OPENED
+]);
+
+const CONTENT_SCRIPT_MESSAGE_TYPES = new Set([
+  MSG.CHECK_VISITED_LINKS,
+  MSG.GET_PAGE_EXCEPTION_FLAGS
+]);
+
+const SHARED_CONTEXT_MESSAGE_TYPES = new Set([
+  MSG.GET_LINK_COLORS
+]);
+
+const EXTENSION_BASE_URL = api?.runtime?.getURL ? api.runtime.getURL("") : "";
+
+function isExtensionDocumentUrl(url) {
+  return typeof url === "string" && EXTENSION_BASE_URL && url.startsWith(EXTENSION_BASE_URL);
+}
+
+function isOwnExtensionSender(sender) {
+  if (!sender) return false;
+  if (sender.id && api?.runtime?.id && sender.id !== api.runtime.id) {
+    return false;
+  }
+  return true;
+}
+
+function isExtensionPageSender(sender) {
+  if (!isOwnExtensionSender(sender)) return false;
+  return isExtensionDocumentUrl(sender.url) || isExtensionDocumentUrl(sender.origin);
+}
+
+function isContentScriptSender(sender) {
+  if (!isOwnExtensionSender(sender) || !sender?.tab) return false;
+  const urlString = sender.url || sender.tab.url || "";
+  try {
+    const url = new URL(urlString);
+    return SUPPORTED_PROTOCOLS.has(url.protocol);
+  } catch (error) {
+    return false;
+  }
+}
+
+function isAuthorizedMessageSender(type, sender) {
+  const fromExtensionPage = isExtensionPageSender(sender);
+  const fromContentScript = isContentScriptSender(sender);
+
+  if (SHARED_CONTEXT_MESSAGE_TYPES.has(type)) {
+    return fromExtensionPage || fromContentScript;
+  }
+  if (EXTENSION_PAGE_MESSAGE_TYPES.has(type)) {
+    return fromExtensionPage;
+  }
+  if (CONTENT_SCRIPT_MESSAGE_TYPES.has(type)) {
+    return fromContentScript;
+  }
+  return false;
+}
+
+function isSupportedTabUrl(urlString) {
+  if (typeof urlString !== "string") return false;
+  try {
+    const url = new URL(urlString);
+    return SUPPORTED_PROTOCOLS.has(url.protocol);
+  } catch (error) {
+    return false;
+  }
+}
+
+async function queryAllTabs() {
+  if (!api.tabs || !api.tabs.query) {
+    return [];
+  }
+  try {
+    const result = api.tabs.query({});
+    if (result && typeof result.then === "function") {
+      const tabs = await result;
+      return Array.isArray(tabs) ? tabs : [];
+    }
+  } catch (error) {
+    // fall back to callback-style APIs
+  }
+  return new Promise((resolve) => {
+    try {
+      api.tabs.query({}, (tabs) => {
+        resolve(Array.isArray(tabs) ? tabs : []);
+      });
+    } catch (error) {
+      resolve([]);
+    }
+  });
+}
+
+function sendRuntimeMessageSafe(message) {
+  try {
+    if (!api.runtime || !api.runtime.sendMessage) {
+      return;
+    }
+    const result = api.runtime.sendMessage(message);
+    if (result && typeof result.catch === "function") {
+      result.catch(() => {});
+    }
+  } catch (error) {
+    // ignore broadcast errors
+  }
+}
+
+function sendTabMessageSafe(tabId, message) {
+  try {
+    const result = api.tabs.sendMessage(tabId, message);
+    if (result && typeof result.catch === "function") {
+      result.catch(() => {});
+    }
+  } catch (error) {
+    // ignore per-tab errors
+  }
+}
+
+async function broadcastToContentTabs(message) {
+  if (!api.tabs || !api.tabs.sendMessage) {
+    return;
+  }
+  const tabs = await queryAllTabs();
+  tabs.forEach((tab) => {
+    if (!tab || typeof tab.id === "undefined" || !isSupportedTabUrl(tab.url)) {
+      return;
+    }
+    sendTabMessageSafe(tab.id, message);
+  });
+}
+
+async function broadcastMessagesToContentTabs(messages) {
+  if (!api.tabs || !api.tabs.sendMessage || !Array.isArray(messages) || !messages.length) {
+    return;
+  }
+  const tabs = await queryAllTabs();
+  tabs.forEach((tab) => {
+    if (!tab || typeof tab.id === "undefined" || !isSupportedTabUrl(tab.url)) {
+      return;
+    }
+    messages.forEach((message) => sendTabMessageSafe(tab.id, message));
+  });
+}
+
 function resolveActionIcons(iconMap) {
   if (!api?.runtime?.getURL) return iconMap;
   const resolved = {};
@@ -70,7 +243,8 @@ if (typeof importScripts === "function") {
     "background.support.js",
     "background.backup.js",
     "background.import.js",
-    "background.export.js"
+    "background.export.js",
+    "background.init.js"
   );
 }
 
@@ -100,48 +274,43 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
       return undefined;
     }
 
-    if (message.type === "CHECK_VISITED_LINKS") {
+    if (!isAuthorizedMessageSender(message.type, sender)) {
+      return { ok: false, error: "Unauthorized message sender" };
+    }
+
+    if (message.type === MSG.CHECK_VISITED_LINKS) {
       return handleCheckVisitedLinks(message.links || [], {
         skipFull: message.skipFull === true,
         skipPartial: message.skipPartial === true
       });
     }
 
-    if (message.type === "GET_STATS") {
+    if (message.type === MSG.GET_STATS) {
       return handleGetStats();
     }
 
-    if (message.type === "SEARCH_HISTORY") {
+    if (message.type === MSG.SEARCH_HISTORY) {
       return handleSearchHistory(message.query || "");
     }
 
-    if (message.type === "GET_PARTIAL_MATCHES") {
+    if (message.type === MSG.GET_PARTIAL_MATCHES) {
       return (async () => {
         const fingerprint = await computeFingerprint(message.url || "");
         if (!fingerprint) return { items: [] };
-        const items = await findPartialMatches(fingerprint, 5);
+        const items = await findPartialMatches(fingerprint, 5, { hostCache: new Map() });
         return { items };
       })();
     }
 
-    if (message.type === "DELETE_VISIT") {
+    if (message.type === MSG.DELETE_VISIT) {
       return (async () => {
         await deleteVisitById(message.id);
-        try {
-        if (api.runtime && api.runtime.sendMessage) {
-          const result = api.runtime.sendMessage({ type: "HISTORY_UPDATED" });
-          if (result && typeof result.catch === "function") {
-            result.catch(() => {});
-          }
-        }
-        } catch (error) {
-          // ignore broadcast errors
-        }
+        sendRuntimeMessageSafe({ type: MSG.HISTORY_UPDATED });
         return { ok: true };
       })().catch((error) => ({ ok: false, error: error?.message || String(error) }));
     }
 
-    if (message.type === "GET_VISIT_FOR_URL") {
+    if (message.type === MSG.GET_VISIT_FOR_URL) {
       if (message.tabId && lastMatchStateByTab.has(message.tabId)) {
         const res = await handleGetVisitForUrl(message.url || "", message.tabId);
         return {
@@ -152,28 +321,28 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
       return handleGetVisitForUrl(message.url || "", message.tabId);
     }
 
-    if (message.type === "GET_ENCRYPTION_ENABLED") {
+    if (message.type === MSG.GET_ENCRYPTION_ENABLED) {
       const value = await getEncryptionEnabled();
       return { encryptionEnabled: value };
     }
 
-    if (message.type === "SET_ENCRYPTION_ENABLED") {
+    if (message.type === MSG.SET_ENCRYPTION_ENABLED) {
       await setEncryptionEnabled(Boolean(message.enabled));
       return { ok: true };
     }
 
-    if (message.type === "CREATE_BACKUP") {
+    if (message.type === MSG.CREATE_BACKUP) {
       const envelope = await createBackup(message.password || "");
       return { ok: true, envelope };
     }
 
-    if (message.type === "CREATE_BACKUP_DOWNLOAD") {
+    if (message.type === MSG.CREATE_BACKUP_DOWNLOAD) {
       const envelope = await createBackup(message.password || "");
       await downloadBackup(envelope, message.filename);
       return { ok: true };
     }
 
-    if (message.type === "RESTORE_BACKUP") {
+    if (message.type === MSG.RESTORE_BACKUP) {
       try {
         await restoreBackup(message.password || "", message.envelope, {
           mergeVisits: message.mergeVisits === true
@@ -185,7 +354,7 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
       }
     }
 
-    if (message.type === "EXPORT_VISITS_CSV") {
+    if (message.type === MSG.EXPORT_VISITS_CSV) {
       return (async () => {
         const result = await exportPlainVisitsCsv(message.filename, {
           includePages: message.includePages,
@@ -198,7 +367,7 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
       }));
     }
 
-    if (message.type === "EXPORT_VISITS_TXT") {
+    if (message.type === MSG.EXPORT_VISITS_TXT) {
       return (async () => {
         const result = await exportPlainVisitsTxt(message.filename, {
           includePages: message.includePages,
@@ -211,7 +380,7 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
       }));
     }
 
-    if (message.type === "GET_LINK_COLORS") {
+    if (message.type === MSG.GET_LINK_COLORS) {
       return (async () => {
         const colors = await getLinkColors();
         return { ok: true, colors };
@@ -221,7 +390,7 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
       }));
     }
 
-    if (message.type === "SET_LINK_COLORS") {
+    if (message.type === MSG.SET_LINK_COLORS) {
       return (async () => {
         const colors = await setLinkColors({
           matchHexColor: message.matchHexColor,
@@ -231,31 +400,8 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
           matchBorderEnabled: message.matchBorderEnabled,
           partialBorderEnabled: message.partialBorderEnabled
         });
-        try {
-          const broadcast = api.runtime.sendMessage({ type: "LINK_COLORS_UPDATED", colors });
-          if (broadcast && typeof broadcast.catch === "function") {
-            broadcast.catch(() => {});
-          }
-          if (api.tabs && api.tabs.query) {
-            api.tabs.query({}, (tabs) => {
-              tabs.forEach((tab) => {
-                try {
-                  const result = api.tabs.sendMessage(tab.id, {
-                    type: "LINK_COLORS_UPDATED",
-                    colors
-                  });
-                  if (result && typeof result.catch === "function") {
-                    result.catch(() => {});
-                  }
-                } catch (error) {
-                  // ignore per-tab errors
-                }
-              });
-            });
-          }
-        } catch (error) {
-          // ignore broadcast error
-        }
+        sendRuntimeMessageSafe({ type: MSG.LINK_COLORS_UPDATED, colors });
+        await broadcastToContentTabs({ type: MSG.LINK_COLORS_UPDATED, colors });
         return { ok: true, colors };
       })().catch((error) => ({
         ok: false,
@@ -263,7 +409,7 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
       }));
     }
 
-    if (message.type === "GET_DOWNLOAD_BADGE_SETTINGS") {
+    if (message.type === MSG.GET_DOWNLOAD_BADGE_SETTINGS) {
       return (async () => {
         const settings = await getDownloadBadgeSettings();
         return { ok: true, settings };
@@ -273,7 +419,7 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
       }));
     }
 
-    if (message.type === "GET_PARTIAL_EXCEPTIONS") {
+    if (message.type === MSG.GET_PARTIAL_EXCEPTIONS) {
       return (async () => {
         const items = await getAllPartialExceptions();
         return { ok: true, items };
@@ -283,28 +429,10 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
       }));
     }
 
-    if (message.type === "SET_PARTIAL_EXCEPTIONS") {
+    if (message.type === MSG.SET_PARTIAL_EXCEPTIONS) {
       return (async () => {
         const items = await setPartialExceptions(message.items || []);
-        try {
-          if (api.tabs && api.tabs.query) {
-            api.tabs.query({}, (tabs) => {
-              tabs.forEach((tab) => {
-                if (!tab || typeof tab.id === "undefined") return;
-                try {
-                  const result = api.tabs.sendMessage(tab.id, { type: "REFRESH_HIGHLIGHT" });
-                  if (result && typeof result.catch === "function") {
-                    result.catch(() => {});
-                  }
-                } catch (error) {
-                  // ignore per-tab errors
-                }
-              });
-            });
-          }
-        } catch (error) {
-          // ignore broadcast error
-        }
+        await broadcastToContentTabs({ type: MSG.REFRESH_HIGHLIGHT });
         refreshAllTabsMatchState();
         return { ok: true, items };
       })().catch((error) => ({
@@ -313,7 +441,7 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
       }));
     }
 
-    if (message.type === "GET_MATCH_EXCEPTIONS") {
+    if (message.type === MSG.GET_MATCH_EXCEPTIONS) {
       return (async () => {
         const items = await getAllMatchExceptions();
         return { ok: true, items };
@@ -323,7 +451,7 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
       }));
     }
 
-    if (message.type === "GET_PAGE_EXCEPTION_FLAGS") {
+    if (message.type === MSG.GET_PAGE_EXCEPTION_FLAGS) {
       return (async () => {
         const url = message.url || "";
         const matchException = await isMatchException(url);
@@ -335,28 +463,10 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
       }));
     }
 
-    if (message.type === "SET_MATCH_EXCEPTIONS") {
+    if (message.type === MSG.SET_MATCH_EXCEPTIONS) {
       return (async () => {
         const items = await setMatchExceptions(message.items || []);
-        try {
-          if (api.tabs && api.tabs.query) {
-            api.tabs.query({}, (tabs) => {
-              tabs.forEach((tab) => {
-                if (!tab || typeof tab.id === "undefined") return;
-                try {
-                  const result = api.tabs.sendMessage(tab.id, { type: "REFRESH_HIGHLIGHT" });
-                  if (result && typeof result.catch === "function") {
-                    result.catch(() => {});
-                  }
-                } catch (error) {
-                  // ignore per-tab errors
-                }
-              });
-            });
-          }
-        } catch (error) {
-          // ignore broadcast error
-        }
+        await broadcastToContentTabs({ type: MSG.REFRESH_HIGHLIGHT });
         refreshAllTabsMatchState();
         return { ok: true, items };
       })().catch((error) => ({
@@ -365,7 +475,7 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
       }));
     }
 
-    if (message.type === "GET_DOWNLOAD_BADGE_STATE") {
+    if (message.type === MSG.GET_DOWNLOAD_BADGE_STATE) {
       return (async () => {
         const settings = getDownloadBadgeSettingsCache() || (await getDownloadBadgeSettings());
         setDownloadBadgeSettingsCache(settings);
@@ -389,7 +499,7 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
       }));
     }
 
-    if (message.type === "GET_SUPPORT_STATUS") {
+    if (message.type === MSG.GET_SUPPORT_STATUS) {
       return (async () => {
         const status = await getSupportStatus();
         return { ok: true, visible: status.visible, supportAt: status.supportAt };
@@ -399,7 +509,7 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
       }));
     }
 
-    if (message.type === "SUPPORT_TAB_OPENED") {
+    if (message.type === MSG.SUPPORT_TAB_OPENED) {
       return (async () => {
         await beginSupportTracking(message.tabId);
         return { ok: true };
@@ -409,12 +519,12 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
       }));
     }
 
-    if (message.type === "DISMISS_DOWNLOAD_BADGE") {
+    if (message.type === MSG.DISMISS_DOWNLOAD_BADGE) {
       clearDownloadBadge();
       return { ok: true };
     }
 
-    if (message.type === "SET_DOWNLOAD_BADGE_SETTINGS") {
+    if (message.type === MSG.SET_DOWNLOAD_BADGE_SETTINGS) {
       return (async () => {
         const settings = await setDownloadBadgeSettings({
           downloadBadgeColor: message.downloadBadgeColor,
@@ -430,9 +540,12 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
       }));
     }
 
-    if (message.type === "IMPORT_ADDRESSES") {
+    if (message.type === MSG.IMPORT_ADDRESSES) {
       return (async () => {
-        const result = await importAddressesFromText(message.content || "", {
+        if (typeof message.content !== "string") {
+          throw new Error("Invalid import content");
+        }
+        const result = await importAddressesFromText(message.content, {
           preview: Boolean(message.preview)
         });
         return { ok: true, ...result };
@@ -522,19 +635,11 @@ async function upsertVisit(urlString, options = {}) {
     ? { ...existing, ...baseRecord, visitCount: (existing.visitCount || 0) + 1 }
     : { ...baseRecord, visitCount: 1 };
 
-  await putVisit(record);
-  try {
-    if (api.runtime && api.runtime.sendMessage) {
-      const result = api.runtime.sendMessage({ type: "HISTORY_UPDATED" });
-      if (result && typeof result.catch === "function") {
-        result.catch(() => {});
-      }
-    }
-  } catch (error) {
-    // ignore broadcast errors
-  }
-  return { record, existedBefore, previousLastVisited };
-}
+	  await putVisit(record);
+	  await adjustStatsTotals(existedBefore ? 0 : 1, 1);
+	  sendRuntimeMessageSafe({ type: MSG.HISTORY_UPDATED });
+	  return { record, existedBefore, previousLastVisited };
+	}
 
 async function setActionState(tabId, state) {
   try {
@@ -566,9 +671,11 @@ async function refreshAllTabsMatchState() {
     return;
   }
   try {
-    const tabs = await api.tabs.query({});
+    const tabs = await queryAllTabs();
+    const hostCache = new Map();
+    const visitCache = new Map();
     for (const tab of tabs) {
-      if (!tab || typeof tab.id === "undefined" || !tab.url) {
+      if (!tab || typeof tab.id === "undefined" || !isSupportedTabUrl(tab.url)) {
         continue;
       }
       const fingerprint = await computeFingerprint(tab.url);
@@ -576,7 +683,7 @@ async function refreshAllTabsMatchState() {
         await setActionState(tab.id, MATCH_STATE.none);
         continue;
       }
-      const match = await findVisitMatch(fingerprint);
+      const match = await findVisitMatch(fingerprint, { hostCache, visitCache });
       const state = match.state || MATCH_STATE.none;
       lastMatchStateByTab.set(tab.id, state);
       if (state === MATCH_STATE.partial) {
@@ -761,14 +868,22 @@ async function handleGetVisitForUrl(urlString, tabId) {
 
 async function bootstrapActiveTab() {
   try {
+    if (typeof computeFingerprint !== "function" || typeof findVisitMatch !== "function") {
+      return;
+    }
     const [tab] = await api.tabs.query({ active: true, currentWindow: true });
     if (tab && tab.id !== undefined) {
-      const visited = await isVisited(tab.url);
-      await setActionState(tab.id, visited);
+      const fingerprint = await computeFingerprint(tab.url);
+      if (!fingerprint) {
+        await setActionState(tab.id, MATCH_STATE.none);
+        return;
+      }
+      const match = await findVisitMatch(fingerprint);
+      const state = match.state || MATCH_STATE.none;
+      lastMatchStateByTab.set(tab.id, state);
+      await setActionState(tab.id, state);
     }
   } catch (error) {
     // ignore bootstrap failures
   }
 }
-
-bootstrapActiveTab();

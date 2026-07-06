@@ -1,4 +1,5 @@
 const api = typeof browser !== "undefined" ? browser : chrome;
+const MSG = globalThis.AKI_MESSAGE_TYPES;
 
 const SUPPORTED_PROTOCOLS = new Set(["http:", "https:"]);
 const VISITED_TEXT_CLASS = "aki-visited-text";
@@ -9,6 +10,8 @@ const STYLE_ID = "aki-style";
 const SCAN_DEBOUNCE_MS = 400;
 
 let scanTimer = null;
+let pendingFullScan = false;
+const pendingAnchors = new Set();
 let currentColors = {
   matchHexColor: null,
   partialHexColor: null,
@@ -126,25 +129,67 @@ function applyColors(colors = {}, options = {}) {
   }
 }
 
-function collectLinks() {
+function addAnchorToCollection(anchor, urlToAnchors) {
+  if (!anchor || !anchor.isConnected) {
+    return;
+  }
+  if (!anchor.matches || !anchor.matches("a[href]")) {
+    if (anchor.dataset && anchor.dataset.akiVisited) {
+      clearAnchorMark(anchor);
+    }
+    return;
+  }
+  try {
+    const url = new URL(anchor.href, window.location.href);
+    if (!SUPPORTED_PROTOCOLS.has(url.protocol)) {
+      return;
+    }
+
+    const normalized = url.toString();
+    if (!urlToAnchors.has(normalized)) {
+      urlToAnchors.set(normalized, []);
+    }
+    urlToAnchors.get(normalized).push(anchor);
+  } catch (error) {
+    // ignore malformed href
+  }
+}
+
+function queueAnchor(anchor) {
+  if (!anchor || !anchor.matches || !anchor.matches("a")) {
+    return false;
+  }
+  pendingAnchors.add(anchor);
+  return true;
+}
+
+function queueAnchorsFromNode(node) {
+  if (!node || node.nodeType !== Node.ELEMENT_NODE) {
+    return false;
+  }
+
+  let queued = false;
+  if (node.matches && node.matches("a")) {
+    queued = queueAnchor(node) || queued;
+  }
+  if (node.querySelectorAll) {
+    node.querySelectorAll("a").forEach((anchor) => {
+      queued = queueAnchor(anchor) || queued;
+    });
+  }
+  return queued;
+}
+
+function collectLinks(options = {}) {
   const urlToAnchors = new Map();
-  const anchors = Array.from(document.querySelectorAll("a[href]"));
+  const anchors = options.full
+    ? Array.from(document.querySelectorAll("a[href]"))
+    : Array.isArray(options.anchors)
+      ? options.anchors
+      : [];
 
   for (const anchor of anchors) {
-    try {
-      const url = new URL(anchor.href, window.location.href);
-      if (!SUPPORTED_PROTOCOLS.has(url.protocol)) {
-        continue;
-      }
-
-      const normalized = url.toString();
-      if (!urlToAnchors.has(normalized)) {
-        urlToAnchors.set(normalized, []);
-      }
-      urlToAnchors.get(normalized).push(anchor);
-    } catch (error) {
-      // ignore malformed href
-    }
+    addAnchorToCollection(anchor, urlToAnchors);
   }
 
   return urlToAnchors;
@@ -225,7 +270,7 @@ async function requestVisited(urlToAnchors) {
 
   try {
     const response = await api.runtime.sendMessage({
-      type: "CHECK_VISITED_LINKS",
+      type: MSG.CHECK_VISITED_LINKS,
       links: linksPayload,
       skipFull: pageExceptionFlags.match === true,
       skipPartial: pageExceptionFlags.partial === true
@@ -237,13 +282,20 @@ async function requestVisited(urlToAnchors) {
   }
 }
 
-function scheduleScan() {
+function scheduleScan(options = {}) {
+  if (options.full) {
+    pendingFullScan = true;
+  }
   if (scanTimer) {
     return;
   }
   scanTimer = setTimeout(() => {
     scanTimer = null;
-    scanAndMark().catch(() => {});
+    const shouldFullScan = pendingFullScan;
+    const anchors = Array.from(pendingAnchors);
+    pendingFullScan = false;
+    pendingAnchors.clear();
+    scanAndMark({ full: shouldFullScan, anchors }).catch(() => {});
   }, SCAN_DEBOUNCE_MS);
 }
 
@@ -261,7 +313,7 @@ async function refreshPageExceptionFlags(force = false) {
   pageExceptionPromise = (async () => {
     try {
       const response = await api.runtime.sendMessage({
-        type: "GET_PAGE_EXCEPTION_FLAGS",
+        type: MSG.GET_PAGE_EXCEPTION_FLAGS,
         url: window.location.href
       });
       pageExceptionFlags = {
@@ -282,9 +334,12 @@ async function refreshPageExceptionFlags(force = false) {
   }
 }
 
-async function scanAndMark() {
+async function scanAndMark(options = {}) {
   await refreshPageExceptionFlags();
-  const urlToAnchors = collectLinks();
+  const urlToAnchors = collectLinks({
+    full: options.full !== false,
+    anchors: options.anchors || []
+  });
   if (pageExceptionFlags.match && pageExceptionFlags.partial) {
     urlToAnchors.forEach((anchors) => {
       anchors.forEach((anchor) => {
@@ -320,14 +375,25 @@ async function scanAndMark() {
 
 function startObservers() {
   const observer = new MutationObserver((mutations) => {
-    if (
-      mutations.some((mutation) => mutation.addedNodes && mutation.addedNodes.length > 0)
-    ) {
-      scheduleScan();
-    }
+    let queued = false;
+    mutations.forEach((mutation) => {
+      if (mutation.type === "childList") {
+        mutation.addedNodes.forEach((node) => {
+          queued = queueAnchorsFromNode(node) || queued;
+        });
+      } else if (mutation.type === "attributes") {
+        queued = queueAnchor(mutation.target) || queued;
+      }
+    });
+    if (queued) scheduleScan({ full: false });
   });
 
-  observer.observe(document.body, { childList: true, subtree: true });
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true,
+    attributes: true,
+    attributeFilter: ["href"]
+  });
 }
 
 async function handleAnchorActivate(event) {
@@ -358,7 +424,7 @@ async function init() {
     return;
   }
   try {
-    api.runtime.sendMessage({ type: "GET_LINK_COLORS" }).then((res) => {
+    api.runtime.sendMessage({ type: MSG.GET_LINK_COLORS }).then((res) => {
       if (res && res.colors) {
         applyColors(res.colors);
       } else {
@@ -370,7 +436,7 @@ async function init() {
   }
   injectStyle();
   await refreshPageExceptionFlags(true);
-  scanAndMark().catch(() => {});
+  scanAndMark({ full: true }).catch(() => {});
   startObservers();
   document.addEventListener("click", handleAnchorActivate, true);
   document.addEventListener("auxclick", handleAnchorActivate, true);
@@ -384,12 +450,12 @@ if (document.readyState === "loading") {
 
 if (api.runtime && api.runtime.onMessage) {
   api.runtime.onMessage.addListener((message) => {
-    if (message && message.type === "LINK_COLORS_UPDATED" && message.colors) {
+    if (message && message.type === MSG.LINK_COLORS_UPDATED && message.colors) {
       applyColors(message.colors, { refreshMarked: true });
     }
-    if (message && message.type === "REFRESH_HIGHLIGHT") {
+    if (message && message.type === MSG.REFRESH_HIGHLIGHT) {
       refreshPageExceptionFlags(true).then(() => {
-        scanAndMark().catch(() => {});
+        scanAndMark({ full: true }).catch(() => {});
       });
     }
   });

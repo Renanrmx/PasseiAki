@@ -1,5 +1,6 @@
 (() => {
   const apiExport = window.apiExport || (window.apiExport = (typeof browser !== "undefined" ? browser : chrome));
+  const MSG = globalThis.AKI_MESSAGE_TYPES;
   const exportButtons = document.querySelectorAll("[data-export-addresses-btn]");
   let exportModal = null;
   let exportModalPromise = null;
@@ -99,7 +100,7 @@
     try {
       const choice = await showExportModal();
       if (!choice) return;
-      const type = choice.format === "txt" ? "EXPORT_VISITS_TXT" : "EXPORT_VISITS_CSV";
+      const type = choice.format === "txt" ? MSG.EXPORT_VISITS_TXT : MSG.EXPORT_VISITS_CSV;
 
       const response = await apiExport.runtime.sendMessage({
         type,

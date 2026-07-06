@@ -56,13 +56,117 @@ function mergePlainVisits(existing = [], incoming = []) {
   return Array.from(merged.values());
 }
 
+function requireBackupString(record, field, index) {
+  if (typeof record[field] !== "string") {
+    throw new Error(`Invalid backup visit at index ${index}: ${field}`);
+  }
+  return record[field];
+}
+
+function optionalBackupString(record, field) {
+  return typeof record[field] === "string" ? record[field] : "";
+}
+
+function optionalBackupNumber(record, field, fallback, index) {
+  if (record[field] == null) {
+    return fallback;
+  }
+  if (!Number.isFinite(record[field]) || record[field] < 0) {
+    throw new Error(`Invalid backup visit at index ${index}: ${field}`);
+  }
+  return record[field];
+}
+
+function validateBackupVisit(record, index) {
+  if (!isPlainObject(record)) {
+    throw new Error(`Invalid backup visit at index ${index}`);
+  }
+
+  const queryParamsHash = record.queryParamsHash == null ? [] : record.queryParamsHash;
+  if (!Array.isArray(queryParamsHash) || queryParamsHash.some((value) => typeof value !== "string")) {
+    throw new Error(`Invalid backup visit at index ${index}: queryParamsHash`);
+  }
+  if (record.hashed != null && typeof record.hashed !== "boolean") {
+    throw new Error(`Invalid backup visit at index ${index}: hashed`);
+  }
+  if (record.download != null && typeof record.download !== "boolean") {
+    throw new Error(`Invalid backup visit at index ${index}: download`);
+  }
+
+  return {
+    id: requireBackupString(record, "id", index),
+    hostHash: requireBackupString(record, "hostHash", index),
+    pathHash: requireBackupString(record, "pathHash", index),
+    queryHash: requireBackupString(record, "queryHash", index),
+    fragmentHash: requireBackupString(record, "fragmentHash", index),
+    queryParamsHash: queryParamsHash.slice(),
+    hashed: record.hashed !== false,
+    host: optionalBackupString(record, "host"),
+    path: optionalBackupString(record, "path"),
+    query: optionalBackupString(record, "query"),
+    fragment: optionalBackupString(record, "fragment"),
+    lastVisited: optionalBackupNumber(record, "lastVisited", 0, index),
+    visitCount: optionalBackupNumber(record, "visitCount", 1, index),
+    download: record.download === true
+  };
+}
+
+function validateBackupMetaEntry(entry, index) {
+  if (!isPlainObject(entry) || typeof entry.key !== "string" || !entry.key.trim()) {
+    throw new Error(`Invalid backup meta at index ${index}`);
+  }
+
+  const value = entry.value;
+  const valueType = typeof value;
+  if (
+    value !== null &&
+    valueType !== "string" &&
+    valueType !== "number" &&
+    valueType !== "boolean"
+  ) {
+    throw new Error(`Invalid backup meta at index ${index}: value`);
+  }
+  if (valueType === "number" && !Number.isFinite(value)) {
+    throw new Error(`Invalid backup meta at index ${index}: value`);
+  }
+
+  return { key: entry.key, value };
+}
+
+function validateBackupExceptions(value, field) {
+  if (value == null) {
+    return [];
+  }
+  if (!Array.isArray(value) || value.some((item) => typeof item !== "string")) {
+    throw new Error(`Invalid backup payload: ${field}`);
+  }
+  return value.slice();
+}
+
+function validateBackupPayload(decoded) {
+  if (!isPlainObject(decoded)) {
+    throw new Error("Invalid backup payload");
+  }
+  if (!Number.isInteger(decoded.version) || decoded.version < 1 || decoded.version > 2) {
+    throw new Error("Unsupported backup payload version");
+  }
+  if (!Array.isArray(decoded.visits) || !Array.isArray(decoded.meta)) {
+    throw new Error("Invalid backup payload");
+  }
+
+  return {
+    version: decoded.version,
+    visits: decoded.visits.map(validateBackupVisit),
+    meta: decoded.meta.map(validateBackupMetaEntry),
+    partialExceptions: validateBackupExceptions(decoded.partialExceptions, "partialExceptions"),
+    matchExceptions: validateBackupExceptions(decoded.matchExceptions, "matchExceptions")
+  };
+}
+
 async function restoreBackup(password, envelope, options = {}) {
   try {
     const plaintext = await decryptWithPassword(password, envelope);
-    const decoded = JSON.parse(new TextDecoder().decode(plaintext));
-    if (!decoded || !decoded.visits || !Array.isArray(decoded.visits) || !Array.isArray(decoded.meta)) {
-      throw new Error("Invalid backup payload");
-    }
+    const decoded = validateBackupPayload(JSON.parse(new TextDecoder().decode(plaintext)));
 
     const shouldMergeVisits = options && options.mergeVisits === true;
     const existingVisits = shouldMergeVisits ? await dumpAllVisits() : [];
@@ -73,15 +177,15 @@ async function restoreBackup(password, envelope, options = {}) {
     await clearAllData();
     await writeMetaEntries(decoded.meta);
     await putVisits(visitsToRestore);
-    if (Array.isArray(decoded.partialExceptions)) {
-      await setPartialExceptions(decoded.partialExceptions);
-    }
-    if (Array.isArray(decoded.matchExceptions)) {
-      await setMatchExceptions(decoded.matchExceptions);
-    }
+    await rebuildStatsTotals(visitsToRestore);
+    await setPartialExceptions(decoded.partialExceptions);
+    await setMatchExceptions(decoded.matchExceptions);
 
     // reset caches
     pepperKeyPromise = null;
+    if (typeof clearMatchCaches === "function") {
+      clearMatchCaches();
+    }
     const encryptionEntry = decoded.meta.find((m) => m && m.key === "encryptionEnabled");
     encryptionEnabledCache = encryptionEntry && typeof encryptionEntry.value === "boolean" ? encryptionEntry.value : null;
     if (typeof resetDownloadBadgeSettingsCache === "function") {
@@ -97,33 +201,11 @@ async function restoreBackup(password, envelope, options = {}) {
     // notify tabs to update visuals and reprocess highlights
     try {
       const colors = await getLinkColors();
-      if (api.runtime && api.runtime.sendMessage) {
-        const result = api.runtime.sendMessage({ type: "LINK_COLORS_UPDATED", colors });
-        if (result && typeof result.catch === "function") {
-          result.catch(() => {});
-        }
-      }
-      if (api.tabs && api.tabs.query) {
-        api.tabs.query({}, (tabs) => {
-          tabs.forEach((tab) => {
-            try {
-              const colorResult = api.tabs.sendMessage(tab.id, {
-                type: "LINK_COLORS_UPDATED",
-                colors
-              });
-              if (colorResult && typeof colorResult.catch === "function") {
-                colorResult.catch(() => {});
-              }
-              const refreshResult = api.tabs.sendMessage(tab.id, { type: "REFRESH_HIGHLIGHT" });
-              if (refreshResult && typeof refreshResult.catch === "function") {
-                refreshResult.catch(() => {});
-              }
-            } catch (error) {
-              // ignore per-tab errors
-            }
-          });
-        });
-      }
+      sendRuntimeMessageSafe({ type: MSG.LINK_COLORS_UPDATED, colors });
+      await broadcastMessagesToContentTabs([
+        { type: MSG.LINK_COLORS_UPDATED, colors },
+        { type: MSG.REFRESH_HIGHLIGHT }
+      ]);
     } catch (error) {
       // ignore broadcast errors
     }

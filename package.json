@@ -4,15 +4,19 @@
   "description": "Registra páginas acessadas e indica quando um link já foi visitado",
   "private": true,
   "scripts": {
-    "start": "node -e \"const fs=require('fs');const path=require('path');const src='src';const dist='dist';fs.rmSync(dist,{recursive:true,force:true});fs.cpSync(src,dist,{recursive:true});['manifest.json','manifest.chrome.json','manifest.firefox.json'].forEach(f=>{try{fs.unlinkSync(path.join(dist,f));}catch(e){}});fs.copyFileSync(path.join(src,'manifest.firefox.json'),path.join(dist,'manifest.json'));\" && web-ext run --source-dir dist",
-    "build:chrome": "node -e \"const fs=require('fs');const path=require('path');const src='src';const dist='dist';fs.rmSync(dist,{recursive:true,force:true});fs.cpSync(src,dist,{recursive:true});['manifest.json','manifest.chrome.json','manifest.firefox.json'].forEach(f=>{try{fs.unlinkSync(path.join(dist,f));}catch(e){}});fs.copyFileSync(path.join(src,'manifest.chrome.json'),path.join(dist,'manifest.json'));\" && web-ext build --source-dir dist --artifacts-dir dist --filename passei-aki-{version}_chrome.zip",
-    "build:firefox": "node -e \"const fs=require('fs');const path=require('path');const src='src';const dist='dist';fs.rmSync(dist,{recursive:true,force:true});fs.cpSync(src,dist,{recursive:true});['manifest.json','manifest.chrome.json','manifest.firefox.json'].forEach(f=>{try{fs.unlinkSync(path.join(dist,f));}catch(e){}});fs.copyFileSync(path.join(src,'manifest.firefox.json'),path.join(dist,'manifest.json'));\" && web-ext build --source-dir dist --artifacts-dir dist --filename passei-aki-{version}_firefox.zip",
-    "lint": "node -e \"const fs=require('fs');const path=require('path');const src='src';const dist='dist';fs.rmSync(dist,{recursive:true,force:true});fs.cpSync(src,dist,{recursive:true});['manifest.json','manifest.chrome.json','manifest.firefox.json'].forEach(f=>{try{fs.unlinkSync(path.join(dist,f));}catch(e){}});fs.copyFileSync(path.join(src,'manifest.chrome.json'),path.join(dist,'manifest.json'));\" && web-ext lint --source-dir dist"
+    "prepare:chrome": "node scripts/prepare-dist.mjs chrome",
+    "prepare:firefox": "node scripts/prepare-dist.mjs firefox",
+    "start": "npm run prepare:firefox && web-ext run --source-dir dist",
+    "build:chrome": "npm run prepare:chrome && web-ext build --source-dir dist --artifacts-dir dist --filename passei-aki-{version}_chrome.zip",
+    "build:firefox": "npm run prepare:firefox && web-ext build --source-dir dist --artifacts-dir dist --filename passei-aki-{version}_firefox.zip",
+    "lint": "npm run lint:firefox && npm run lint:chrome",
+    "lint:chrome": "node scripts/validate-extension.mjs chrome",
+    "lint:firefox": "npm run prepare:firefox && web-ext lint --source-dir dist"
   },
   "author": "",
   "license": "Apache-2.0",
   "devDependencies": {
-    "web-ext": "^9.2.0"
+    "web-ext": "^10.4.0"
   },
   "dependencies": {
     "@jaames/iro": "^5.5.2",

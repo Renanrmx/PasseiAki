@@ -1,4 +1,5 @@
 const api = typeof browser !== "undefined" ? browser : chrome;
+const MSG = globalThis.AKI_MESSAGE_TYPES;
 
 const totalVisits = document.getElementById("total-visits");
 const lastVisitDate = document.getElementById("last-visit-date");
@@ -53,7 +54,7 @@ async function loadStats() {
     tabId = tab ? tab.id : undefined;
 
     const visitSummary = await api.runtime.sendMessage({
-      type: "GET_VISIT_FOR_URL",
+      type: MSG.GET_VISIT_FOR_URL,
       url,
       tabId
     });
@@ -159,7 +160,7 @@ function renderDownloadBadgeList(items, visible) {
 
 async function loadDownloadBadgeState() {
   try {
-    const res = await api.runtime.sendMessage({ type: "GET_DOWNLOAD_BADGE_STATE" });
+    const res = await api.runtime.sendMessage({ type: MSG.GET_DOWNLOAD_BADGE_STATE });
     if (res && res.ok) {
       renderDownloadBadgeList(res.items || [], res.visible);
     } else {
@@ -178,7 +179,7 @@ function setSupportVisibility(visible) {
 async function loadSupportVisibility() {
   if (!supportContainer) return;
   try {
-    const res = await api.runtime.sendMessage({ type: "GET_SUPPORT_STATUS" });
+    const res = await api.runtime.sendMessage({ type: MSG.GET_SUPPORT_STATUS });
     if (res && res.ok) {
       setSupportVisibility(res.visible !== false);
       return;
@@ -197,7 +198,7 @@ async function loadPartialMatches(url) {
   const currentParamsSet = new Set(normalizeParamsLocal((new URL(url)).search));
   try {
     const res = await api.runtime.sendMessage({
-      type: "GET_PARTIAL_MATCHES",
+      type: MSG.GET_PARTIAL_MATCHES,
       url
     });
     const items = (res && res.items) || [];
@@ -332,10 +333,10 @@ if (historyBtn) {
 
 if (api.runtime && api.runtime.onMessage) {
   api.runtime.onMessage.addListener((message) => {
-    if (message && message.type === "DOWNLOAD_BADGE_UPDATED") {
+    if (message && message.type === MSG.DOWNLOAD_BADGE_UPDATED) {
       renderDownloadBadgeList(message.items || [], message.visible);
     }
-    if (message && message.type === "SUPPORT_STATUS_UPDATED") {
+    if (message && message.type === MSG.SUPPORT_STATUS_UPDATED) {
       setSupportVisibility(message.visible !== false);
     }
   });
@@ -344,7 +345,7 @@ if (api.runtime && api.runtime.onMessage) {
 if (downloadBadgeDismiss) {
   downloadBadgeDismiss.addEventListener("click", async () => {
     try {
-      await api.runtime.sendMessage({ type: "DISMISS_DOWNLOAD_BADGE" });
+      await api.runtime.sendMessage({ type: MSG.DISMISS_DOWNLOAD_BADGE });
     } catch (error) {
       // ignore dismiss errors
     }
@@ -363,7 +364,7 @@ if (supportBtn) {
       const created = await api?.tabs?.create?.({ url });
       if (created && typeof created.id === "number") {
         try {
-          await api.runtime.sendMessage({ type: "SUPPORT_TAB_OPENED", tabId: created.id });
+          await api.runtime.sendMessage({ type: MSG.SUPPORT_TAB_OPENED, tabId: created.id });
         } catch (error) {
           // ignore tracking errors
         }

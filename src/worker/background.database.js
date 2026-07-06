@@ -7,6 +7,9 @@ let defaultSettingsPromise = null;
 const memoryVisits = new Map();
 const memoryMeta = new Map();
 const exceptionStores = {};
+const META_STATS_TOTAL_ENTRIES = "statsTotalEntries";
+const META_STATS_TOTAL_VISITS = "statsTotalVisits";
+const PUT_VISITS_BATCH_SIZE = 500;
 
 function getDbSchema() {
   return {
@@ -199,6 +202,12 @@ function requestToPromise(request) {
   });
 }
 
+function notifyVisitDataChanged() {
+  if (typeof clearMatchCaches === "function") {
+    clearMatchCaches();
+  }
+}
+
 async function readMetaEntry(key) {
   if (isDbWriteBlocked()) {
     return memoryMeta.get(key) || null;
@@ -264,6 +273,77 @@ async function writeMetaEntries(entries) {
 
 async function writeMetaEntry(key, value) {
   await writeMetaEntries([{ key, value }]);
+}
+
+function countVisitStats(records) {
+  let totalEntries = 0;
+  let totalVisits = 0;
+  records.forEach((record) => {
+    if (!record || !record.id) {
+      return;
+    }
+    totalEntries += 1;
+    totalVisits += Number.isFinite(record.visitCount) ? record.visitCount : 0;
+  });
+  return { totalEntries, totalVisits };
+}
+
+function readStatsValue(entry) {
+  if (!entry || !Number.isFinite(entry.value) || entry.value < 0) {
+    return null;
+  }
+  return Math.round(entry.value);
+}
+
+async function readStoredStatsTotals() {
+  const [entriesEntry, visitsEntry] = await Promise.all([
+    readMetaEntry(META_STATS_TOTAL_ENTRIES),
+    readMetaEntry(META_STATS_TOTAL_VISITS)
+  ]);
+  const totalEntries = readStatsValue(entriesEntry);
+  const totalVisits = readStatsValue(visitsEntry);
+  if (totalEntries === null || totalVisits === null) {
+    return null;
+  }
+  return { totalEntries, totalVisits };
+}
+
+async function writeStatsTotals(totalEntries, totalVisits) {
+  const safeEntries = Math.max(0, Number.isFinite(totalEntries) ? Math.round(totalEntries) : 0);
+  const safeVisits = Math.max(0, Number.isFinite(totalVisits) ? Math.round(totalVisits) : 0);
+  await writeMetaEntries([
+    { key: META_STATS_TOTAL_ENTRIES, value: safeEntries },
+    { key: META_STATS_TOTAL_VISITS, value: safeVisits }
+  ]);
+  return { totalEntries: safeEntries, totalVisits: safeVisits };
+}
+
+async function rebuildStatsTotals(records = null) {
+  const source = Array.isArray(records) ? records : await getAllVisits();
+  const totals = countVisitStats(source);
+  return writeStatsTotals(totals.totalEntries, totals.totalVisits);
+}
+
+async function getStatsTotals() {
+  const totals = await readStoredStatsTotals();
+  if (totals) {
+    return totals;
+  }
+  return rebuildStatsTotals();
+}
+
+async function adjustStatsTotals(entryDelta = 0, visitDelta = 0) {
+  if (!entryDelta && !visitDelta) {
+    return getStatsTotals();
+  }
+  const totals = await readStoredStatsTotals();
+  if (!totals) {
+    return rebuildStatsTotals();
+  }
+  return writeStatsTotals(
+    totals.totalEntries + entryDelta,
+    totals.totalVisits + visitDelta
+  );
 }
 
 async function getAllMetaEntries() {
@@ -600,9 +680,146 @@ async function getAllVisits() {
   }
 }
 
+async function getRecentVisits(limit = 50) {
+  const maxItems = Math.max(1, Number.isFinite(Number(limit)) ? Math.round(Number(limit)) : 50);
+  if (isDbWriteBlocked()) {
+    return Array.from(memoryVisits.values())
+      .sort((a, b) => (b.lastVisited || 0) - (a.lastVisited || 0))
+      .slice(0, maxItems);
+  }
+  try {
+    const db = await openDatabase();
+    if (!db) {
+      return Array.from(memoryVisits.values())
+        .sort((a, b) => (b.lastVisited || 0) - (a.lastVisited || 0))
+        .slice(0, maxItems);
+    }
+    const tx = db.transaction(VISITS_STORE, "readonly");
+    const store = tx.objectStore(VISITS_STORE);
+    const index = store.index("lastVisited");
+    const cursorRequest = index.openCursor(null, "prev");
+    const visits = [];
+
+    await new Promise((resolve, reject) => {
+      cursorRequest.onsuccess = (event) => {
+        const cursor = event.target.result;
+        if (cursor && visits.length < maxItems) {
+          visits.push(cursor.value);
+          cursor.continue();
+        } else {
+          resolve();
+        }
+      };
+      cursorRequest.onerror = () => reject(cursorRequest.error);
+    });
+    await waitForTransaction(tx);
+    return visits;
+  } catch (error) {
+    if (markDbWriteBlocked(error)) {
+      return Array.from(memoryVisits.values())
+        .sort((a, b) => (b.lastVisited || 0) - (a.lastVisited || 0))
+        .slice(0, maxItems);
+    }
+    throw error;
+  }
+}
+
+async function forEachVisitByLastVisited(callback) {
+  if (typeof callback !== "function") {
+    return;
+  }
+  if (isDbWriteBlocked()) {
+    const visits = Array.from(memoryVisits.values()).sort(
+      (a, b) => (b.lastVisited || 0) - (a.lastVisited || 0)
+    );
+    for (const visit of visits) {
+      if (callback(visit) === false) {
+        break;
+      }
+    }
+    return;
+  }
+  try {
+    const db = await openDatabase();
+    if (!db) {
+      const visits = Array.from(memoryVisits.values()).sort(
+        (a, b) => (b.lastVisited || 0) - (a.lastVisited || 0)
+      );
+      for (const visit of visits) {
+        if (callback(visit) === false) {
+          break;
+        }
+      }
+      return;
+    }
+    const tx = db.transaction(VISITS_STORE, "readonly");
+    const store = tx.objectStore(VISITS_STORE);
+    const index = store.index("lastVisited");
+    const cursorRequest = index.openCursor(null, "prev");
+
+    await new Promise((resolve, reject) => {
+      cursorRequest.onsuccess = (event) => {
+        const cursor = event.target.result;
+        if (!cursor) {
+          resolve();
+          return;
+        }
+        try {
+          if (callback(cursor.value) === false) {
+            resolve();
+            return;
+          }
+        } catch (error) {
+          reject(error);
+          return;
+        }
+        cursor.continue();
+      };
+      cursorRequest.onerror = () => reject(cursorRequest.error);
+    });
+    await waitForTransaction(tx);
+  } catch (error) {
+    if (markDbWriteBlocked(error)) {
+      const visits = Array.from(memoryVisits.values()).sort(
+        (a, b) => (b.lastVisited || 0) - (a.lastVisited || 0)
+      );
+      for (const visit of visits) {
+        if (callback(visit) === false) {
+          break;
+        }
+      }
+      return;
+    }
+    throw error;
+  }
+}
+
+async function searchPlainVisits(term, limit = 50) {
+  const normalized = typeof term === "string" ? term.trim().toLowerCase() : "";
+  const maxItems = Math.max(1, Number.isFinite(Number(limit)) ? Math.round(Number(limit)) : 50);
+  const matches = [];
+  if (normalized.length < 3) {
+    return matches;
+  }
+
+  await forEachVisitByLastVisited((record) => {
+    if (!record || record.hashed !== false) {
+      return true;
+    }
+    const address = buildAddressFromRecord(record).toLowerCase();
+    if (address.includes(normalized)) {
+      matches.push(record);
+    }
+    return matches.length < maxItems;
+  });
+
+  return matches;
+}
+
 async function putVisit(record) {
   if (isDbWriteBlocked()) {
     memoryVisits.set(record.id, record);
+    notifyVisitDataChanged();
     return;
   }
 
@@ -610,15 +827,18 @@ async function putVisit(record) {
     const db = await openDatabase();
     if (!db) {
       memoryVisits.set(record.id, record);
+      notifyVisitDataChanged();
       return;
     }
     const tx = db.transaction(VISITS_STORE, "readwrite");
     const store = tx.objectStore(VISITS_STORE);
     store.put(record);
     await waitForTransaction(tx);
+    notifyVisitDataChanged();
   } catch (error) {
     if (markDbWriteBlocked(error)) {
       memoryVisits.set(record.id, record);
+      notifyVisitDataChanged();
       return;
     }
     throw error;
@@ -626,40 +846,44 @@ async function putVisit(record) {
 }
 
 async function putVisits(records) {
+  const validRecords = Array.isArray(records)
+    ? records.filter((record) => record && record.id)
+    : [];
+  if (!validRecords.length) {
+    return;
+  }
   if (isDbWriteBlocked()) {
-    records.forEach((record) => {
-      if (record && record.id) {
-        memoryVisits.set(record.id, record);
-      }
+    validRecords.forEach((record) => {
+      memoryVisits.set(record.id, record);
     });
+    notifyVisitDataChanged();
     return;
   }
 
   try {
     const db = await openDatabase();
     if (!db) {
-      records.forEach((record) => {
-        if (record && record.id) {
-          memoryVisits.set(record.id, record);
-        }
+      validRecords.forEach((record) => {
+        memoryVisits.set(record.id, record);
       });
+      notifyVisitDataChanged();
       return;
     }
-    const tx = db.transaction(VISITS_STORE, "readwrite");
-    const store = tx.objectStore(VISITS_STORE);
-    records.forEach((record) => {
-      if (record && record.id) {
+    for (let index = 0; index < validRecords.length; index += PUT_VISITS_BATCH_SIZE) {
+      const tx = db.transaction(VISITS_STORE, "readwrite");
+      const store = tx.objectStore(VISITS_STORE);
+      validRecords.slice(index, index + PUT_VISITS_BATCH_SIZE).forEach((record) => {
         store.put(record);
-      }
-    });
-    await waitForTransaction(tx);
+      });
+      await waitForTransaction(tx);
+    }
+    notifyVisitDataChanged();
   } catch (error) {
     if (markDbWriteBlocked(error)) {
-      records.forEach((record) => {
-        if (record && record.id) {
-          memoryVisits.set(record.id, record);
-        }
+      validRecords.forEach((record) => {
+        memoryVisits.set(record.id, record);
       });
+      notifyVisitDataChanged();
       return;
     }
     throw error;
@@ -668,22 +892,51 @@ async function putVisits(records) {
 
 async function deleteVisitById(id) {
   if (isDbWriteBlocked()) {
-    memoryVisits.delete(id);
+    const existing = memoryVisits.get(id);
+    const deleted = memoryVisits.delete(id);
+    if (deleted) {
+      await adjustStatsTotals(-1, -(existing?.visitCount || 0));
+      notifyVisitDataChanged();
+    }
     return;
   }
 
   try {
     const db = await openDatabase();
     if (!db) {
-      memoryVisits.delete(id);
+      const existing = memoryVisits.get(id);
+      const deleted = memoryVisits.delete(id);
+      if (deleted) {
+        await adjustStatsTotals(-1, -(existing?.visitCount || 0));
+        notifyVisitDataChanged();
+      }
       return;
     }
     const tx = db.transaction(VISITS_STORE, "readwrite");
-    tx.objectStore(VISITS_STORE).delete(id);
+    const store = tx.objectStore(VISITS_STORE);
+    let existing = null;
+    await new Promise((resolve, reject) => {
+      const getRequest = store.get(id);
+      getRequest.onsuccess = () => {
+        existing = getRequest.result || null;
+        store.delete(id);
+        resolve();
+      };
+      getRequest.onerror = () => reject(getRequest.error);
+    });
     await waitForTransaction(tx);
+    if (existing) {
+      await adjustStatsTotals(-1, -(existing.visitCount || 0));
+      notifyVisitDataChanged();
+    }
   } catch (error) {
     if (markDbWriteBlocked(error)) {
-      memoryVisits.delete(id);
+      const existing = memoryVisits.get(id);
+      const deleted = memoryVisits.delete(id);
+      if (deleted) {
+        await adjustStatsTotals(-1, -(existing?.visitCount || 0));
+        notifyVisitDataChanged();
+      }
       return;
     }
     throw error;
@@ -696,6 +949,7 @@ async function clearAllData() {
     memoryMeta.clear();
     resetExceptionStoreState(PARTIAL_EXCEPTIONS_STORE);
     resetExceptionStoreState(MATCH_EXCEPTIONS_STORE);
+    notifyVisitDataChanged();
     return;
   }
 
@@ -706,6 +960,7 @@ async function clearAllData() {
       memoryMeta.clear();
       resetExceptionStoreState(PARTIAL_EXCEPTIONS_STORE);
       resetExceptionStoreState(MATCH_EXCEPTIONS_STORE);
+      notifyVisitDataChanged();
       return;
     }
     const stores = [VISITS_STORE, META_STORE];
@@ -725,12 +980,14 @@ async function clearAllData() {
       tx.objectStore(MATCH_EXCEPTIONS_STORE).clear();
     }
     await waitForTransaction(tx);
+    notifyVisitDataChanged();
   } catch (error) {
     if (markDbWriteBlocked(error)) {
       memoryVisits.clear();
       memoryMeta.clear();
       resetExceptionStoreState(PARTIAL_EXCEPTIONS_STORE);
       resetExceptionStoreState(MATCH_EXCEPTIONS_STORE);
+      notifyVisitDataChanged();
       return;
     }
     throw error;
@@ -756,6 +1013,7 @@ async function getEncryptionEnabled() {
 async function setEncryptionEnabled(enabled) {
   await writeMetaEntry("encryptionEnabled", enabled);
   encryptionEnabledCache = enabled;
+  notifyVisitDataChanged();
 }
 
 function normalizeHexColor(value, fallback) {

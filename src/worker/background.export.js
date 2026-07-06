@@ -12,26 +12,30 @@ function csvEscape(value) {
   return `"${str.replace(/"/g, '""')}"`;
 }
 
+function shouldExportPlainVisit(visit, includePages, includeDownloads) {
+  if (!visit || visit.hashed !== false) return false;
+  if (visit.download === true) return includeDownloads;
+  return includePages;
+}
+
 async function exportPlainVisitsCsv(filename, options = {}) {
-  const visits = await dumpAllVisits();
   const includePages = options.includePages !== false;
   const includeDownloads = options.includeDownloads === true;
-  const plainVisits = visits
-    .filter((visit) => {
-      if (!visit || visit.hashed !== false) return false;
-      if (visit.download === true) return includeDownloads;
-      return includePages;
-    })
-    .sort((a, b) => (b.lastVisited || 0) - (a.lastVisited || 0));
   const lines = [i18n("csvHeader")];
+  let exported = 0;
 
-  for (const visit of plainVisits) {
+  await forEachVisitByLastVisited((visit) => {
+    if (!shouldExportPlainVisit(visit, includePages, includeDownloads)) {
+      return true;
+    }
     const address = buildAddressFromRecord(visit);
     const date = formatDateTime(visit.lastVisited);
     const count = typeof visit.visitCount === "number" ? visit.visitCount : 0;
     const type = visit.download === true ? i18n("exportTypeDownload") : i18n("exportTypePage");
     lines.push([csvEscape(address), csvEscape(date), count, csvEscape(type)].join(";"));
-  }
+    exported += 1;
+    return true;
+  });
 
   const csvContent = "\uFEFF" + lines.join("\n");
   const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8" });
@@ -53,25 +57,23 @@ async function exportPlainVisitsCsv(filename, options = {}) {
     }
   }
 
-  return { exported: plainVisits.length };
+  return { exported };
 }
 
 async function exportPlainVisitsTxt(filename, options = {}) {
-  const visits = await dumpAllVisits();
   const includePages = options.includePages !== false;
   const includeDownloads = options.includeDownloads === true;
-  const plainVisits = visits
-    .filter((visit) => {
-      if (!visit || visit.hashed !== false) return false;
-      if (visit.download === true) return includeDownloads;
-      return includePages;
-    })
-    .sort((a, b) => (b.lastVisited || 0) - (a.lastVisited || 0));
-
   const lines = [];
-  for (const visit of plainVisits) {
+  let exported = 0;
+
+  await forEachVisitByLastVisited((visit) => {
+    if (!shouldExportPlainVisit(visit, includePages, includeDownloads)) {
+      return true;
+    }
     lines.push(buildAddressFromRecord(visit));
-  }
+    exported += 1;
+    return true;
+  });
 
   const txtContent = lines.join("\n");
   const blob = new Blob([txtContent], { type: "text/plain;charset=utf-8" });
@@ -93,5 +95,5 @@ async function exportPlainVisitsTxt(filename, options = {}) {
     }
   }
 
-  return { exported: plainVisits.length };
+  return { exported };
 }

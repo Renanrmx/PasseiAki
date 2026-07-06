@@ -113,7 +113,7 @@ function sendDownloadBadgeUpdate(visible) {
     }
     if (!visible) {
       const result = api.runtime.sendMessage({
-        type: "DOWNLOAD_BADGE_UPDATED",
+        type: MSG.DOWNLOAD_BADGE_UPDATED,
         visible: false,
         count: 0,
         items: []
@@ -125,7 +125,7 @@ function sendDownloadBadgeUpdate(visible) {
     }
     const items = downloadBadgeItems.slice(0, downloadBadgeCount);
     const result = api.runtime.sendMessage({
-      type: "DOWNLOAD_BADGE_UPDATED",
+      type: MSG.DOWNLOAD_BADGE_UPDATED,
       visible: true,
       count: downloadBadgeCount,
       items

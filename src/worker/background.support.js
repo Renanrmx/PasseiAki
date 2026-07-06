@@ -173,7 +173,7 @@ function sendSupportStatusUpdate(visible) {
       return;
     }
     const result = api.runtime.sendMessage({
-      type: "SUPPORT_STATUS_UPDATED",
+      type: MSG.SUPPORT_STATUS_UPDATED,
       visible: Boolean(visible)
     });
     if (result && typeof result.catch === "function") {

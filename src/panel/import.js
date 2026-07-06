@@ -1,4 +1,5 @@
 const apiImport = typeof browser !== "undefined" ? browser : chrome;
+const importMessages = globalThis.AKI_MESSAGE_TYPES;
 const importButtons = document.querySelectorAll("[data-import-addresses]");
 
 let hiddenImportInput = null;
@@ -100,7 +101,7 @@ async function onImportFileSelected(event) {
     const text = await file.text();
 
     const preview = await apiImport.runtime.sendMessage({
-      type: "IMPORT_ADDRESSES",
+      type: importMessages.IMPORT_ADDRESSES,
       content: text,
       preview: true
     });
@@ -130,7 +131,7 @@ async function onImportFileSelected(event) {
     }
 
     const response = await apiImport.runtime.sendMessage({
-      type: "IMPORT_ADDRESSES",
+      type: importMessages.IMPORT_ADDRESSES,
       content: text
     });
     if (!response || response.ok === false) {
