@@ -16,14 +16,21 @@ O histórico fica em base local segura sem coleta de dados, o usuário pode esco
 
 ## Recursos secundários
 - Listagem dos últimos endereços acessados com data e hora (este recurso fica limitado se configurar a extensão para anonimizar os dados).
-- Backup seguro: em configurações pode criar ou restaurar um backup que é criptografado com uma senha definida no momento da criação.
-- Exportar endereços acessados em formato de tabela com as datas de acesso ou exportar como texto apenas com os endereços.
-- Importar endereços de arquivos de texto, cada linha contendo uma URL apenas, não são aceitas datas de acesso ficando assim com a data da importação, essa limitação é intencional para manter a integridade do banco sendo assim só podendo definir todos os campos por meio da restauração de backup que é criptografado.
+- Mirrors de sites: permite agrupar sites equivalentes para compartilharem o mesmo histórico de acessos.
+- Exceções de match completo e parcial para ignorar sites específicos durante as comparações.
+- Backup completo dos acessos e configurações, com opção de criar arquivo protegido por senha ou arquivo sem senha legível.
+- Restauração de backup com opção de mesclar acessos ou substituir os dados atuais.
+- Exportar endereços não anonimizados em formato de tabela (CSV) com datas de acesso ou em texto (TXT) apenas com os endereços.
+- Importar endereços a partir de arquivo de texto, com uma URL por linha. Datas externas não são aceitas; os acessos importados recebem a data da importação para preservar a integridade do banco.
+- Badge para downloads: pode indicar quando um link de download já foi acessado anteriormente.
 
 ## Persistência e privacidade
-- Os registros são salvos após normalizados e separados em `host`, `path`, `params` e `fragment`, tudo é salvo apenas localmente no IndexedDB
-- Quando a criptografia está habilitada nas configurações os dados das URLs são salvos como HMAC-SHA512 com pepper local, já quando desabilitada estes ficam legiveis.
-- Backup/restore: envelope `.bak` (JSON) é criptografado com Argon2id + ChaCha20-Poly1305; A senha é definida pelo usuário no momento do backup e é requisitada ao restaurar em qualquer dispositivo.
+- Os registros são salvos apenas localmente, normalmente no IndexedDB.
+- Se o navegador bloquear armazenamento persistente, a extensão usa armazenamento em memória com `Map()`. Nesse modo, a popup exibe um aviso porque os dados serão perdidos ao fechar a aplicação.
+- As URLs são normalizadas e separadas em `host`, `path`, `query` e `fragment`. O prefixo inicial `www.` é ignorado globalmente.
+- Quando a anonimização está habilitada nas configurações, as partes das URLs são salvas como HMAC-SHA512 com pepper local. Quando desabilitada, ficam legíveis para permitir histórico, busca, importação e exportação.
+- Backup com senha: envelope `.bak` em JSON criptografado com Argon2id + ChaCha20-Poly1305. A senha é definida no momento do backup e exigida ao restaurar.
+- Backup sem senha: envelope `.bak` em JSON legível, detectado automaticamente na restauração e validado antes de processar.
 
 ## Executar via código
 1. Instale dependências: `npm install`.
@@ -32,11 +39,37 @@ O histórico fica em base local segura sem coleta de dados, o usuário pode esco
 
 ## Build
 1. Instale dependências: `npm install`.
-2. Crie o build para Firefox (`npm run build:firefox`) ou Chrome (`npm run build:chrome`).
+2. Crie o build para Firefox (`npm run build:firefox`) ou Chrome (`npm run build:chrome`). Os comandos de build executam `npm test` antes de gerar o pacote.
+
+## Testes e lint
+
+- `npm test`: executa a suíte com `node:test`.
+- `npm run lint`: prepara o build Firefox, executa `web-ext lint` e valida referências do manifest Chrome.
+
+## Documentação técnica
+
+A documentação técnica para manutenção e evolução do projeto fica em `docs/`:
+
+- [Arquitetura da extensão](docs/architecture.md)
+- [Persistência, privacidade e modelo de dados](docs/persistence-and-data-model.md)
+- [Matching, mirrors e normalização de domínios](docs/matching-and-mirrors.md)
+- [Backup, restauração, importação e exportação](docs/backup-import-export.md)
+- [Testes, lint e build](docs/testing-build.md)
+
+Para mudanças simples de UI, comece por [Arquitetura da extensão](docs/architecture.md) e [Testes, lint e build](docs/testing-build.md).
+
+Para mudanças que mexem com histórico, migrações, backup, mirrors ou anonimização, leia antes:
+
+- [Persistência, privacidade e modelo de dados](docs/persistence-and-data-model.md)
+- [Matching, mirrors e normalização de domínios](docs/matching-and-mirrors.md)
+- [Backup, restauração, importação e exportação](docs/backup-import-export.md)
+
+Essas áreas mexem diretamente com dados do usuário. A regra prática é planejar tudo antes de escrever, não misturar dados anonimizados e legíveis, e validar com `npm test`.
 
 ## Permissões
-- tabs: Utilizada para ler o URL da aba ativa e atualizar o ícone e o estado da extensão de acordo com a página visitada.
-Também é usada para ouvir eventos de abas (onUpdated, onActivated, onRemoved), garantindo que o estado interno da extensão permaneça sincronizado com a navegação do usuário.
-- activeTab: Concede acesso temporário à aba ativa somente após interação explícita do usuário, permitindo a leitura do URL atual de forma pontual.
-- webNavigation: Utilizada para observar eventos de navegação e redirecionamento no frame principal da aba, possibilitando registrar corretamente URLs iniciais e finais, inclusive em casos de redirecionamento, garantindo a integridade dos registros armazenados localmente.
-- downloads: Utilizada exclusivamente para exportação manual de dados pelo usuário, permitindo a criação de arquivos locais de backup (.bak) e exportações em .csv e .txt, os downloads só ocorrem mediante ação explícita do usuário e nenhum conteúdo remoto é baixado.
+- storage: Utilizada para armazenamento local da extensão e preferências auxiliares.
+- tabs: Utilizada para ler o URL da aba ativa e atualizar o ícone e o estado da extensão de acordo com a página visitada. Também é usada para ouvir eventos de abas (`onUpdated`, `onActivated`, `onRemoved`), mantendo o estado interno sincronizado com a navegação.
+- activeTab: Concede acesso temporário à aba ativa após interação explícita do usuário, permitindo a leitura pontual do URL atual.
+- webNavigation: Utilizada para observar navegação e redirecionamentos no frame principal, registrando corretamente URLs iniciais e finais.
+- downloads: Utilizada para exportação manual de backups e arquivos `.csv`/`.txt`, e para detectar downloads criados pelo navegador para marcar/reconhecer links de download já acessados.
+- Acesso a `http://*/*` e `https://*/*`: necessário para o content script analisar links em páginas visitadas e para o background comparar URLs acessadas.
