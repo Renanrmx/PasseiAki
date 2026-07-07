@@ -40,7 +40,7 @@
     }
     confirmBtn.disabled = true;
     const hideLoading = showDangerLoading(
-      typeof t === "function" ? t("loadingClearVisitHistory") : "Deleting access history..."
+      typeof t === "function" ? t("loadingClearVisitHistory") : "Deleting visit history..."
     );
     try {
       const response = await apiDanger.runtime.sendMessage({

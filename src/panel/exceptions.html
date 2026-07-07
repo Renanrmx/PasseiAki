@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title data-i18n="exceptionsPageTitle">Exceções de match</title>
+    <title data-i18n="exceptionsPageTitle">Match exceptions</title>
     <link rel="stylesheet" href="exceptions.css" />
   </head>
   <body>
@@ -11,21 +11,21 @@
       <a
         class="back-icon-btn"
         href="settings.html"
-        aria-label="Voltar para configurações"
-        title="Voltar para configurações"
+        aria-label="Back to settings"
+        title="Back to settings"
         data-i18n="backToSettings"
         data-i18n-attr="aria-label,title"
       >
         <span aria-hidden="true"></span>
       </a>
-      <h1 data-i18n="exceptionsPageTitle">Exceções de match</h1>
-      <p data-i18n="exceptionsPageInfo">Configure sites ignorados nos matches completos e parciais.</p>
+      <h1 data-i18n="exceptionsPageTitle">Match exceptions</h1>
+      <p data-i18n="exceptionsPageInfo">Configure sites ignored in full and partial matches.</p>
     </header>
 
     <main>
       <section class="exception-card">
-        <h2 data-i18n="matchExceptionsTitle">Exceções de match completo</h2>
-        <p data-i18n="matchExceptionsInfo">Cada linha representa um endereço de site a ignorar nos matches completos</p>
+        <h2 data-i18n="matchExceptionsTitle">Full match exceptions</h2>
+        <p data-i18n="matchExceptionsInfo">Each line represents a site address to ignore for full matches</p>
         <div
           id="match-exceptions"
           class="exception-tag-editor"
@@ -38,14 +38,14 @@
             spellcheck="false"
             data-i18n="matchExceptionsPlaceholder"
             data-i18n-attr="placeholder"
-            placeholder="google.com"
+            placeholder="google.com.br"
           />
         </div>
       </section>
 
       <section class="exception-card">
-        <h2 data-i18n="partialExceptionsTitle">Exceções de match parcial</h2>
-        <p data-i18n="partialExceptionsInfo">Cada linha representa um endereço de site a ignorar nos matches parciais</p>
+        <h2 data-i18n="partialExceptionsTitle">Partial match exceptions</h2>
+        <p data-i18n="partialExceptionsInfo">Each line represents a site address to ignore during partial matches</p>
         <div
           id="partial-exceptions"
           class="exception-tag-editor"
@@ -58,7 +58,7 @@
             spellcheck="false"
             data-i18n="partialExceptionsPlaceholder"
             data-i18n-attr="placeholder"
-            placeholder="google.com"
+            placeholder="google.com.br"
           />
         </div>
       </section>

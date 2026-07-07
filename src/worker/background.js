@@ -383,7 +383,7 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
         });
         return { ok: true };
       } catch (error) {
-        console.error("Backup restore fail:", error);
+        console.error("Backup restore failed:", error);
         return { ok: false, error: error && error.message ? error.message : String(error) };
       }
     }

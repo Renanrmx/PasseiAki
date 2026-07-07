@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title data-i18n="mirrorGroupsPageTitle">Mirrors de sites</title>
+    <title data-i18n="mirrorGroupsPageTitle">Site mirrors</title>
     <link rel="stylesheet" href="mirrors.css" />
   </head>
   <body>
@@ -11,28 +11,28 @@
       <a
         class="back-icon-btn"
         href="settings.html"
-        aria-label="Voltar para configurações"
-        title="Voltar para configurações"
+        aria-label="Back to settings"
+        title="Back to settings"
         data-i18n="backToSettings"
         data-i18n-attr="aria-label,title"
       >
         <span aria-hidden="true"></span>
       </a>
-      <h1 data-i18n="mirrorGroupsPageTitle">Mirrors de sites</h1>
+      <h1 data-i18n="mirrorGroupsPageTitle">Site mirrors</h1>
       <p data-i18n="mirrorGroupsPageInfo">
-        Agrupe sites que devem compartilhar o mesmo histórico de acessos.
+        Group sites that should share the same visit history.
       </p>
     </header>
 
     <main>
       <div id="mirror-groups-list" class="mirror-groups-list"></div>
-      <p id="mirror-empty" class="empty-state" data-i18n="mirrorGroupsEmpty">Nenhum grupo cadastrado.</p>
+      <p id="mirror-empty" class="empty-state" data-i18n="mirrorGroupsEmpty">No groups registered.</p>
     </main>
 
     <footer>
       <div class="status" id="mirror-status"></div>
       <div class="actions">
-        <button class="btn" id="add-mirror-group" type="button" data-i18n="mirrorGroupAdd">Adicionar grupo</button>
+        <button class="btn" id="add-mirror-group" type="button" data-i18n="mirrorGroupAdd">Add group</button>
       </div>
     </footer>
 
@@ -40,9 +40,9 @@
       <section class="mirror-group">
         <div class="mirror-group-header">
           <h2></h2>
-          <button class="icon-btn remove-group" type="button" data-i18n="remove">Remover</button>
+          <button class="icon-btn remove-group" type="button" data-i18n="remove">Remove</button>
         </div>
-        <p data-i18n="mirrorGroupHint">O primeiro endereço de site é o domínio canônico. Os demais são aliases.</p>
+        <p data-i18n="mirrorGroupHint">The first site address is the canonical domain. The others are aliases.</p>
         <div class="mirror-tag-editor">
           <div class="mirror-tags"></div>
           <input

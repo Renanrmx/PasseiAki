@@ -3,11 +3,11 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title data-i18n="historyPageTitle">Últimos acessos</title>
+    <title data-i18n="historyPageTitle">Recent visits</title>
     <link rel="stylesheet" href="history.css" />
   </head>
   <body>
-    <h1 data-i18n="historyPageTitle">Últimos acessos</h1>
+    <h1 data-i18n="historyPageTitle">Recent visits</h1>
     <div class="history-search">
       <input
         id="history-search"
@@ -15,26 +15,26 @@
         autocomplete="off"
         data-i18n="historySearchPlaceholder"
         data-i18n-attr="placeholder"
-        placeholder="Buscar endereço"
+        placeholder="Search address"
       />
     </div>
     <ul id="history-list" style="flex: 1;"></ul>
     <footer>
       <div class="footer-text">
-        <span data-i18n="recentOnlyNote">Exibidos apenas os últimos acessos</span><br />
-        <span data-i18n="exportAllNote">Todos os registros disponiveis ao exportar os dados</span>
+        <span data-i18n="recentOnlyNote">Only recent visits are displayed</span><br />
+        <span data-i18n="exportAllNote">All records will be available when exporting data</span>
       </div>
       <div style="display:flex; gap:8px;">
-        <button class="export-btn" id="export-history-btn" data-export-addresses-btn data-i18n="exportVisits">Exportar acessos</button>
-        <button class="export-btn" data-import-addresses data-i18n="importAddresses">Importar endereços</button>
+        <button class="export-btn" id="export-history-btn" data-export-addresses-btn data-i18n="exportVisits">Export visits</button>
+        <button class="export-btn" data-import-addresses data-i18n="importAddresses">Import addresses</button>
       </div>
     </footer>
     <div class="overlay" id="confirm-overlay">
       <div class="modal">
-        <p id="confirm-text" data-i18n="deleteConfirm">Excluir este registro de acesso?</p>
+        <p id="confirm-text" data-i18n="deleteConfirm">Delete this visit record?</p>
         <div class="modal-actions">
-          <button class="btn" id="confirm-cancel" data-i18n="cancel">Cancelar</button>
-          <button class="btn" id="confirm-ok" data-i18n="delete">Excluir</button>
+          <button class="btn" id="confirm-cancel" data-i18n="cancel">Cancel</button>
+          <button class="btn" id="confirm-ok" data-i18n="delete">Delete</button>
         </div>
       </div>
     </div>
