@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title data-i18n="exceptionsPageTitle">Exceções de match</title>
+    <link rel="stylesheet" href="exceptions.css" />
+  </head>
+  <body>
+    <header>
+      <a
+        class="back-icon-btn"
+        href="settings.html"
+        aria-label="Voltar para configurações"
+        title="Voltar para configurações"
+        data-i18n="backToSettings"
+        data-i18n-attr="aria-label,title"
+      >
+        <span aria-hidden="true"></span>
+      </a>
+      <h1 data-i18n="exceptionsPageTitle">Exceções de match</h1>
+      <p data-i18n="exceptionsPageInfo">Configure sites ignorados nos matches completos e parciais.</p>
+    </header>
+
+    <main>
+      <section class="exception-card">
+        <h2 data-i18n="matchExceptionsTitle">Exceções de match completo</h2>
+        <p data-i18n="matchExceptionsInfo">Cada linha representa um endereço de site a ignorar nos matches completos</p>
+        <div
+          id="match-exceptions"
+          class="exception-tag-editor"
+        >
+          <div class="exception-tags"></div>
+          <input
+            class="exception-tag-input"
+            type="text"
+            autocomplete="off"
+            spellcheck="false"
+            data-i18n="matchExceptionsPlaceholder"
+            data-i18n-attr="placeholder"
+            placeholder="google.com"
+          />
+        </div>
+      </section>
+
+      <section class="exception-card">
+        <h2 data-i18n="partialExceptionsTitle">Exceções de match parcial</h2>
+        <p data-i18n="partialExceptionsInfo">Cada linha representa um endereço de site a ignorar nos matches parciais</p>
+        <div
+          id="partial-exceptions"
+          class="exception-tag-editor"
+        >
+          <div class="exception-tags"></div>
+          <input
+            class="exception-tag-input"
+            type="text"
+            autocomplete="off"
+            spellcheck="false"
+            data-i18n="partialExceptionsPlaceholder"
+            data-i18n-attr="placeholder"
+            placeholder="google.com"
+          />
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <div class="status" id="exceptions-status"></div>
+    </footer>
+
+    <script src="i18n.js"></script>
+    <script src="init-i18n.js"></script>
+    <script src="../shared/messages.js"></script>
+    <script src="../shared/domains.js"></script>
+    <script src="loading.js"></script>
+    <script src="domain-tags.js"></script>
+    <script src="exceptions.js"></script>
+  </body>
+</html>

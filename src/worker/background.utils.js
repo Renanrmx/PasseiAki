@@ -64,6 +64,15 @@ function normalizeParams(paramString) {
   };
 }
 
+function normalizeHostIdentity(host) {
+  if (typeof AkiDomains !== "undefined" && AkiDomains?.normalizeHostIdentity) {
+    return AkiDomains.normalizeHostIdentity(host);
+  }
+  if (!host) return "";
+  const normalized = String(host).toLowerCase();
+  return normalized.startsWith("www.") ? normalized.slice(4) : normalized;
+}
+
 function normalizeUrlParts(urlString) {
   try {
     const url = new URL(urlString);
@@ -71,7 +80,7 @@ function normalizeUrlParts(urlString) {
       return null;
     }
 
-    const hostDecoded = decodeComponentSafe(url.host.toLowerCase());
+    const hostDecoded = normalizeHostIdentity(decodeComponentSafe(url.host.toLowerCase()));
     const rawPath = decodeComponentSafe(url.pathname.toLowerCase() || "/");
     // normalize by removing trailing slashes (except root) to avoid /foo and /foo/ counting as different
     let pathDecoded = rawPath.replace(/\/+$/, "");
@@ -91,42 +100,22 @@ function normalizeUrlParts(urlString) {
   }
 }
 
-const CC_TLD_SECOND_LEVELS = new Set(["com", "net", "org", "gov", "edu", "co", "ac", "ad", "nom"]);
-
 function getHostFromInput(value) {
+  if (typeof AkiDomains !== "undefined" && AkiDomains?.normalizeDomainInput) {
+    return AkiDomains.normalizeDomainInput(value);
+  }
   if (!value) return "";
   const trimmed = String(value).trim();
   if (!trimmed) return "";
   if (/^[a-z][a-z0-9+.-]*:\/\//i.test(trimmed)) {
     try {
-      return new URL(trimmed).hostname.toLowerCase();
+      return normalizeHostIdentity(new URL(trimmed).hostname.toLowerCase());
     } catch (error) {
       // fall through
     }
   }
   const host = trimmed.split(/[\/?#]/)[0].toLowerCase();
-  return host.includes(":") ? host.split(":")[0] : host;
-}
-
-function getDomainKeyFromHost(host) {
-  if (!host) return "";
-  const labels = host.split(".").filter(Boolean);
-  if (labels.length === 0) return "";
-  if (labels.length === 1) return labels[0];
-  const last = labels[labels.length - 1];
-  const secondLast = labels[labels.length - 2];
-  let suffixLength = 1;
-  if (last.length === 2 && CC_TLD_SECOND_LEVELS.has(secondLast) && labels.length >= 3) {
-    suffixLength = 2;
-  }
-  const index = labels.length - suffixLength - 1;
-  return labels[index] || labels[0];
-}
-
-function getDomainKeyFromValue(value) {
-  const host = getHostFromInput(value);
-  if (!host) return "";
-  return getDomainKeyFromHost(host);
+  return normalizeHostIdentity(host.includes(":") ? host.split(":")[0] : host);
 }
 
 async function buildDownloadUrl(blob, fallbackMime) {

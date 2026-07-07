@@ -1,7 +1,14 @@
 (function initBackground() {
-  const run = () => {
-    if (typeof bootstrapActiveTab === "function") {
-      bootstrapActiveTab();
+  const run = async () => {
+    try {
+      if (typeof ensureWwwNormalizationMigration === "function") {
+        await ensureWwwNormalizationMigration();
+      }
+      if (typeof bootstrapActiveTab === "function") {
+        await bootstrapActiveTab();
+      }
+    } catch (error) {
+      // ignore startup migration/bootstrap errors; handlers will retry when needed
     }
   };
 

@@ -91,27 +91,17 @@
     </div>
 
     <div class="card">
-      <h3 style="margin:6px 0 4px; font-size:13px; color:#c5d6e2;" data-i18n="matchExceptionsTitle">Exceções de match completo</h3>
-      <p data-i18n="matchExceptionsInfo">Cada linha representa um domínio a ignorar nos matches completos</p>
-      <textarea
-        id="match-exceptions"
-        class="exception-textarea"
-        data-i18n="matchExceptionsPlaceholder"
-        data-i18n-attr="placeholder"
-        placeholder="google.com"
-      ></textarea>
+      <p data-i18n="exceptionsInfo">Configure sites ignorados nos matches completos e parciais</p>
+      <div class="actions">
+        <a class="btn btn-link" href="exceptions.html" data-i18n="exceptionsOpen">Configurar exceções</a>
+      </div>
     </div>
 
     <div class="card">
-      <h3 style="margin:6px 0 4px; font-size:13px; color:#c5d6e2;" data-i18n="partialExceptionsTitle">Exceções de match parciais</h3>
-      <p data-i18n="partialExceptionsInfo">Cada linha representa um domínio a ignorar nos matches parciais</p>
-      <textarea
-        id="partial-exceptions"
-        class="exception-textarea"
-        data-i18n="partialExceptionsPlaceholder"
-        data-i18n-attr="placeholder"
-        placeholder="google.com"
-      ></textarea>
+      <p data-i18n="mirrorGroupsInfo">Cadastre sites espelhados para compartilharem o mesmo histórico de acessos</p>
+      <div class="actions">
+        <a class="btn btn-link" href="mirrors.html" data-i18n="mirrorGroupsOpen">Configurar mirrors</a>
+      </div>
     </div>
 
     <div class="card">
@@ -124,16 +114,23 @@
     </div>
 
     <div class="card">
-      <p data-i18n="exportInfo">Exportar para um arquivo todos os endereços salvos que não estejam anonimizados</p>
-      <div class="actions">
-        <button class="btn" id="export-addresses-btn" data-export-addresses-btn data-i18n="exportAddresses">Exportar endereços</button>
-      </div>
-    </div>
-
-    <div class="card">
-      <p data-i18n="importInfo">Importar endereços a partir de um arquivo de texto (.txt) com apenas uma URL por linha</p>
-      <div class="actions">
-        <button class="btn" data-import-addresses data-i18n="importAddresses">Importar endereços</button>
+      <p data-i18n="addressTransferInfo">Exportar ou importar um arquivo com todos os endereços acessados não anonimizados</p>
+      <div class="actions address-transfer-actions">
+        <button
+          class="btn"
+          id="export-addresses-btn"
+          data-export-addresses-btn
+          title="Exportar para um arquivo todos os endereços salvos que não estejam anonimizados"
+          data-i18n="exportAddresses"
+          data-i18n-attr="title:exportInfo"
+        >Exportar endereços</button>
+        <button
+          class="btn"
+          data-import-addresses
+          title="Importar endereços a partir de um arquivo de texto (.txt) com apenas uma URL por linha"
+          data-i18n="importAddresses"
+          data-i18n-attr="title:importInfo"
+        >Importar endereços</button>
       </div>
     </div>
 
@@ -219,6 +216,5 @@
     <script src="import.js"></script>
     <script src="danger-zone.js"></script>
     <script src="colors.js"></script>
-    <script src="exceptions.js"></script>
   </body>
 </html>

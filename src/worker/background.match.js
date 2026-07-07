@@ -51,7 +51,10 @@ function isPartialMatch(record, fingerprint) {
   const fpKeys = recordHashed ? fingerprint.keys?.hash : fingerprint.keys?.plain;
   if (!fpKeys) return false;
 
-  if (record.hostHash !== fpKeys.host) return false;
+  const hostCandidates = recordHashed
+    ? fingerprint.candidateHosts?.hash || [fpKeys.host]
+    : fingerprint.candidateHosts?.plain || [fpKeys.host];
+  if (!hostCandidates.includes(record.hostHash)) return false;
   if (record.pathHash !== fpKeys.path) return false;
 
   const fragmentDiff =
@@ -71,7 +74,14 @@ function isPartialMatch(record, fingerprint) {
   return fragmentDiff || paramPartial;
 }
 
+function uniqueStrings(values) {
+  return Array.from(new Set((values || []).filter((value) => typeof value === "string" && value)));
+}
+
 async function computeFingerprint(urlString) {
+  if (typeof ensureWwwNormalizationMigration === "function") {
+    await ensureWwwNormalizationMigration();
+  }
   const encryptionEnabled = await getEncryptionEnabled();
   const cacheKey = `${encryptionEnabled ? "1" : "0"}|${urlString}`;
   const cached = readFingerprintCache(cacheKey);
@@ -79,11 +89,25 @@ async function computeFingerprint(urlString) {
     return cached;
   }
 
-  const parts = normalizeUrlParts(urlString);
-  if (!parts) {
+  const originalParts = normalizeUrlParts(urlString);
+  if (!originalParts) {
     writeFingerprintCache(cacheKey, null);
     return null;
   }
+  const mirrorResolution =
+    typeof getMirrorResolution === "function"
+      ? await getMirrorResolution(originalParts.host)
+      : { canonical: originalParts.host, hosts: [originalParts.host], hasMirror: false };
+  const canonicalHost = mirrorResolution.hasMirror ? mirrorResolution.canonical : originalParts.host;
+  const candidatePlainHosts = uniqueStrings(
+    [canonicalHost].concat(mirrorResolution.hosts || [], originalParts.host)
+  );
+  const parts = {
+    ...originalParts,
+    originalHost: originalParts.host,
+    host: canonicalHost,
+    mirrorHosts: candidatePlainHosts
+  };
   const plainKeys = {
     host: parts.host,
     path: parts.path,
@@ -98,6 +122,7 @@ async function computeFingerprint(urlString) {
     fragment: await hashValue(parts.fragment),
     params: await Promise.all((parts.queryEntries || []).map((entry) => hashValue(entry)))
   };
+  const candidateHashHosts = await Promise.all(candidatePlainHosts.map((host) => hashValue(host)));
 
   const hashId = buildVisitId(hashKeys.host, {
     path: hashKeys.path,
@@ -109,6 +134,26 @@ async function computeFingerprint(urlString) {
     query: plainKeys.query,
     fragment: plainKeys.fragment
   });
+  const candidateIds = {
+    hash: uniqueStrings(
+      candidateHashHosts.map((host) =>
+        buildVisitId(host, {
+          path: hashKeys.path,
+          query: hashKeys.query,
+          fragment: hashKeys.fragment
+        })
+      )
+    ),
+    plain: uniqueStrings(
+      candidatePlainHosts.map((host) =>
+        buildVisitId(host, {
+          path: plainKeys.path,
+          query: plainKeys.query,
+          fragment: plainKeys.fragment
+        })
+      )
+    )
+  };
 
   const selected = encryptionEnabled
     ? hashKeys
@@ -133,6 +178,11 @@ async function computeFingerprint(urlString) {
     fragmentHash: selected.fragment,
     storedHashed: encryptionEnabled,
     keys: { hash: hashKeys, plain: plainKeys },
+    candidateIds,
+    candidateHosts: {
+      hash: uniqueStrings(candidateHashHosts),
+      plain: candidatePlainHosts
+    },
     parts
   };
   writeFingerprintCache(cacheKey, fingerprint);
@@ -164,11 +214,22 @@ async function getVisitsByHostCached(hostKey, cache) {
 }
 
 async function findVisitMatch(fingerprint, options = {}) {
-  const skipFullMatch = await isMatchException(fingerprint.parts.host);
+  const exceptionHosts = fingerprint.parts?.mirrorHosts || [fingerprint.parts.host];
+  const skipFullMatch = await isMatchException(fingerprint.parts.host, exceptionHosts);
   if (!skipFullMatch) {
     // exact search in hash/plain ids
     const idsToTry = Array.from(
-      new Set([fingerprint.id, fingerprint.ids?.hash, fingerprint.ids?.plain].filter(Boolean))
+      new Set(
+        []
+          .concat(
+            fingerprint.id,
+            fingerprint.ids?.hash,
+            fingerprint.ids?.plain,
+            fingerprint.storedHashed ? fingerprint.candidateIds?.hash : fingerprint.candidateIds?.plain,
+            fingerprint.storedHashed ? fingerprint.candidateIds?.plain : fingerprint.candidateIds?.hash
+          )
+          .filter(Boolean)
+      )
     );
 
     for (const id of idsToTry) {
@@ -179,13 +240,17 @@ async function findVisitMatch(fingerprint, options = {}) {
     }
   }
 
-  if (await isPartialException(fingerprint.parts.host)) {
+  if (await isPartialException(fingerprint.parts.host, exceptionHosts)) {
     return { state: MATCH_STATE.none };
   }
 
   // partial search: same host/path, params/fragment with intersection
   const hostCandidates = Array.from(
-    new Set([fingerprint.keys.hash.host, fingerprint.keys.plain.host].filter(Boolean))
+    new Set(
+      []
+        .concat(fingerprint.candidateHosts?.hash, fingerprint.candidateHosts?.plain)
+        .filter(Boolean)
+    )
   );
 
   for (const hostKey of hostCandidates) {
@@ -201,18 +266,25 @@ async function findVisitMatch(fingerprint, options = {}) {
 }
 
 async function findPartialMatches(fingerprint, limit = 5, options = {}) {
-  if (await isPartialException(fingerprint.parts.host)) {
+  const exceptionHosts = fingerprint.parts?.mirrorHosts || [fingerprint.parts.host];
+  if (await isPartialException(fingerprint.parts.host, exceptionHosts)) {
     return [];
   }
   const hostCandidates = Array.from(
-    new Set([fingerprint.keys.hash.host, fingerprint.keys.plain.host].filter(Boolean))
+    new Set(
+      []
+        .concat(fingerprint.candidateHosts?.hash, fingerprint.candidateHosts?.plain)
+        .filter(Boolean)
+    )
   );
   const results = [];
+  const seenIds = new Set();
 
   for (const hostKey of hostCandidates) {
     const matches = await getVisitsByHostCached(hostKey, options.hostCache);
     for (const value of matches) {
-      if (isPartialMatch(value, fingerprint)) {
+      if (value && !seenIds.has(value.id) && isPartialMatch(value, fingerprint)) {
+        seenIds.add(value.id);
         results.push(value);
         if (results.length >= limit) {
           break;

@@ -24,14 +24,30 @@ function applyI18n(root = document) {
     const message = t(key);
     if (!message) return;
     if (targetAttr) {
+      let shouldSetElementText = false;
       targetAttr
         .split(",")
         .map((attr) => attr.trim())
         .filter(Boolean)
         .forEach((attr) => {
+          const separatorIndex = attr.indexOf(":");
+          if (separatorIndex > 0) {
+            const attrName = attr.slice(0, separatorIndex).trim();
+            const attrKey = attr.slice(separatorIndex + 1).trim();
+            const attrMessage = t(attrKey);
+            if (attrName && attrMessage) {
+              el.setAttribute(attrName, attrMessage);
+            }
+            shouldSetElementText = true;
+            return;
+          }
           el.setAttribute(attr, message);
         });
-    } else if (el.tagName === "INPUT" && el.type === "password") {
+      if (!shouldSetElementText) {
+        return;
+      }
+    }
+    if (el.tagName === "INPUT" && el.type === "password") {
       el.setAttribute("placeholder", message);
     } else {
       el.textContent = message;

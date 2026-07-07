@@ -2,56 +2,57 @@
   const apiExceptions =
     window.apiExport || (window.apiExport = typeof browser !== "undefined" ? browser : chrome);
   const MSG = globalThis.AKI_MESSAGE_TYPES;
+  const statusEl = document.getElementById("exceptions-status");
 
-  function parseDomains(text) {
-    if (!text) return [];
-    const lines = text.split(/\r?\n/);
-    const domains = [];
-    lines.forEach((line) => {
-      const cleaned = line.trim();
-      if (!cleaned) {
-        return;
-      }
-      domains.push(cleaned);
-    });
-    return domains;
-  }
-
-  function formatDomains(domains) {
-    if (!Array.isArray(domains) || domains.length === 0) {
-      return "";
+  function setStatus(message, type) {
+    if (!statusEl) return;
+    statusEl.textContent = message || "";
+    statusEl.classList.remove("error", "success");
+    if (type) {
+      statusEl.classList.add(type);
     }
-    return domains.map((domain) => String(domain)).join("\n");
   }
 
-  function setupExceptionsTextarea(config) {
-    const textarea = document.getElementById(config.id);
-    if (!textarea) {
+  function setupExceptionsEditor(config) {
+    const editor = document.getElementById(config.id);
+    if (!editor) {
       return;
     }
 
     let saveTimer = null;
 
     async function loadExceptions() {
+      const closeLoading =
+        typeof showPanelLoading === "function"
+          ? showPanelLoading(window.getPanelLoadingMessage("loadingExceptions", "Loading exceptions..."))
+          : null;
       try {
         const res = await apiExceptions.runtime.sendMessage({ type: config.getType });
         if (res && res.ok) {
-          textarea.value = formatDomains(res.items || []);
+          window.AkiDomainTags.setItems(editor, "exception", res.items || [], scheduleSave);
         }
+        setStatus("");
       } catch (error) {
-        // ignore load errors
+        setStatus(error && error.message ? error.message : t("exceptionsLoadFailed"), "error");
+      } finally {
+        if (closeLoading) closeLoading();
       }
     }
 
     async function saveExceptions() {
       try {
-        const domains = parseDomains(textarea.value);
-        await apiExceptions.runtime.sendMessage({
+        window.AkiDomainTags.commitEditor(editor, "exception");
+        const items = window.AkiDomainTags.getItems(editor, "exception");
+        const response = await apiExceptions.runtime.sendMessage({
           type: config.setType,
-          items: domains
+          items
         });
+        if (response && response.ok && Array.isArray(response.items)) {
+          window.AkiDomainTags.setItems(editor, "exception", response.items, scheduleSave);
+        }
+        setStatus(t("exceptionsSaved"), "success");
       } catch (error) {
-        // ignore save errors
+        setStatus(error && error.message ? error.message : t("exceptionsSaveFailed"), "error");
       }
     }
 
@@ -65,8 +66,10 @@
       }, 400);
     }
 
-    textarea.addEventListener("input", scheduleSave);
-    textarea.addEventListener("blur", saveExceptions);
+    window.AkiDomainTags.setupEditor(editor, {
+      prefix: "exception",
+      onChange: scheduleSave
+    });
 
     loadExceptions();
   }
@@ -76,5 +79,5 @@
     { id: "partial-exceptions", getType: MSG.GET_PARTIAL_EXCEPTIONS, setType: MSG.SET_PARTIAL_EXCEPTIONS }
   ];
 
-  configs.forEach(setupExceptionsTextarea);
+  configs.forEach(setupExceptionsEditor);
 })();

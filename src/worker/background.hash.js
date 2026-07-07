@@ -22,6 +22,31 @@ function base64ToBuffer(value) {
   return bytes.buffer;
 }
 
+const HASH_VALUE_CACHE_MAX = 5000;
+const hashValueCache = new Map();
+
+function readHashCache(value) {
+  if (!hashValueCache.has(value)) {
+    return null;
+  }
+  const cached = hashValueCache.get(value);
+  hashValueCache.delete(value);
+  hashValueCache.set(value, cached);
+  return cached;
+}
+
+function writeHashCache(value, hash) {
+  hashValueCache.set(value, hash);
+  if (hashValueCache.size > HASH_VALUE_CACHE_MAX) {
+    const oldestKey = hashValueCache.keys().next().value;
+    hashValueCache.delete(oldestKey);
+  }
+}
+
+function clearHashCache() {
+  hashValueCache.clear();
+}
+
 async function ensurePepperKey() {
   if (pepperKeyPromise) {
     return pepperKeyPromise;
@@ -53,7 +78,14 @@ async function ensurePepperKey() {
 }
 
 async function hashValue(value) {
+  const normalized = String(value);
+  const cached = readHashCache(normalized);
+  if (cached) {
+    return cached;
+  }
   const key = await ensurePepperKey();
-  const signature = await crypto.subtle.sign("HMAC", key, textEncoder.encode(value));
-  return bufferToHex(signature);
+  const signature = await crypto.subtle.sign("HMAC", key, textEncoder.encode(normalized));
+  const hash = bufferToHex(signature);
+  writeHashCache(normalized, hash);
+  return hash;
 }

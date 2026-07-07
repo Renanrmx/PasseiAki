@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title data-i18n="mirrorGroupsPageTitle">Mirrors de sites</title>
+    <link rel="stylesheet" href="mirrors.css" />
+  </head>
+  <body>
+    <header>
+      <a
+        class="back-icon-btn"
+        href="settings.html"
+        aria-label="Voltar para configurações"
+        title="Voltar para configurações"
+        data-i18n="backToSettings"
+        data-i18n-attr="aria-label,title"
+      >
+        <span aria-hidden="true"></span>
+      </a>
+      <h1 data-i18n="mirrorGroupsPageTitle">Mirrors de sites</h1>
+      <p data-i18n="mirrorGroupsPageInfo">
+        Agrupe sites que devem compartilhar o mesmo histórico de acessos.
+      </p>
+    </header>
+
+    <main>
+      <div id="mirror-groups-list" class="mirror-groups-list"></div>
+      <p id="mirror-empty" class="empty-state" data-i18n="mirrorGroupsEmpty">Nenhum grupo cadastrado.</p>
+    </main>
+
+    <footer>
+      <div class="status" id="mirror-status"></div>
+      <div class="actions">
+        <button class="btn" id="add-mirror-group" type="button" data-i18n="mirrorGroupAdd">Adicionar grupo</button>
+      </div>
+    </footer>
+
+    <template id="mirror-group-template">
+      <section class="mirror-group">
+        <div class="mirror-group-header">
+          <h2></h2>
+          <button class="icon-btn remove-group" type="button" data-i18n="remove">Remover</button>
+        </div>
+        <p data-i18n="mirrorGroupHint">O primeiro endereço de site é o domínio canônico. Os demais são aliases.</p>
+        <div class="mirror-tag-editor">
+          <div class="mirror-tags"></div>
+          <input
+            class="mirror-tag-input"
+            type="text"
+            autocomplete="off"
+            spellcheck="false"
+            data-i18n="mirrorGroupPlaceholder"
+            data-i18n-attr="placeholder"
+            placeholder="site-a.com"
+          />
+        </div>
+      </section>
+    </template>
+
+    <script src="i18n.js"></script>
+    <script src="init-i18n.js"></script>
+    <script src="../shared/messages.js"></script>
+    <script src="../shared/domains.js"></script>
+    <script src="loading.js"></script>
+    <script src="domain-tags.js"></script>
+    <script src="mirrors.js"></script>
+  </body>
+</html>

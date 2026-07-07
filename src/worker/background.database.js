@@ -29,6 +29,9 @@ function getDbSchema() {
       },
       [MATCH_EXCEPTIONS_STORE]: {
         keyPath: "domain"
+      },
+      [MIRROR_GROUPS_STORE]: {
+        keyPath: "canonical"
       }
     }
   };
@@ -431,7 +434,7 @@ async function getDefaultPartialExceptions() {
 function buildExceptionsKeySet(domains) {
   const set = new Set();
   domains.forEach((domain) => {
-    const key = getDomainKeyFromValue(domain);
+    const key = getHostFromInput(domain);
     if (key) {
       set.add(key);
     }
@@ -559,11 +562,26 @@ async function setExceptions(storeName, domains) {
   }
 }
 
-async function isException(storeName, value) {
-  const key = getDomainKeyFromValue(value);
-  if (!key) return false;
+async function isException(storeName, value, candidateValues) {
   const set = await getExceptionsSet(storeName);
-  return set.has(key);
+  const candidates = [value].concat(Array.isArray(candidateValues) ? candidateValues : []);
+
+  if (!Array.isArray(candidateValues) && typeof getMirrorResolution === "function") {
+    try {
+      const resolution = await getMirrorResolution(value);
+      if (resolution && resolution.hasMirror) {
+        candidates.push(resolution.canonical);
+        candidates.push(...(Array.isArray(resolution.hosts) ? resolution.hosts : []));
+      }
+    } catch (error) {
+      // Fall back to the original value if mirror resolution is temporarily unavailable.
+    }
+  }
+
+  return candidates.some((candidate) => {
+    const key = getHostFromInput(candidate);
+    return key && set.has(key);
+  });
 }
 
 async function setPartialExceptions(domains) {
@@ -576,12 +594,12 @@ async function setMatchExceptions(domains) {
   return setExceptions(MATCH_EXCEPTIONS_STORE, domains);
 }
 
-async function isPartialException(value) {
-  return isException(PARTIAL_EXCEPTIONS_STORE, value);
+async function isPartialException(value, candidateValues) {
+  return isException(PARTIAL_EXCEPTIONS_STORE, value, candidateValues);
 }
 
-async function isMatchException(value) {
-  return isException(MATCH_EXCEPTIONS_STORE, value);
+async function isMatchException(value, candidateValues) {
+  return isException(MATCH_EXCEPTIONS_STORE, value, candidateValues);
 }
 
 async function getVisitById(id) {
@@ -801,13 +819,20 @@ async function searchPlainVisits(term, limit = 50) {
   if (normalized.length < 3) {
     return matches;
   }
+  const mirrorGroups =
+    typeof getMirrorGroups === "function" ? await getMirrorGroups() : [];
+  const mirrorSearchIndex =
+    typeof buildMirrorSearchIndex === "function" ? buildMirrorSearchIndex(mirrorGroups) : null;
 
   await forEachVisitByLastVisited((record) => {
     if (!record || record.hashed !== false) {
       return true;
     }
-    const address = buildAddressFromRecord(record).toLowerCase();
-    if (address.includes(normalized)) {
+    const addresses =
+      typeof buildMirrorSearchAddresses === "function"
+        ? buildMirrorSearchAddresses(record, mirrorSearchIndex || mirrorGroups)
+        : [buildAddressFromRecord(record).toLowerCase()];
+    if (addresses.some((address) => address.includes(normalized))) {
       matches.push(record);
     }
     return matches.length < maxItems;
@@ -880,6 +905,66 @@ async function putVisits(records) {
     notifyVisitDataChanged();
   } catch (error) {
     if (markDbWriteBlocked(error)) {
+      validRecords.forEach((record) => {
+        memoryVisits.set(record.id, record);
+      });
+      notifyVisitDataChanged();
+      return;
+    }
+    throw error;
+  }
+}
+
+async function replaceVisits(deleteIds = [], records = []) {
+  const ids = Array.isArray(deleteIds)
+    ? Array.from(new Set(deleteIds.filter((id) => typeof id === "string" && id)))
+    : [];
+  const validRecords = Array.isArray(records)
+    ? records.filter((record) => record && typeof record.id === "string" && record.id)
+    : [];
+
+  if (!ids.length && !validRecords.length) {
+    return;
+  }
+
+  if (isDbWriteBlocked()) {
+    ids.forEach((id) => {
+      memoryVisits.delete(id);
+    });
+    validRecords.forEach((record) => {
+      memoryVisits.set(record.id, record);
+    });
+    notifyVisitDataChanged();
+    return;
+  }
+
+  try {
+    const db = await openDatabase();
+    if (!db) {
+      ids.forEach((id) => {
+        memoryVisits.delete(id);
+      });
+      validRecords.forEach((record) => {
+        memoryVisits.set(record.id, record);
+      });
+      notifyVisitDataChanged();
+      return;
+    }
+    const tx = db.transaction(VISITS_STORE, "readwrite");
+    const store = tx.objectStore(VISITS_STORE);
+    ids.forEach((id) => {
+      store.delete(id);
+    });
+    validRecords.forEach((record) => {
+      store.put(record);
+    });
+    await waitForTransaction(tx);
+    notifyVisitDataChanged();
+  } catch (error) {
+    if (markDbWriteBlocked(error)) {
+      ids.forEach((id) => {
+        memoryVisits.delete(id);
+      });
       validRecords.forEach((record) => {
         memoryVisits.set(record.id, record);
       });
@@ -977,12 +1062,23 @@ async function clearVisitHistory() {
   }
 }
 
+function resetPepperAndHashCache() {
+  pepperKeyPromise = null;
+  if (typeof clearHashCache === "function") {
+    clearHashCache();
+  }
+}
+
 async function clearAllData() {
   if (isDbWriteBlocked()) {
     memoryVisits.clear();
     memoryMeta.clear();
+    resetPepperAndHashCache();
     resetExceptionStoreState(PARTIAL_EXCEPTIONS_STORE);
     resetExceptionStoreState(MATCH_EXCEPTIONS_STORE);
+    if (typeof resetMirrorGroupsState === "function") {
+      resetMirrorGroupsState();
+    }
     notifyVisitDataChanged();
     return;
   }
@@ -992,8 +1088,12 @@ async function clearAllData() {
     if (!db) {
       memoryVisits.clear();
       memoryMeta.clear();
+      resetPepperAndHashCache();
       resetExceptionStoreState(PARTIAL_EXCEPTIONS_STORE);
       resetExceptionStoreState(MATCH_EXCEPTIONS_STORE);
+      if (typeof resetMirrorGroupsState === "function") {
+        resetMirrorGroupsState();
+      }
       notifyVisitDataChanged();
       return;
     }
@@ -1004,6 +1104,9 @@ async function clearAllData() {
     if (db.objectStoreNames.contains(MATCH_EXCEPTIONS_STORE)) {
       stores.push(MATCH_EXCEPTIONS_STORE);
     }
+    if (db.objectStoreNames.contains(MIRROR_GROUPS_STORE)) {
+      stores.push(MIRROR_GROUPS_STORE);
+    }
     const tx = db.transaction(stores, "readwrite");
     tx.objectStore(VISITS_STORE).clear();
     tx.objectStore(META_STORE).clear();
@@ -1013,14 +1116,25 @@ async function clearAllData() {
     if (db.objectStoreNames.contains(MATCH_EXCEPTIONS_STORE)) {
       tx.objectStore(MATCH_EXCEPTIONS_STORE).clear();
     }
+    if (db.objectStoreNames.contains(MIRROR_GROUPS_STORE)) {
+      tx.objectStore(MIRROR_GROUPS_STORE).clear();
+    }
     await waitForTransaction(tx);
+    resetPepperAndHashCache();
+    if (typeof resetMirrorGroupsState === "function") {
+      resetMirrorGroupsState();
+    }
     notifyVisitDataChanged();
   } catch (error) {
     if (markDbWriteBlocked(error)) {
       memoryVisits.clear();
       memoryMeta.clear();
+      resetPepperAndHashCache();
       resetExceptionStoreState(PARTIAL_EXCEPTIONS_STORE);
       resetExceptionStoreState(MATCH_EXCEPTIONS_STORE);
+      if (typeof resetMirrorGroupsState === "function") {
+        resetMirrorGroupsState();
+      }
       notifyVisitDataChanged();
       return;
     }

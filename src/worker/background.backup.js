@@ -15,7 +15,8 @@ async function buildBackupPayload() {
     visits: await dumpAllVisits(),
     meta: await dumpAllMeta(),
     partialExceptions: await getAllPartialExceptions(),
-    matchExceptions: await getAllMatchExceptions()
+    matchExceptions: await getAllMatchExceptions(),
+    mirrorGroups: await getAllMirrorGroups()
   };
 }
 
@@ -164,6 +165,17 @@ function validateBackupExceptions(value, field) {
   return value.slice();
 }
 
+function validateBackupMirrorGroups(value) {
+  if (value == null) {
+    return [];
+  }
+  try {
+    return normalizeMirrorGroups(value);
+  } catch (error) {
+    throw new Error("Invalid backup payload: mirrorGroups");
+  }
+}
+
 function validateBackupPayload(decoded) {
   if (!isPlainObject(decoded)) {
     throw new Error("Invalid backup payload");
@@ -180,7 +192,8 @@ function validateBackupPayload(decoded) {
     visits: decoded.visits.map(validateBackupVisit),
     meta: decoded.meta.map(validateBackupMetaEntry),
     partialExceptions: validateBackupExceptions(decoded.partialExceptions, "partialExceptions"),
-    matchExceptions: validateBackupExceptions(decoded.matchExceptions, "matchExceptions")
+    matchExceptions: validateBackupExceptions(decoded.matchExceptions, "matchExceptions"),
+    mirrorGroups: validateBackupMirrorGroups(decoded.mirrorGroups)
   };
 }
 
@@ -223,13 +236,20 @@ async function restoreBackup(password, envelope, options = {}) {
 
     await clearAllData();
     await writeMetaEntries(decoded.meta);
+    pepperKeyPromise = null;
+    if (typeof clearHashCache === "function") {
+      clearHashCache();
+    }
     await putVisits(visitsToRestore);
     await rebuildStatsTotals(visitsToRestore);
     await setPartialExceptions(decoded.partialExceptions);
     await setMatchExceptions(decoded.matchExceptions);
+    await setMirrorGroups(decoded.mirrorGroups);
+    if (typeof ensureWwwNormalizationMigration === "function") {
+      await ensureWwwNormalizationMigration({ force: true });
+    }
 
     // reset caches
-    pepperKeyPromise = null;
     if (typeof clearMatchCaches === "function") {
       clearMatchCaches();
     }

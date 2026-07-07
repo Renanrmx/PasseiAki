@@ -2,17 +2,18 @@ const api = typeof browser !== "undefined" ? browser : chrome;
 const actionApi = api.action || api.browserAction;
 
 if (typeof importScripts === "function") {
-  importScripts("../shared/messages.js", "../shared/records.js");
+  importScripts("../shared/messages.js", "../shared/records.js", "../shared/domains.js");
 }
 
 const MSG = globalThis.AKI_MESSAGE_TYPES;
 
 const DB_NAME = "passeiAki";
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 const VISITS_STORE = "visits";
 const META_STORE = "meta";
 const PARTIAL_EXCEPTIONS_STORE = "partial_exceptions";
 const MATCH_EXCEPTIONS_STORE = "match_exceptions";
+const MIRROR_GROUPS_STORE = "mirror_groups";
 const META_PEPPER_KEY = "pepper";
 
 const SUPPORTED_PROTOCOLS = new Set(["http:", "https:"]);
@@ -55,6 +56,7 @@ const EXTENSION_PAGE_MESSAGE_TYPES = new Set([
   MSG.GET_DOWNLOAD_BADGE_STATE,
   MSG.GET_ENCRYPTION_ENABLED,
   MSG.GET_MATCH_EXCEPTIONS,
+  MSG.GET_MIRROR_GROUPS,
   MSG.GET_PARTIAL_EXCEPTIONS,
   MSG.GET_PARTIAL_MATCHES,
   MSG.GET_STATS,
@@ -67,6 +69,7 @@ const EXTENSION_PAGE_MESSAGE_TYPES = new Set([
   MSG.SET_ENCRYPTION_ENABLED,
   MSG.SET_LINK_COLORS,
   MSG.SET_MATCH_EXCEPTIONS,
+  MSG.SET_MIRROR_GROUPS,
   MSG.SET_PARTIAL_EXCEPTIONS,
   MSG.SUPPORT_TAB_OPENED
 ]);
@@ -237,6 +240,7 @@ if (typeof importScripts === "function") {
     "background.hash.js",
     "background.database.js",
     "background.utils.js",
+    "background.mirrors.js",
     "background.match.js",
     "background.history.js",
     "background.highlight.js",
@@ -277,6 +281,13 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     if (!isAuthorizedMessageSender(message.type, sender)) {
       return { ok: false, error: "Unauthorized message sender" };
+    }
+
+    if (
+      message.type !== MSG.RESTORE_BACKUP &&
+      typeof ensureWwwNormalizationMigration === "function"
+    ) {
+      await ensureWwwNormalizationMigration();
     }
 
     if (message.type === MSG.CHECK_VISITED_LINKS) {
@@ -473,6 +484,34 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
       }));
     }
 
+    if (message.type === MSG.GET_MIRROR_GROUPS) {
+      return (async () => {
+        const groups = await getMirrorGroups();
+        return { ok: true, groups };
+      })().catch((error) => ({
+        ok: false,
+        error: error && error.message ? error.message : String(error)
+      }));
+    }
+
+    if (message.type === MSG.SET_MIRROR_GROUPS) {
+      return (async () => {
+        const groups = await setMirrorGroups(message.groups || []);
+        lastSavedByTab.clear();
+        lastMatchStateByTab.clear();
+        lastPrevVisitByTab.clear();
+        pendingFirstVisit.clear();
+        forcedPartialByTab.clear();
+        sendRuntimeMessageSafe({ type: MSG.HISTORY_UPDATED });
+        await broadcastToContentTabs({ type: MSG.REFRESH_HIGHLIGHT });
+        refreshAllTabsMatchState();
+        return { ok: true, groups };
+      })().catch((error) => ({
+        ok: false,
+        error: error && error.message ? error.message : String(error)
+      }));
+    }
+
     if (message.type === MSG.GET_PAGE_EXCEPTION_FLAGS) {
       return (async () => {
         const url = message.url || "";
@@ -594,6 +633,9 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
 api.runtime.onInstalled.addListener(async (details) => {
   await ensurePepperKey();
   await openDatabase();
+  if (typeof ensureWwwNormalizationMigration === "function") {
+    await ensureWwwNormalizationMigration();
+  }
 
   try {
     if (details && details.reason === "install") {
@@ -610,33 +652,59 @@ api.runtime.onInstalled.addListener(async (details) => {
 });
 
 async function upsertVisit(urlString, options = {}) {
+  if (typeof waitForMirrorMigrationLock === "function") {
+    await waitForMirrorMigrationLock();
+  }
+
   const fingerprint = await computeFingerprint(urlString);
   if (!fingerprint) {
     return null;
   }
 
-  let existing = null;
+  const selectedCandidateIds = fingerprint.storedHashed
+    ? fingerprint.candidateIds?.hash
+    : fingerprint.candidateIds?.plain;
+  const alternateCandidateIds = fingerprint.storedHashed
+    ? fingerprint.candidateIds?.plain
+    : fingerprint.candidateIds?.hash;
   const idsToTry = Array.from(
-    new Set([fingerprint.id, fingerprint.ids?.hash, fingerprint.ids?.plain].filter(Boolean))
+    new Set(
+      []
+        .concat(
+          fingerprint.id,
+          fingerprint.ids?.hash,
+          fingerprint.ids?.plain,
+          selectedCandidateIds,
+          alternateCandidateIds
+        )
+        .filter(Boolean)
+    )
   );
+  const existingRecords = [];
   for (const id of idsToTry) {
     const found = await getVisitById(id);
     if (found) {
-      existing = found;
-      break;
+      existingRecords.push(found);
     }
   }
 
   const now = Date.now();
-  const previousLastVisited = existing ? existing.lastVisited : null;
+  const preferredExisting = existingRecords[0] || null;
 
-  const existedBefore = Boolean(existing);
-  const hashed = existing ? existing.hashed !== false : fingerprint.storedHashed;
+  const hashed = preferredExisting ? preferredExisting.hashed !== false : fingerprint.storedHashed;
+  const existingSameMode = existingRecords.filter((record) => (record.hashed !== false) === hashed);
+  const previousLastVisited = existingSameMode.reduce((latest, record) => {
+    const value = Number.isFinite(record.lastVisited) ? record.lastVisited : 0;
+    return Math.max(latest || 0, value);
+  }, null);
+
+  const existedBefore = existingSameMode.length > 0;
   const keySet = hashed ? fingerprint.keys.hash : fingerprint.keys.plain;
   const recordId = hashed ? fingerprint.ids?.hash || fingerprint.id : fingerprint.ids?.plain || fingerprint.id;
   const paramKeys = hashed ? fingerprint.keys.hash.params : fingerprint.keys.plain.params;
-  const download = options.download === true || (existing && existing.download === true);
-  
+  const download =
+    options.download === true || existingSameMode.some((record) => record && record.download === true);
+
   const baseRecord = {
     id: recordId,
     hostHash: keySet.host,
@@ -650,18 +718,36 @@ async function upsertVisit(urlString, options = {}) {
     query: fingerprint.parts.query,
     fragment: fingerprint.parts.fragment,
     lastVisited: now,
-    download
+    download,
+    visitCount: 0
   };
 
-  const record = existedBefore
-    ? { ...existing, ...baseRecord, visitCount: (existing.visitCount || 0) + 1 }
-    : { ...baseRecord, visitCount: 1 };
+  let mergedExisting = null;
+  for (const record of existingSameMode) {
+    const canonicalRecord =
+      typeof canonicalizeVisitForMirrorGroup === "function"
+        ? await canonicalizeVisitForMirrorGroup(record, fingerprint.parts.host)
+        : { ...record, ...baseRecord, visitCount: record.visitCount || 0 };
+    mergedExisting =
+      typeof mergeCanonicalVisit === "function"
+        ? mergeCanonicalVisit(mergedExisting, canonicalRecord)
+        : canonicalRecord;
+  }
 
-	  await putVisit(record);
-	  await adjustStatsTotals(existedBefore ? 0 : 1, 1);
-	  sendRuntimeMessageSafe({ type: MSG.HISTORY_UPDATED });
-	  return { record, existedBefore, previousLastVisited };
-	}
+  const record =
+    typeof mergeVisitForCurrentAccess === "function"
+      ? mergeVisitForCurrentAccess(mergedExisting, baseRecord)
+      : { ...mergedExisting, ...baseRecord, visitCount: (mergedExisting?.visitCount || 0) + 1 };
+
+  if (existedBefore) {
+    await replaceVisits(existingSameMode.map((value) => value.id), [record]);
+  } else {
+    await putVisit(record);
+  }
+  await adjustStatsTotals(existedBefore ? 1 - existingSameMode.length : 1, 1);
+  sendRuntimeMessageSafe({ type: MSG.HISTORY_UPDATED });
+  return { record, existedBefore, previousLastVisited };
+}
 
 async function setActionState(tabId, state) {
   try {
