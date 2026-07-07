@@ -1,75 +1,75 @@
 # Passei Aki
 
-[Instale pelo Chrome Store](https://chromewebstore.google.com/detail/passei-aki/cjgkgmcaogogknnaflonleghgegpcjop)
+[Install from the Chrome Web Store](https://chromewebstore.google.com/detail/passei-aki/cjgkgmcaogogknnaflonleghgegpcjop)
 
-[Instale pelo Mozilla Store](https://addons.mozilla.org/firefox/addon/passei-aki)
+[Install from Mozilla Add-ons](https://addons.mozilla.org/firefox/addon/passei-aki)
 
-Extensão de navegador que sinaliza se um endereço já foi visitado e quando foi, é útil principalmente para quem faz muitas pesquisas e não quer se perder em tantos links.
+Browser extension that indicates whether an address has already been visited and when. It is especially useful for people who do a lot of research and do not want to get lost among so many links.
 
-Nas páginas os links que já foram acessados em algum momento são marcados com a cor verde.
+On pages, links that have already been accessed at some point are marked in green.
 
-O ícone da extensão muda para a cor verde indicando que já foi acessado em algum momento (é recomendado deixar a extensão sempre visível para facilitar ver essa mudança), ao clicar na extensão dá para ver quando foi o último acesso e quantas vezes foi acessado.
+The extension icon changes to green to indicate that the address has already been accessed at some point (it is recommended to keep the extension always visible to make this change easier to see). By clicking the extension, you can see when it was last accessed and how many times it was accessed.
 
-Em casos de endereços semelhantes mudando só alguns parâmetros o ícone muda para roxo e ao clicar na extensão são exibidos os últimos acessos a endereços que coincidam com alguns parâmetros quando comparados ao endereço da aba atual, esses parâmetros ficam em cores diferentes para facilitar a visualização e comparação.
+For similar addresses that only change some parameters, the icon changes to purple. When clicking the extension, it displays the latest accesses to addresses that match some parameters when compared with the current tab's address. These parameters are shown in different colors to make viewing and comparison easier.
 
-O histórico fica em base local segura sem coleta de dados, o usuário pode escolher nas configurações se prefere deixar os endereços salvos em texto puro ou em hash, se escolher anonimizar deixa ainda mais seguro impedindo que alguém visualize os links, mas ainda mantém a funcionalidade principal de indicar quando um endereço já foi acessado.
+The history is stored in a secure local database with no data collection. The user can choose in the settings whether to keep saved addresses in plain text or as hashes. Choosing anonymization makes it even safer by preventing someone from viewing the links, while still keeping the main functionality of indicating when an address has already been accessed.
 
-## Recursos secundários
-- Listagem dos últimos endereços acessados com data e hora (este recurso fica limitado se configurar a extensão para anonimizar os dados).
-- Mirrors de sites: permite agrupar sites equivalentes para compartilharem o mesmo histórico de acessos.
-- Exceções de match completo e parcial para ignorar sites específicos durante as comparações.
-- Backup completo dos acessos e configurações, com opção de criar arquivo protegido por senha ou arquivo sem senha legível.
-- Restauração de backup com opção de mesclar acessos ou substituir os dados atuais.
-- Exportar endereços não anonimizados em formato de tabela (CSV) com datas de acesso ou em texto (TXT) apenas com os endereços.
-- Importar endereços a partir de arquivo de texto, com uma URL por linha. Datas externas não são aceitas; os acessos importados recebem a data da importação para preservar a integridade do banco.
-- Badge para downloads: pode indicar quando um link de download já foi acessado anteriormente.
+## Secondary features
+- List of the latest accessed addresses with date and time (this feature is limited if the extension is configured to anonymize data).
+- Site mirrors: allows grouping equivalent sites so they share the same access history.
+- Full and partial match exceptions to ignore specific sites during comparisons.
+- Full backup of accesses and settings, with the option to create a password-protected file or a readable file without a password.
+- Backup restoration with the option to merge accesses or replace the current data.
+- Export non-anonymized addresses in table format (CSV) with access dates or in text format (TXT) with addresses only.
+- Import addresses from a text file, with one URL per line. External dates are not accepted; imported accesses receive the import date to preserve database integrity.
+- Download badge: can indicate when a download link has already been accessed before.
 
-## Persistência e privacidade
-- Os registros são salvos apenas localmente, normalmente no IndexedDB.
-- Se o navegador bloquear armazenamento persistente, a extensão usa armazenamento em memória com `Map()`. Nesse modo, a popup exibe um aviso porque os dados serão perdidos ao fechar a aplicação.
-- As URLs são normalizadas e separadas em `host`, `path`, `query` e `fragment`. O prefixo inicial `www.` é ignorado globalmente.
-- Quando a anonimização está habilitada nas configurações, as partes das URLs são salvas como HMAC-SHA512 com pepper local. Quando desabilitada, ficam legíveis para permitir histórico, busca, importação e exportação.
-- Backup com senha: envelope `.bak` em JSON criptografado com Argon2id + ChaCha20-Poly1305. A senha é definida no momento do backup e exigida ao restaurar.
-- Backup sem senha: envelope `.bak` em JSON legível, detectado automaticamente na restauração e validado antes de processar.
+## Persistence and privacy
+- Records are saved only locally, normally in IndexedDB.
+- If the browser blocks persistent storage, the extension uses in-memory storage with `Map()`. In this mode, the popup displays a warning because the data will be lost when the application closes.
+- URLs are normalized and split into `host`, `path`, `query`, and `fragment`. The initial `www.` prefix is ignored globally.
+- When anonymization is enabled in the settings, URL parts are saved as HMAC-SHA512 with a local pepper. When disabled, they remain readable to allow history, search, import, and export.
+- Password backup: `.bak` envelope in JSON encrypted with Argon2id + ChaCha20-Poly1305. The password is defined when the backup is created and required when restoring.
+- Backup without password: readable JSON `.bak` envelope, automatically detected during restoration and validated before processing.
 
-## Executar via código
-1. Instale dependências: `npm install`.
-2. Firefox (MV2 por padrão): `npm start` (clona `src` para `dist`, copia `manifest.firefox.json` para `dist/manifest.json` e roda `web-ext run` a partir de `dist`).
-3. Chrome/Chromium ou Firefox MV3: gerar `dist` e usar `manifest.chrome.json` como `dist/manifest.json` (`npm run build:chrome` ou ajuste manual) e carregar em modo unpacked.
+## Run from source
+1. Install dependencies: `npm install`.
+2. Firefox (MV2 by default): `npm start` (clones `src` to `dist`, copies `manifest.firefox.json` to `dist/manifest.json`, and runs `web-ext run` from `dist`).
+3. Chrome/Chromium or Firefox MV3: generate `dist` and use `manifest.chrome.json` as `dist/manifest.json` (`npm run build:chrome` or manual adjustment), then load it in unpacked mode.
 
 ## Build
-1. Instale dependências: `npm install`.
-2. Crie o build para Firefox (`npm run build:firefox`) ou Chrome (`npm run build:chrome`). Os comandos de build executam `npm test` antes de gerar o pacote.
+1. Install dependencies: `npm install`.
+2. Create the build for Firefox (`npm run build:firefox`) or Chrome (`npm run build:chrome`). The build commands run `npm test` before generating the package.
 
-## Testes e lint
+## Tests and lint
 
-- `npm test`: executa a suíte com `node:test`.
-- `npm run lint`: prepara o build Firefox, executa `web-ext lint` e valida referências do manifest Chrome.
+- `npm test`: runs the suite with `node:test`.
+- `npm run lint`: prepares the Firefox build, runs `web-ext lint`, and validates Chrome manifest references.
 
-## Documentação técnica
+## Technical documentation
 
-A documentação técnica para manutenção e evolução do projeto fica em `docs/`:
+The technical documentation for project maintenance and evolution is in `docs/`:
 
-- [Arquitetura da extensão](docs/architecture.md)
-- [Persistência, privacidade e modelo de dados](docs/persistence-and-data-model.md)
-- [Matching, mirrors e normalização de domínios](docs/matching-and-mirrors.md)
-- [Backup, restauração, importação e exportação](docs/backup-import-export.md)
-- [Testes, lint e build](docs/testing-build.md)
+- [Extension architecture](docs/en-us/architecture.md)
+- [Persistence, privacy, and data model](docs/en-us/persistence-and-data-model.md)
+- [Matching, mirrors, and domain normalization](docs/en-us/matching-and-mirrors.md)
+- [Backup, restoration, import, and export](docs/en-us/backup-import-export.md)
+- [Tests, lint, and build](docs/en-us/testing-build.md)
 
-Para mudanças simples de UI, comece por [Arquitetura da extensão](docs/architecture.md) e [Testes, lint e build](docs/testing-build.md).
+For simple UI changes, start with [Extension architecture](docs/en-us/architecture.md) and [Tests, lint, and build](docs/en-us/testing-build.md).
 
-Para mudanças que mexem com histórico, migrações, backup, mirrors ou anonimização, leia antes:
+For changes involving history, migrations, backup, mirrors, or anonymization, read these first:
 
-- [Persistência, privacidade e modelo de dados](docs/persistence-and-data-model.md)
-- [Matching, mirrors e normalização de domínios](docs/matching-and-mirrors.md)
-- [Backup, restauração, importação e exportação](docs/backup-import-export.md)
+- [Persistence, privacy, and data model](docs/en-us/persistence-and-data-model.md)
+- [Matching, mirrors, and domain normalization](docs/en-us/matching-and-mirrors.md)
+- [Backup, restoration, import, and export](docs/en-us/backup-import-export.md)
 
-Essas áreas mexem diretamente com dados do usuário. A regra prática é planejar tudo antes de escrever, não misturar dados anonimizados e legíveis, e validar com `npm test`.
+These areas directly affect user data. The rule of thumb is to plan everything before writing, avoid mixing anonymized and readable data, and validate with `npm test`.
 
-## Permissões
-- storage: Utilizada para armazenamento local da extensão e preferências auxiliares.
-- tabs: Utilizada para ler o URL da aba ativa e atualizar o ícone e o estado da extensão de acordo com a página visitada. Também é usada para ouvir eventos de abas (`onUpdated`, `onActivated`, `onRemoved`), mantendo o estado interno sincronizado com a navegação.
-- activeTab: Concede acesso temporário à aba ativa após interação explícita do usuário, permitindo a leitura pontual do URL atual.
-- webNavigation: Utilizada para observar navegação e redirecionamentos no frame principal, registrando corretamente URLs iniciais e finais.
-- downloads: Utilizada para exportação manual de backups e arquivos `.csv`/`.txt`, e para detectar downloads criados pelo navegador para marcar/reconhecer links de download já acessados.
-- Acesso a `http://*/*` e `https://*/*`: necessário para o content script analisar links em páginas visitadas e para o background comparar URLs acessadas.
+## Permissions
+- storage: Used for the extension's local storage and auxiliary preferences.
+- tabs: Used to read the active tab URL and update the extension icon and state according to the visited page. It is also used to listen to tab events (`onUpdated`, `onActivated`, `onRemoved`), keeping the internal state synchronized with navigation.
+- activeTab: Grants temporary access to the active tab after explicit user interaction, allowing one-off reading of the current URL.
+- webNavigation: Used to observe navigation and redirects in the main frame, correctly recording initial and final URLs.
+- downloads: Used for manual export of backups and `.csv`/`.txt` files, and to detect downloads created by the browser in order to mark/recognize download links that have already been accessed.
+- Access to `http://*/*` and `https://*/*`: required for the content script to analyze links on visited pages and for the background script to compare accessed URLs.
