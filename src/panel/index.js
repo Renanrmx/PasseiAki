@@ -14,6 +14,8 @@ const downloadBadgeList = document.getElementById("download-badge-list");
 const downloadBadgeDismiss = document.getElementById("download-badge-dismiss");
 const supportBtn = document.getElementById("support-btn");
 const supportContainer = document.getElementById("support-container");
+const memoryOnlyFooter = document.getElementById("memory-only-footer");
+const memoryOnlyWarning = document.getElementById("memory-only-warning");
 
 
 function normalizeParamsLocal(paramString) {
@@ -84,6 +86,7 @@ document.addEventListener("DOMContentLoaded", () => {
   loadStats();
   loadDownloadBadgeState();
   loadSupportVisibility();
+  loadPersistenceStatus();
 });
 
 function updateMatchStatus(url, state) {  
@@ -188,6 +191,26 @@ async function loadSupportVisibility() {
     // ignore status errors
   }
   setSupportVisibility(true);
+}
+
+function setMemoryOnlyWarningVisible(visible) {
+  const shouldShow = visible === true;
+  if (memoryOnlyFooter) {
+    memoryOnlyFooter.hidden = !shouldShow;
+  }
+  if (memoryOnlyWarning) {
+    memoryOnlyWarning.hidden = !shouldShow;
+  }
+}
+
+async function loadPersistenceStatus() {
+  if (!memoryOnlyWarning) return;
+  try {
+    const res = await api.runtime.sendMessage({ type: MSG.GET_PERSISTENCE_STATUS });
+    setMemoryOnlyWarningVisible(Boolean(res && res.ok && res.memoryOnly));
+  } catch (error) {
+    setMemoryOnlyWarningVisible(false);
+  }
 }
 
 async function loadPartialMatches(url) {

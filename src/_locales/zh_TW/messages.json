@@ -73,6 +73,7 @@
   "importValidationFailed": { "message": "匯入驗證失敗" },
   "includeValid": { "message": "僅加入有效項目" },
   "indexedDbOpenFailed": { "message": "無法開啟本機資料庫" },
+  "memoryOnlyWarning": { "message": "由於瀏覽器限制，目前僅以記憶體資料執行；關閉應用程式後，擴充功能的所有資料都會遺失。" },
   "invalidExportModal": { "message": "匯出對話框無效" },
   "invalidImportModal": { "message": "匯入對話框無效" },
   "lastVisitLabel": { "message": "上次造訪" },

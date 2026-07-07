@@ -73,6 +73,7 @@
   "importValidationFailed": { "message": "आयात सत्यापन विफल" },
   "includeValid": { "message": "केवल मान्य जोड़ें" },
   "indexedDbOpenFailed": { "message": "स्थानीय डेटाबेस खोलने में विफल" },
+  "memoryOnlyWarning": { "message": "ब्राउज़र की सीमाओं के कारण डेटा केवल मेमोरी में रखा जा रहा है; ऐप्लिकेशन बंद करने पर एक्सटेंशन का सारा डेटा खो जाएगा।" },
   "invalidExportModal": { "message": "अमान्य निर्यात मोडल" },
   "invalidImportModal": { "message": "अमान्य आयात मोडल" },
   "lastVisitLabel": { "message": "अंतिम विजिट" },

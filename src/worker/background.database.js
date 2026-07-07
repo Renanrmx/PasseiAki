@@ -136,6 +136,16 @@ function isDbWriteBlocked() {
   return dbWriteBlocked;
 }
 
+async function getPersistenceStatus() {
+  if (!isDbWriteBlocked()) {
+    await openDatabase();
+  }
+  return {
+    persistent: !isDbWriteBlocked(),
+    memoryOnly: isDbWriteBlocked()
+  };
+}
+
 function openDatabase() {
   if (dbPromise) {
     return dbPromise;

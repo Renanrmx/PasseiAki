@@ -73,6 +73,7 @@
   "importValidationFailed": { "message": "导入验证失败" },
   "includeValid": { "message": "仅加入有效项" },
   "indexedDbOpenFailed": { "message": "无法打开本地数据库" },
+  "memoryOnlyWarning": { "message": "由于浏览器限制，正在仅以内存数据运行；关闭应用后，扩展的所有数据都将丢失。" },
   "invalidExportModal": { "message": "导出模态框无效" },
   "invalidImportModal": { "message": "导入模态框无效" },
   "lastVisitLabel": { "message": "最后访问" },

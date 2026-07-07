@@ -73,6 +73,7 @@
   "importValidationFailed": { "message": "가져오기 검증 실패" },
   "includeValid": { "message": "유효한 것만 포함" },
   "indexedDbOpenFailed": { "message": "로컬 데이터베이스를 열지 못했습니다" },
+  "memoryOnlyWarning": { "message": "브라우저 제한으로 인해 데이터를 메모리에만 저장한 상태로 실행 중입니다. 애플리케이션을 닫으면 확장 프로그램의 모든 데이터가 손실됩니다." },
   "invalidExportModal": { "message": "잘못된 내보내기 모달" },
   "invalidImportModal": { "message": "잘못된 가져오기 모달" },
   "lastVisitLabel": { "message": "마지막 방문" },

@@ -73,6 +73,7 @@
   "importValidationFailed": { "message": "Échec de la validation de l'importation" },
   "includeValid": { "message": "Inclure les valides" },
   "indexedDbOpenFailed": { "message": "Échec de l'ouverture de la base de données locale" },
+  "memoryOnlyWarning": { "message": "Exécution avec des données uniquement en mémoire en raison de limitations du navigateur ; toutes les données de l’extension seront perdues à la fermeture de l’application." },
   "invalidExportModal": { "message": "Modale d'exportation invalide" },
   "invalidImportModal": { "message": "Modale d'importation invalide" },
   "lastVisitLabel": { "message": "Dernière visite" },

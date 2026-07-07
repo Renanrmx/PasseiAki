@@ -73,6 +73,7 @@
   "importValidationFailed": { "message": "فشل التحقق من الاستيراد" },
   "includeValid": { "message": "تضمين الصالحة" },
   "indexedDbOpenFailed": { "message": "تعذر فتح قاعدة البيانات المحلية" },
+  "memoryOnlyWarning": { "message": "يتم التشغيل ببيانات في الذاكرة فقط بسبب قيود المتصفح؛ ستُفقد جميع بيانات الإضافة عند إغلاق التطبيق." },
   "invalidExportModal": { "message": "نافذة التصدير غير صالحة" },
   "invalidImportModal": { "message": "نافذة الاستيراد غير صالحة" },
   "lastVisitLabel": { "message": "آخر زيارة" },

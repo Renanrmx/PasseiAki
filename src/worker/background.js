@@ -59,6 +59,7 @@ const EXTENSION_PAGE_MESSAGE_TYPES = new Set([
   MSG.GET_MIRROR_GROUPS,
   MSG.GET_PARTIAL_EXCEPTIONS,
   MSG.GET_PARTIAL_MATCHES,
+  MSG.GET_PERSISTENCE_STATUS,
   MSG.GET_STATS,
   MSG.GET_SUPPORT_STATUS,
   MSG.GET_VISIT_FOR_URL,
@@ -564,6 +565,16 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
       return (async () => {
         const status = await getSupportStatus();
         return { ok: true, visible: status.visible, supportAt: status.supportAt };
+      })().catch((error) => ({
+        ok: false,
+        error: error && error.message ? error.message : String(error)
+      }));
+    }
+
+    if (message.type === MSG.GET_PERSISTENCE_STATUS) {
+      return (async () => {
+        const status = await getPersistenceStatus();
+        return { ok: true, ...status };
       })().catch((error) => ({
         ok: false,
         error: error && error.message ? error.message : String(error)

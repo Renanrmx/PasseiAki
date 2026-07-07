@@ -13,6 +13,7 @@ body {
   width: 100%;
   box-sizing: border-box;
   background: linear-gradient(135deg, #0b0c10 0%, #1f2833 55%, #0b1727 100%);
+  overflow-x: hidden;
 }
 
 h1 {
@@ -228,6 +229,35 @@ footer {
   gap: 8px;
   flex-direction: column;
   width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+footer[hidden] {
+  display: none;
+}
+
+.memory-only-warning {
+  contain: inline-size;
+  box-sizing: border-box;
+  inline-size: 100%;
+  max-width: 100%;
+  min-width: 0;
+  color: #ff6b6b;
+  background: rgba(120, 0, 0, 0.22);
+  border: 1px solid rgba(255, 107, 107, 0.6);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 12px;
+  line-height: 1.35;
+  font-weight: 700;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+.memory-only-warning[hidden] {
+  display: none;
 }
 
 .toggle {

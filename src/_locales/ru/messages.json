@@ -73,6 +73,7 @@
   "importValidationFailed": { "message": "Не удалось проверить импорт" },
   "includeValid": { "message": "Добавить допустимые" },
   "indexedDbOpenFailed": { "message": "Не удалось открыть локальную базу данных" },
+  "memoryOnlyWarning": { "message": "Из-за ограничений браузера данные хранятся только в памяти; при закрытии приложения все данные расширения будут потеряны." },
   "invalidExportModal": { "message": "Недопустимое окно экспорта" },
   "invalidImportModal": { "message": "Недопустимое окно импорта" },
   "lastVisitLabel": { "message": "Последний визит" },

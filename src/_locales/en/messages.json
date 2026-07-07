@@ -73,6 +73,7 @@
   "importValidationFailed": { "message": "Import validation failed" },
   "includeValid": { "message": "Include valid ones" },
   "indexedDbOpenFailed": { "message": "Failed to open the local database" },
+  "memoryOnlyWarning": { "message": "Running with data only in memory due to browser limitations; all extension data will be lost when the application is closed." },
   "invalidExportModal": { "message": "Invalid export modal" },
   "invalidImportModal": { "message": "Invalid import modal" },
   "lastVisitLabel": { "message": "Last visit" },

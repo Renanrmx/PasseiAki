@@ -73,6 +73,7 @@
   "importValidationFailed": { "message": "インポートの検証に失敗しました" },
   "includeValid": { "message": "有効なものを含める" },
   "indexedDbOpenFailed": { "message": "ローカルデータベースを開けませんでした" },
+  "memoryOnlyWarning": { "message": "ブラウザーの制限によりデータをメモリ内のみに保持して実行しています。アプリケーションを閉じると拡張機能のすべてのデータが失われます。" },
   "invalidExportModal": { "message": "無効なエクスポートモーダル" },
   "invalidImportModal": { "message": "無効なインポートモーダル" },
   "lastVisitLabel": { "message": "最終訪問" },
